@@ -17,6 +17,23 @@ library(tidyverse)
 tracking <- arrow::read_parquet("data/tracking.parquet")
 
 games <- read_csv("data/games.csv")
-
 players <- read_csv("data/players.csv")
-head(tracking, 10)
+player_play <- read_csv("data/player_play.csv")
+plays <- read_csv("data/plays.csv")
+
+## Cleaning
+# Making sure players go in the same direction
+tracking <- tracking |>
+  mutate(
+    # Plays will always go from left to right
+    x = ifelse(playDirection == "left", 120 - x, x),
+    y = ifelse(playDirection == "left", 160 / 3 - y, y),
+    # flip player direction and orientation
+    dir = ifelse(playDirection == "left", dir + 180, dir),
+    dir = ifelse(dir > 360, dir - 360, dir),
+    o = ifelse(playDirection == "left", o + 180, o),
+    o = ifelse(o > 360, o - 360, o)
+  )
+
+# Test
+head <- head(tracking, 10)
