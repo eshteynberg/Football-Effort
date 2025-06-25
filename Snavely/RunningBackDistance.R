@@ -106,3 +106,20 @@ distance |>
 rb_stats_per_play |> 
   ggplot(aes(x = mean_ke)) +
   geom_histogram()
+
+
+## players with the highest KE
+
+rb_stats_per_play |>
+  arrange(desc(mean_ke)) |>
+ filter(mean_ke >= 8786) |>
+  ggplot(aes(x = mean_ke, y = displayName)) +
+  geom_col() +
+  labs(
+    x = "Average Kinetic Energy",
+    y = "Player Name"
+  )
+  
+
+
+
