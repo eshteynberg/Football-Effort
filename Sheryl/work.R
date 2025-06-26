@@ -39,7 +39,7 @@ rb_stats_total |>
   ggplot(aes(x = reorder(displayName, avg_EPA), y = avg_EPA)) +
   geom_col(fill = "darkred") +
   geom_label(
-    aes(label = round(avg_EPA, 2)),
+    aes(label = round(avg_EPA, 3)),
     hjust = 0.5,
     size = 4,
     fill = "white"
@@ -57,6 +57,12 @@ rb_stats_total |>
     axis.title.x = element_text(face = "bold"),
     axis.title.y = element_text(face = "bold")
   )
+
+
+EPA <- rb_stats_total |>
+  ungroup() |>
+  arrange(desc(mean_ke)) |>
+  slice_head(n = 5) 
 
 
 
