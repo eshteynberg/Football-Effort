@@ -1,11 +1,30 @@
+library(tidyverse)
+
+
 ## players with the highest KE
 
 rb_stats_total |>
+  ungroup() |>                     
   arrange(desc(mean_ke)) |>
-  filter(mean_ke >= 8786) |>
-  ggplot(aes(x = mean_ke, y = displayName)) +
-  geom_col() +
+  slice_head(n = 5) |>
+  ggplot(aes(x = reorder(displayName, mean_ke), y = mean_ke)) +
+  geom_col(fill = "navyblue") +
+  # making the background of the labels white so they're visible when overlapping with the bars
+  geom_label(aes(
+    label = round(mean_ke, 1)),
+    hjust = 0.5,
+    size = 4,
+    fill = "white"
+  ) +
+  coord_flip() +
   labs(
-    x = "Average Kinetic Energy",
-    y = "Player Name"
+    title = "Top 5 Players with Highest Average Kinetic Energy",
+    x = "Player Name",
+    y = "Average Kinetic Energy"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
   )
