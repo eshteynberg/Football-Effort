@@ -84,7 +84,7 @@ rb_stats_total |>
   coord_flip() +
   labs(
     title = "Average Expected Points Added for Top 5 Players
-                with Average yards gained",
+                with Average yards gained ",
     x = "Player Name",
     y = "Average Expected Points Added"
   ) +
@@ -95,5 +95,8 @@ rb_stats_total |>
     axis.title.y = element_text(face = "bold")
   )
 
-
+yards <- rb_stats_total |>
+  ungroup() |>
+  arrange(desc(avg_yards_gained)) |>
+  slice_head(n = 5) 
 
