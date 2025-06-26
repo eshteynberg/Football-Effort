@@ -17,6 +17,17 @@ format:
 
 ## Background and Motivation
 
+* How do we quantify effort for NFL running backs?
+
+. . .
+
+* Importance
+
+  * Effort is a "intangible" concept
+
+  * Effort can is subjective
+
+    * Dependent on multiple factors (defense faced, position, velocity, etc.)
 
 
 ## Our Data: 2022 NFL Season 

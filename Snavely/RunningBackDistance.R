@@ -80,7 +80,8 @@ rb_stats_total <- rb_stats_per_play |>
     avg_yards_gained = mean(yardsGained),
     avg_EPA = mean(expectedPointsAdded),
     num_of_rushes = n()
-  )
+  ) |> 
+  ungroup()
 
 summary(rb_stats_total$num_of_rushes) # Do a minimum of 20 rushes to eliminate players with low rushes
 
@@ -110,6 +111,76 @@ rb_stats_per_play |>
   ggplot(aes(x = dis_gained)) +
   geom_histogram()
 
+# Top ke players
 rb_stats_total_filtered |>
+  slice_max(order_by = mean_ke, n = 10) |> 
   ggplot(aes(x = mean_ke, y = displayName)) +
   geom_col()
+
+# Least ke players
+rb_stats_total_filtered |>
+  slice_min(order_by = mean_ke, n = 10) |> 
+  ggplot(aes(x = mean_ke, y = displayName)) +
+  geom_col()
+
+# Top ke plays
+rb_stats_per_play |>
+  slice_max(order_by = mean_ke, n = 10) |> 
+  ggplot(aes(x = mean_ke, y = as.character(playId))) +
+  geom_col() +
+  geom_label(aes(label = displayName))
+
+# Relationship between mean_ke and EPA
+rb_stats_per_play |> 
+  ggplot((aes(x = expectedPointsAdded, y = mean_ke))) +
+  geom_point() +
+  scale_x_log10()
+
+# Relationship between mean_ke and dis_gained_x
+rb_stats_per_play |> 
+  ggplot((aes(x = dis_gained_x, y = mean_ke))) +
+  geom_point() +
+  scale_x_log10()
+
+# Animating the top KE play -----------------------------------------------
+library(gganimate)
+library(sportyR)
+
+# Filtering for the play with the highest avg KE
+# Week 1: Giants @ Titans
+saquon <- tracking |> 
+  filter(playId == 1948,
+         gameId == 2022091108) |> 
+  mutate(team_col = case_when(club == "TEN" ~ "#4B92DB",
+                              club == "NYG" ~ "#FFFFFF",
+                              club == "football" ~ "#964B00"),
+         size = case_when(club == "TEN" ~ 3,
+                          club == "NYG" ~ 3,
+                          club == "football" ~ 2))
+
+# Field characteristics
+field_params <- list(
+  field_apron = "springgreen3",
+  field_border = "springgreen3",
+  offensive_endzone = "springgreen3",
+  defensive_endzone = "springgreen3",
+  offensive_half = "springgreen3",
+  defensive_half = "springgreen3"
+)
+
+field_background <- geom_football(
+  league = "nfl",
+  display_range = "in_bounds_only",
+  x_trans = 60,
+  y_trans = 26.6667,
+  xlims = c(20, 130),
+  color_updates = field_params
+)
+
+field_background +
+  geom_point(data = saquon,
+             aes(120 - x, 160 / 3 - y),
+             size = 3,
+             color = saquon$team_col) +
+  transition_time(saquon$frameId)
+
