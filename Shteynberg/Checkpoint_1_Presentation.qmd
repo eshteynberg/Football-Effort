@@ -1,0 +1,42 @@
+---
+title: "title"
+author: "Emily Shteynberg, Luke Snavely, Sheryl Solorzano"
+format:
+  revealjs:
+    theme: theme.scss
+    smaller: true
+    slide-number: c/t
+    footer: "[github.com/eshteynberg/Football-Effort](https://github.com/eshteynberg/Football-Effort)"
+    embed-resources: true
+    code-line-numbers: false
+    linestretch: 1.25
+    html-math-method:
+      method: mathjax
+      url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+---
+
+## Background and Motivation
+
+
+
+## Our Data: 2022 NFL Season 
+
+* Game, play, player, tracking data [^1]
+
+[^1]: Courtesy of NFL Big Data Bowl 2025
+
+. . .
+
+* something
+
+## [eda 1 assertion-evidence]
+
+## [eda 2 assertion-evidence]
+
+## Methods
+
+## Plan of Action
+
+# Appendix 
+
+
