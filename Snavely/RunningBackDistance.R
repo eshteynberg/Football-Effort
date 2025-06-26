@@ -89,7 +89,6 @@ rb_stats_total_filtered <- rb_stats_total |>
 
 # Visualizations
 # Distance gained x
-
 distance <- rb_stats_per_play |> 
   pivot_longer(c(dis_gained, dis_gained_x, yardsGained),
                names_to = "distance_type",
@@ -106,3 +105,11 @@ distance |>
 rb_stats_per_play |> 
   ggplot(aes(x = mean_ke)) +
   geom_histogram()
+
+rb_stats_per_play |> 
+  ggplot(aes(x = dis_gained)) +
+  geom_histogram()
+
+rb_stats_total_filtered |>
+  ggplot(aes(x = mean_ke, y = displayName)) +
+  geom_col()
