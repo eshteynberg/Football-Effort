@@ -66,6 +66,34 @@ EPA <- rb_stats_total |>
 
 
 
+# Avg expected points added for the top 5 players with the most avg_yards_gained
+
+
+rb_stats_total |>
+  ungroup() |>
+  arrange(desc(avg_yards_gained)) |>
+  slice_head(n = 5) |>
+  ggplot(aes(x = reorder(displayName, avg_EPA), y = avg_EPA)) +
+  geom_col(fill = "darkred") +
+  geom_label(
+    aes(label = round(avg_EPA, 3)),
+    hjust = 0.5,
+    size = 4,
+    fill = "white"
+  ) +
+  coord_flip() +
+  labs(
+    title = "Average Expected Points Added for Top 5 Players
+                with Average yards gained",
+    x = "Player Name",
+    y = "Average Expected Points Added"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
+  )
 
 
 
