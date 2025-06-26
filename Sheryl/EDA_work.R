@@ -32,7 +32,7 @@ rb_stats_total |>
 
 # Avg expected points added for the top 5 players with the most kinetic energy
 
-rb_stats_total |>
+rb_stats_total_filtered |>
   ungroup() |>
   arrange(desc(mean_ke)) |>
   slice_head(n = 5) |>
