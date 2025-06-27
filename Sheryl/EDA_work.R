@@ -59,11 +59,78 @@ rb_stats_total_filtered |>
   )
 
 
-EPA <- rb_stats_total |>
+# Avg expected points added for the top 5 players with the least kinetic energy
+
+rb_stats_total_filtered |>
+  ungroup() |>
+  arrange(mean_ke) |>
+  slice_head(n = 5) |>
+  ggplot(aes(x = reorder(displayName, avg_EPA), y = avg_EPA)) +
+  geom_col(fill = "darkred") +
+  geom_label(
+    aes(label = round(avg_EPA, 3)),
+    hjust = 0.5,
+    size = 4,
+    fill = "white"
+  ) +
+  coord_flip() +
+  labs(
+    title = "Average Expected Points Added for Top 5 Players
+                with Lowest Kinetic Energy",
+    x = "Player Name",
+    y = "Average Expected Points Added"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
+  )
+
+# ds of players with the highest KE
+KE_high <- rb_stats_total_filtered |>
   ungroup() |>
   arrange(desc(mean_ke)) |>
   slice_head(n = 5) 
 
+# ds of players with the lowest KE
+KE_low <- rb_stats_total_filtered |>
+  ungroup() |>
+  arrange(mean_ke) |>
+  slice_head(n = 5) 
+
+
+# joining both data sets
+
+KE_combined <- bind_rows(KE_high, KE_low)
+
+# plot with combined datasets
+
+KE_combined |>
+  ungroup() |>
+  arrange(desc(mean_ke)) |>
+  ggplot(aes(x = reorder(displayName, avg_EPA), y = avg_EPA)) +
+  geom_col(fill = "darkred") +
+  geom_label(
+    aes(label = round(avg_EPA, 2)),
+    hjust = 0.4,
+    size = 4,
+    fill = "white"
+  ) +
+  coord_flip() +
+  labs(
+    title = "Average Expected Points Added by Kinetic Energy",
+    subtitle = "Average expected points for five players with the highest
+kinetic energy and the five players with the lowest kinetic energy",
+    x = "Player Name",
+    y = "Average Expected Points Added"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
+  )
 
 
 #=========================[ expected points added for ] ====================== 
