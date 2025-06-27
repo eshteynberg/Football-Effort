@@ -120,7 +120,7 @@ KE_combined |>
   coord_flip() +
   labs(
     title = "Average Expected Points Added by Kinetic Energy",
-    subtitle = "Average expected points for five players with the highest
+    subtitle = "Average expected points for the five players with the highest
 kinetic energy and the five players with the lowest kinetic energy",
     x = "Player Name",
     y = "Average Expected Points Added"
@@ -134,47 +134,16 @@ kinetic energy and the five players with the lowest kinetic energy",
 
 
 #=========================[ expected points added for ] ====================== 
-#================[ avg positive work across all plays ]==========================
-
-rb_stats_total_filtered |>
-  ungroup() |>
-  arrange(desc(mean_pos_work)) |>
-  slice_head(n = 5) |>
-  ggplot(aes(x = reorder(displayName, avg_EPA), y = avg_EPA)) +
-  geom_col(fill = "darkred") +
-  geom_label(
-    aes(label = round(avg_EPA, 3)),
-    hjust = 0.5,
-    size = 4,
-    fill = "white"
-  ) +
-  coord_flip() +
-  labs(
-    title = "Average Expected Points Added for Top 5 Players
-                with Highest Positive Work",
-    x = "Player Name",
-    y = "Average Expected Points Added"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold", size = 14),
-    axis.title.x = element_text(face = "bold"),
-    axis.title.y = element_text(face = "bold")
-  )
-
-
-
+#================[ avg_yards_gained ]===========================================
 
 
 # Avg expected points added for the top 5 players with the most avg_yards_gained
-
-
-rb_stats_total |>
+rb_stats_total_filtered |>
   ungroup() |>
   arrange(desc(avg_yards_gained)) |>
   slice_head(n = 5) |>
   ggplot(aes(x = reorder(displayName, avg_EPA), y = avg_EPA)) +
-  geom_col(fill = "darkred") +
+  geom_col(fill = "navyblue") +
   geom_label(
     aes(label = round(avg_EPA, 3)),
     hjust = 0.5,
@@ -184,7 +153,7 @@ rb_stats_total |>
   coord_flip() +
   labs(
     title = "Average Expected Points Added for Top 5 Players
-                with Average yards gained ",
+                with the most Average yards gained ",
     x = "Player Name",
     y = "Average Expected Points Added"
   ) +
@@ -195,8 +164,80 @@ rb_stats_total |>
     axis.title.y = element_text(face = "bold")
   )
 
-yards <- rb_stats_total |>
+
+# Avg expected points added for the top 5 players with the least avg_yards_gained
+
+rb_stats_total_filtered |>
+  ungroup() |>
+  arrange(avg_yards_gained) |>
+  slice_head(n = 5) |>
+  ggplot(aes(x = reorder(displayName, avg_EPA), y = avg_EPA)) +
+  geom_col(fill = "navyblue") +
+  geom_label(
+    aes(label = round(avg_EPA, 3)),
+    hjust = 0.5,
+    size = 4,
+    fill = "white"
+  ) +
+  coord_flip() +
+  labs(
+    title = "Average Expected Points Added for Top 5 Players
+                with the least average yards gained ",
+    x = "Player Name",
+    y = "Average Expected Points Added"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
+  )
+
+# joining datasets
+
+low_yards <- rb_stats_total_filtered |>
   ungroup() |>
   arrange(desc(avg_yards_gained)) |>
   slice_head(n = 5) 
+
+high_yeards <- rb_stats_total_filtered |>
+ungroup() |>
+  arrange(avg_yards_gained) |>
+  slice_head(n = 5)
+
+
+yards_combined <- bind_rows(low_yards, high_yeards)
+
+# plotting combined ds 
+
+yards_combined |>
+  ungroup() |>
+  arrange(desc(avg_yards_gained)) |>
+  ggplot(aes(x = reorder(displayName, avg_EPA), y = avg_EPA)) +
+  geom_col(fill = "navyblue") +
+  geom_label(
+    aes(label = round(avg_EPA, 2)),
+    hjust = 0.4,
+    size = 4,
+    fill = "white"
+  ) +
+  coord_flip() +
+  labs(
+    title = "Average Expected Points Added by Average Yards Gained",
+    subtitle = "Average expected points for the five players with the highest
+Average Yards Gained and the five players with the lowest Average Yards Gained",
+    x = "Player Name",
+    y = "Average Expected Points Added"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
+  )
+
+
+
+
+
 
