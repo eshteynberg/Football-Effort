@@ -103,8 +103,11 @@ rb_stats_per_play <- tracking_bc |>
   summarize(dis_gained = sum(dis),
             mean_ke = mean(ke),
             mean_m_x = mean(m_x),
+            sd_ke=sd(ke),
             dis_gained_x = sum(dis_x, na.rm = TRUE),
             mean_pos_work = mean(positive_work, na.rm=TRUE),
+            sd_pos_work = sd(positive_work, na.rm=TRUE),
+            effort_consistency = mean_ke/sd_ke,
             total_pos_work=sum(positive_work, na.rm=TRUE),
             avg_accel = mean(a)) |> 
   ungroup() |> 
@@ -117,6 +120,9 @@ rb_stats_total <- rb_stats_per_play |>
     total_dis_gained = sum(dis_gained),
     total_dis_gained_x = sum(dis_gained_x, na.rm = TRUE),
     mean_ke = mean(mean_ke),
+    avg_sd_ke=mean(sd_ke, na.rm=TRUE),
+    avg_sd_work= mean(sd_pos_work, na.rm=TRUE),
+    avg_effort_consistency =mean(effort_consistency, na.rm=TRUE),
     mean_m_x = mean(mean_m_x),
     mean_pos_work = mean(mean_pos_work, na.rm=TRUE),
     total_pos_work = sum(total_pos_work, na.rm=TRUE),
@@ -155,7 +161,7 @@ rb_stats_per_play |>
   geom_histogram()
 
 #top avg KE players
-rb_stats_total |> 
+rb_stats_total_filtered |> 
   slice_max(mean_ke, n=10) |> 
   ggplot(aes(x=reorder(displayName, mean_ke), y=mean_ke))+
   geom_col()+
@@ -231,6 +237,12 @@ rb_stats_total |>
   geom_col()+
   coord_flip()
 
+rb_stats_total_filtered |> 
+  slice_max(avg_effort_consistency, n=10) |> 
+  ggplot(aes(x=reorder(displayName, avg_effort_consistency), y=avg_effort_consistency))+
+  geom_col()+
+  coord_flip()
+
 #RBs with lowest EPA despite high work
 rb_stats_total |> 
   filter(num_of_rushes>=20) |> 
@@ -295,7 +307,14 @@ rb_stats_per_play_with_flips |>
   ggplot(aes(x=reorder(displayName, num_sign_changes), y=num_sign_changes))+
   geom_col()+
   coord_flip()
-  
+
+
+rb_stats_per_play_with_flips |> 
+  ggplot(aes(x=total_pos_work, y=num_sign_changes))+
+  geom_point()
+
+
+
 
   
 # rb_work_ratio <- tracking_bc |> 
@@ -312,7 +331,14 @@ rb_stats_per_play_with_flips |>
 
 
 
-#View(rb_stats_total)
+rb_stats_per_play |> 
+  ggplot(aes(x=effort_consistency, y=expectedPointsAdded))+
+
+
+
+View(rb_stats_total)
+View(rb_stats_total_filtered)
+View(rb_stats_per_play)
 #View(rb_test)
 
 ## EDA-------------------------------------
@@ -327,4 +353,150 @@ rb_stats_per_play <- rb_stats_per_play |>
     yards_per_ke = yardsGained / mean_ke,
     epa_per_ke = expectedPointsAdded / mean_ke
   ) 
+
+
+#QUADRANT ARCHETYPE PLOT (similar to clustering but not)
+ke_median <- median(rb_stats_total_filtered$mean_ke)
+epa_median <- median(rb_stats_total_filtered$avg_EPA)
+
+rb_stats_total_filtered <- rb_stats_total_filtered |> 
+  mutate(
+    quadrant= case_when(
+      mean_ke >= ke_median & avg_EPA >= epa_median ~ "Elites",
+      mean_ke < ke_median & avg_EPA>= epa_median ~ "Effortlessly efficient",
+      mean_ke >= ke_median & avg_EPA < epa_median ~ "Low payoff grinders",
+      TRUE ~ "Underperformers"
+    ),
+    quadrant = factor(quadrant, levels = c(
+      "Elites",
+      "Effortlessly efficient",
+      "Low payoff grinders",
+      "Underperformers"
+    ))
+  )
+
+label_players <- bind_rows(
+  rb_stats_total_filtered |> filter(quadrant == "Elites") |> slice_max(mean_ke, n = 4),
+  rb_stats_total_filtered |> filter(quadrant == "Elites") |> slice_max(avg_EPA, n = 3),
+  rb_stats_total_filtered |> filter(quadrant == "Effortlessly efficient") |> slice_max(avg_EPA, n = 1),
+  rb_stats_total_filtered |> filter(quadrant == "Low payoff grinders") |> slice_max(mean_ke, n = 1),
+  rb_stats_total_filtered |> filter(quadrant == "Underperformers") |> slice_min(avg_EPA*mean_ke, n = 5) 
+)
+
+
+rb_stats_total_filtered |> 
+  ggplot(aes(x=mean_ke, y=avg_EPA, color=quadrant))+
+  geom_point(size=3, alpha=0.8)+
+  geom_vline(xintercept = ke_median, linetype="dashed", color="gray50")+
+  geom_hline(yintercept = epa_median, linetype="dashed",color="gray50")+
+  scale_color_viridis_d(option = "D", end = 0.85, name = "Archetype") +
+  labs(
+    x="Avg Kinetic Energy (joules)",
+    y="Avg EPA",
+    color="Player Archetype"
+  )+
+  ggrepel::geom_text_repel(
+    data=label_players,
+    aes(label=displayName),
+    size = 3.8,
+    fontface="bold",
+    color = "black",
+    max.overlaps = 100,
+    box.padding = 0.3
+  ) +
+  theme_minimal(base_size=14)+
+  theme(
+    legend.title=element_text(face="bold"),
+    axis.title=element_text(face="bold")
+  )
+  
+
+#standardize effort "metrics"
+rb_total_filtered_std <- rb_stats_total_filtered |> 
+  mutate(across(c(mean_ke, mean_pos_work, total_pos_work, avg_effort_consistency), scale)) |> 
+  pivot_longer(
+    cols=c(mean_ke, mean_pos_work, total_pos_work, avg_effort_consistency),
+    names_to="effort_metric",
+    values_to="effort_value"
+  )
+
+#get slope
+slopes <- rb_total_filtered_std |> 
+  group_by(effort_metric) |> 
+  summarise(
+    slope=coef(lm(avg_EPA ~ effort_value))[2],
+    .groups="drop"
+  ) |> 
+    mutate(
+      facet_label=paste0(
+        case_when(
+          effort_metric == "mean_ke" ~ "Avg Kinetic Energy",
+          effort_metric == "mean_pos_work" ~ "Avg Positive Work",
+          effort_metric == "total_pos_work" ~ "Total Positive Work",
+          effort_metric == "avg_effort_consistency" ~ "Avg KE Consistency"
+        ),
+        "\n(Slope: ", round(slope,3), ")"
+      ))
+
+rb_total_filtered_std |> 
+  left_join(slopes, by= "effort_metric") |> 
+  ggplot(aes(x=effort_value, y=avg_EPA))+
+  geom_point(alpha=0.6)+
+  geom_smooth(method="lm", color="steelblue")+
+  facet_wrap(~facet_label, scales="free_x")+
+  labs(
+    x="Standardized Effort Metric",
+    y="Avg EPA"
+  )+
+  theme_minimal(base_size=14)+
+  theme(
+    #strip.text=element_text(face="bold"),
+    axis.title=element_text(face="bold")
+    
+  )
+
+
+
+#get slope
+slopes <- rb_total_filtered_std |> 
+  group_by(effort_metric) |> 
+  summarise(
+    slope=coef(lm(avg_yards_gained ~ effort_value))[2],
+    .groups="drop"
+  ) |> 
+  mutate(
+    facet_label=paste0(
+      case_when(
+        effort_metric == "mean_ke" ~ "Avg Kinetic Energy",
+        effort_metric == "mean_pos_work" ~ "Avg Positive Work",
+        effort_metric == "total_pos_work" ~ "Total Positive Work",
+        effort_metric == "avg_effort_consistency" ~ "Avg KE Consistency"
+      ),
+      "\n(Slope: ", round(slope,3), ")"
+    ))
+
+rb_total_filtered_std |> 
+  left_join(slopes, by= "effort_metric") |> 
+  ggplot(aes(x=effort_value, y=avg_yards_gained))+
+  geom_point(alpha=0.6)+
+  geom_smooth(method="lm", color="steelblue")+
+  facet_wrap(~facet_label, scales="free_x")+
+  labs(
+    x="Standardized Effort Metric",
+    y="Avg Yards Gained"
+  )+
+  theme_minimal(base_size=14)+
+  theme(
+    #strip.text=element_text(face="bold"),
+    axis.title=element_text(face="bold")
+    
+  )
+
+
+
+
+
+
+
+
 
