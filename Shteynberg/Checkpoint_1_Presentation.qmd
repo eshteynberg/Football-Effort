@@ -1,10 +1,12 @@
 ---
-title: "title"
+title: "Quantifying Effort in American Football"
 author: "Emily Shteynberg, Luke Snavely, Sheryl Solorzano"
 format:
   revealjs:
     theme: theme.scss
     smaller: true
+    incremental: true
+    math: mathjax
     slide-number: c/t
     footer: "[github.com/eshteynberg/Football-Effort](https://github.com/eshteynberg/Football-Effort)"
     embed-resources: true
@@ -17,30 +19,47 @@ format:
 
 ## Background and Motivation
 
-* How do we quantify effort for NFL running backs?
+* Not all rushing yards are equal 
 
-. . .
+* Traditional stats miss the "how" behind yards gained
 
-* Importance
+* Can we "measure" effort using tracking data?
 
-  * Effort is a "intangible" concept
+* No universal way to evaluate effort 
 
-  * Effort can is subjective
+  - Intangible and subjective
+  - Depends on player position, defense faced, game context, snap count/play volume, play call/assignment
 
-    * Dependent on multiple factors (defense faced, position, velocity, etc.)
 
 
 ## Our Data: 2022 NFL Season 
 
-* Game, play, player, tracking data [^1]
+* Game, play, player, tracking data from Weeks 1-9 [^1]
+
+* Running plays where a running back (RB) is the ball carrier
+
+* Trimmed each play to frames between handoff and end of play
+
+* Backed out key features:
+
+  - Kinetic energy (KE)= 1/2 mv^2^
+  - Positive work = max {ΔKE, 0}
+  - Horizontal displacement of RB
+  - Aggregated per-play and per-player metrics
+
 
 [^1]: Courtesy of NFL Big Data Bowl 2025
 
-. . .
-
-* something
 
 ## [eda 1 assertion-evidence]
+
+```{r}
+#| echo: false
+#| fig-align: center
+
+
+```
+
 
 ## [eda 2 assertion-evidence]
 
