@@ -8,7 +8,6 @@ format:
     incremental: true
     math: mathjax
     slide-number: c/t
-    footer: "[github.com/eshteynberg/Football-Effort](https://github.com/eshteynberg/Football-Effort)"
     embed-resources: true
     code-line-numbers: false
     linestretch: 1.25
@@ -40,33 +39,62 @@ format:
 
 * Trimmed each play to frames between handoff and end of play
 
-* Backed out key features:
+* Backed out key features, aggregated per-play and per-player:
 
-  - Kinetic energy (KE)= 1/2 mv^2^
+  - Kinetic energy (KE) = 1/2 mv^2^
+  - KE consistency = mean(KE) / sd(KE)
   - Positive work = max {ΔKE, 0}
-  - Horizontal displacement of RB
-  - Aggregated per-play and per-player metrics
-
+  - Horizontal displacement of RB in yards
 
 [^1]: Courtesy of NFL Big Data Bowl 2025
 
 
-## [eda 1 assertion-evidence]
-
-```{r}
-#| echo: false
-#| fig-align: center
-
-
-```
+## Increasing KE and sustained positive work can lead to high yardage plays 
+<div style="display: flex; justify-content: center; margin-top: -7vh;">
+  <img src="ComboAnimation.gif" style="max-height: 96vh; width: auto;" />
+</div>
 
 
-## [eda 2 assertion-evidence]
 
-## Methods
+## Among our effort metrics, Avg KE best predicts Avg EPA
 
-## Plan of Action
+![](effort_vs_epa_plot.png){fig-align="center" width=90%}
+
+## Early thoughts on methods
+
+* Regression and correlation to determine which metric(s) align best with high impact plays
+
+* Residual effort estimation: predict minimum effort needed to avoid a tackle and compare to actual effort to measure excess ("residual") effort
+
+* Logistic regression, random forest, etc to predict likelihood of tackle broken or play success from effort and related metrics
+
+* Clustering to classify RBs by effort-reward profile and identify archetypes of RB behavior
+
+## Plan of action
+
+* Define research question and scope ✅
+
+* Data cleaning and preprocessing, EDA ✅
+
+* Select effort metric(s)
+
+* Use chosen metric to answer questions related to effort (residual effort, tackle outcome probabilities, minimum required effort per play, etc) 
+
+* Interpret results, complete report and presentation
+
 
 # Appendix 
+
+## Among our effort metrics, Avg KE also best predicts Avg Yards Gained 
+
+![](effort_vs_yards_plot.png){fig-align="center" width=90%}
+
+## Avg KE and Avg EPA segment RBs into 4 quadrants
+
+![](quadrant_archetype_plot.png){fig-align="center" width=90%}
+
+## Avg EPA for the 5 players with the highest KE and the 5 players with the lowest KE
+
+![](KE_high_low_plot.png){fig-align="center" width=90%}
 
 

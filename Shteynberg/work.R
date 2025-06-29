@@ -384,7 +384,7 @@ label_players <- bind_rows(
 )
 
 
-rb_stats_total_filtered |> 
+quadplot <- rb_stats_total_filtered |> 
   ggplot(aes(x=mean_ke, y=avg_EPA, color=quadrant))+
   geom_point(size=3, alpha=0.8)+
   geom_vline(xintercept = ke_median, linetype="dashed", color="gray50")+
@@ -398,17 +398,21 @@ rb_stats_total_filtered |>
   ggrepel::geom_text_repel(
     data=label_players,
     aes(label=displayName),
-    size = 3.8,
+    size = 4.2,
     fontface="bold",
     color = "black",
     max.overlaps = 100,
     box.padding = 0.3
   ) +
-  theme_minimal(base_size=14)+
+  theme_minimal(base_size=16)+
   theme(
     legend.title=element_text(face="bold"),
+    legend.text=element_text(size="15"),
     axis.title=element_text(face="bold")
   )
+
+ggsave("quadrant_archetype_plot.png", plot = quadplot, width = 10, height = 6, dpi = 300, bg="white")
+
   
 
 #standardize effort "metrics"
@@ -420,7 +424,7 @@ rb_total_filtered_std <- rb_stats_total_filtered |>
     values_to="effort_value"
   )
 
-#get slope
+#get slope for epa lm
 slopes <- rb_total_filtered_std |> 
   group_by(effort_metric) |> 
   summarise(
@@ -438,26 +442,25 @@ slopes <- rb_total_filtered_std |>
         "\n(Slope: ", round(slope,3), ")"
       ))
 
-rb_total_filtered_std |> 
+p<- rb_total_filtered_std |> 
   left_join(slopes, by= "effort_metric") |> 
   ggplot(aes(x=effort_value, y=avg_EPA))+
   geom_point(alpha=0.6)+
   geom_smooth(method="lm", color="steelblue")+
   facet_wrap(~facet_label, scales="free_x")+
   labs(
-    x="Standardized Effort Metric",
+    x="Standardized ''Effort'' Metric",
     y="Avg EPA"
   )+
-  theme_minimal(base_size=14)+
+  theme_minimal(base_size=16)+
   theme(
-    #strip.text=element_text(face="bold"),
+    strip.text=element_text(size=14),
     axis.title=element_text(face="bold")
-    
   )
 
+ggsave("effort_vs_epa_plot.png", plot = p, width = 10, height = 6, dpi = 300, bg="white")
 
-
-#get slope
+#get slope for yards gained lm
 slopes <- rb_total_filtered_std |> 
   group_by(effort_metric) |> 
   summarise(
@@ -475,7 +478,7 @@ slopes <- rb_total_filtered_std |>
       "\n(Slope: ", round(slope,3), ")"
     ))
 
-rb_total_filtered_std |> 
+p2 <- rb_total_filtered_std |> 
   left_join(slopes, by= "effort_metric") |> 
   ggplot(aes(x=effort_value, y=avg_yards_gained))+
   geom_point(alpha=0.6)+
@@ -485,18 +488,73 @@ rb_total_filtered_std |>
     x="Standardized Effort Metric",
     y="Avg Yards Gained"
   )+
-  theme_minimal(base_size=14)+
+  theme_minimal(base_size=16)+
   theme(
-    #strip.text=element_text(face="bold"),
+    strip.text=element_text(size=14),
     axis.title=element_text(face="bold")
     
   )
 
 
+ggsave("effort_vs_yards_plot.png", plot = p2, width = 10, height = 6, dpi = 300, bg="white")
+
+
+library(magick)
+
+a_gif <- image_read("Shteynberg/AnimationA.gif")
+b_gif <- image_read("Shteynberg/AnimationB.gif")
+
+combined_frames <- image_append(c(a_gif[1], b_gif[1]), stack = TRUE)
+for (i in 2:min(length(a_gif), length(b_gif))) {
+  new_frame <- image_append(c(a_gif[i], b_gif[i]), stack = TRUE)
+  combined_frames <- c(combined_frames, new_frame)
+}
+
+image_write_gif(combined_frames, "ComboAnimation.gif", delay = 1/10)
 
 
 
 
+# ds of players with the highest KE
+KE_high <- rb_stats_total_filtered |>
+  ungroup() |>
+  arrange(desc(mean_ke)) |>
+  slice_head(n = 5) 
+
+# ds of players with the lowest KE
+KE_low <- rb_stats_total_filtered |>
+  ungroup() |>
+  arrange(mean_ke) |>
+  slice_head(n = 5) 
 
 
+# joining both data sets
 
+KE_combined <- bind_rows(KE_high, KE_low)
+
+# plot with combined datasets
+
+KE_high_low_plot <- KE_combined |>
+  ungroup() |>
+  arrange(desc(mean_ke)) |>
+  ggplot(aes(x = reorder(displayName, avg_EPA), y = avg_EPA)) +
+  geom_col(fill = "darkred") +
+  geom_label(
+    aes(label = round(avg_EPA, 2)),
+    hjust = 0.4,
+    size = 4.5,
+    fill = "white"
+  ) +
+  coord_flip() +
+  labs(
+    x = "Player Name",
+    y = "Avg EPA"
+  ) +
+  theme_minimal(base_size=18) +
+  theme(
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text =element_text(color="black")
+  )
+
+ggsave("KE_high_low_plot.png", plot = KE_high_low_plot, width = 10, height = 6, dpi = 300, bg="white")
