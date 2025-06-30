@@ -78,7 +78,7 @@ format:
 
 * Select effort metric(s)
 
-* Use chosen metric to answer questions related to effort (residual effort, tackle outcome probabilities, minimum required effort per play, etc) 
+* Use chosen metric(s) to answer questions related to effort (residual effort, tackle outcome probabilities, minimum required effort per play, etc) 
 
 * Interpret results, complete report and presentation
 

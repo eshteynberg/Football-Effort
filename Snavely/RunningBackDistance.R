@@ -152,6 +152,18 @@ rb_stats_per_play |>
   scale_x_log10()
 
 # Animating the top KE play -----------------------------------------------
+tracking <- tracking |>
+  mutate(
+    # Plays will always go from left to right
+    x = ifelse(playDirection == "left", 120 - x, x),
+    y = ifelse(playDirection == "left", 160 / 3 - y, y),
+    # flip player direction and orientation
+    dir = ifelse(playDirection == "left", dir + 180, dir),
+    dir = ifelse(dir > 360, dir - 360, dir),
+    o = ifelse(playDirection == "left", o + 180, o),
+    o = ifelse(o > 360, o - 360, o)
+  )
+
 library(gganimate)
 library(sportyR)
 # install.packages("ggtext")
