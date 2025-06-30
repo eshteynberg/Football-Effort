@@ -62,7 +62,7 @@ format:
 
 ## Early thoughts on methods
 
-* Regression and correlation to determine which metric(s) align best with high impact plays
+* Regression and correlation to determine which effort metric(s) align best with high impact plays
 
 * Residual effort estimation: predict minimum effort needed to avoid a tackle and compare to actual effort to measure excess ("residual") effort
 
