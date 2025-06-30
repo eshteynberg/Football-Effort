@@ -231,7 +231,7 @@ b <- just_saquon |>
   geom_line(lwd = 2) +
   scale_color_manual("Metric", values = c("#0B2265", "#808080")) +
   labs(x = "Frame number since snap", 
-       y = "Joules",
+       y = "Energy units",
        title = "<span style='color: #CC5500;'>S. Barkley</span> kinetic energy and work throughout play") +
   theme(plot.title = element_markdown(size = 28,
                                       face = "bold"),

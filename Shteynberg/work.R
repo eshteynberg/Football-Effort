@@ -168,7 +168,7 @@ rb_stats_total_filtered |>
   coord_flip()+
   labs(
     title="Top 10 RBs by Avg KE Across All Plays",
-    x="Avg KE (joules)",
+    x="Avg KE",
     y=NULL
   )
 
@@ -192,7 +192,7 @@ rb_stats_total |>
   coord_flip()+
   labs(
     title="Top 10 RBs by Total Positive Work Across All Plays",
-    x="Total Work (Joules)",
+    x="Total Work",
     y=NULL
   )
 
@@ -204,7 +204,7 @@ rb_stats_total |>
   coord_flip()+
   labs(
     title="Top 10 RBs by Avg Positive Work Across All Plays",
-    x="Total Work (Joules)",
+    x="Total Work",
     y=NULL
   )
 
@@ -391,7 +391,7 @@ quadplot <- rb_stats_total_filtered |>
   geom_hline(yintercept = epa_median, linetype="dashed",color="gray50")+
   scale_color_viridis_d(option = "D", end = 0.85, name = "Archetype") +
   labs(
-    x="Avg Kinetic Energy (joules)",
+    x="Avg KE",
     y="Avg EPA",
     color="Player Archetype"
   )+
@@ -434,7 +434,7 @@ slopes <- rb_total_filtered_std |>
     mutate(
       facet_label=paste0(
         case_when(
-          effort_metric == "mean_ke" ~ "Avg Kinetic Energy",
+          effort_metric == "mean_ke" ~ "Avg KE",
           effort_metric == "mean_pos_work" ~ "Avg Positive Work",
           effort_metric == "total_pos_work" ~ "Total Positive Work",
           effort_metric == "avg_effort_consistency" ~ "Avg KE Consistency"
@@ -470,7 +470,7 @@ slopes <- rb_total_filtered_std |>
   mutate(
     facet_label=paste0(
       case_when(
-        effort_metric == "mean_ke" ~ "Avg Kinetic Energy",
+        effort_metric == "mean_ke" ~ "Avg KE",
         effort_metric == "mean_pos_work" ~ "Avg Positive Work",
         effort_metric == "total_pos_work" ~ "Total Positive Work",
         effort_metric == "avg_effort_consistency" ~ "Avg KE Consistency"
