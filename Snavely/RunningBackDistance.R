@@ -1,6 +1,19 @@
 ## TRACKING FOR RUNNING BACKS
 theme_set(theme_bw())
 
+# Making sure tracking is same orientation
+tracking <- tracking |>
+  mutate(
+    # Plays will always go from left to right
+    x = ifelse(playDirection == "left", 120 - x, x),
+    y = ifelse(playDirection == "left", 160 / 3 - y, y),
+    # flip player direction and orientation
+    dir = ifelse(playDirection == "left", dir + 180, dir),
+    dir = ifelse(dir > 360, dir - 360, dir),
+    o = ifelse(playDirection == "left", o + 180, o),
+    o = ifelse(o > 360, o - 360, o)
+  )
+
 # Don't care about pre-snap plays
 tracking <- tracking |> 
   filter(frameType != "BEFORE_SNAP")
@@ -54,7 +67,9 @@ tracking_bc <- tracking_rb_runs |>
   left_join(select(players, nflId, weight)) |> 
   mutate(ke = 0.5 * weight * s^2,
          m_x = weight * s_x, # momentum in the x
-         dis_x = ifelse(gameId == lag(gameId) & playId == lag(playId), x - lag(x), NA))
+         dis_x = ifelse(gameId == lag(gameId) & playId == lag(playId), x - lag(x), NA),
+         work = ifelse(gameId==lag(gameId) & playId == lag(playId), ke-lag(ke), NA),
+         positive_work = ifelse(gameId==lag(gameId) & playId == lag(playId), pmax(ke-lag(ke),0), NA))
 
 
 # Running back metrics per play and for weeks 1-9------------------------------------------------------
@@ -64,8 +79,11 @@ rb_stats_per_play <- tracking_bc |>
   summarize(dis_gained = sum(dis),
             mean_ke = mean(ke),
             mean_m_x = mean(m_x),
+            sd_ke=sd(ke),
             dis_gained_x = sum(dis_x, na.rm = TRUE),
             mean_pos_work = mean(positive_work, na.rm=TRUE),
+            sd_pos_work = sd(positive_work, na.rm=TRUE),
+            effort_consistency = mean_ke/sd_ke,
             total_pos_work=sum(positive_work, na.rm=TRUE),
             avg_accel = mean(a)) |> 
   ungroup() |> 
@@ -78,6 +96,9 @@ rb_stats_total <- rb_stats_per_play |>
     total_dis_gained = sum(dis_gained),
     total_dis_gained_x = sum(dis_gained_x, na.rm = TRUE),
     mean_ke = mean(mean_ke),
+    avg_sd_ke=mean(sd_ke, na.rm=TRUE),
+    avg_sd_work= mean(sd_pos_work, na.rm=TRUE),
+    avg_effort_consistency =mean(effort_consistency, na.rm=TRUE),
     mean_m_x = mean(mean_m_x),
     mean_pos_work = mean(mean_pos_work, na.rm=TRUE),
     total_pos_work = sum(total_pos_work, na.rm=TRUE),
@@ -152,17 +173,6 @@ rb_stats_per_play |>
   scale_x_log10()
 
 # Animating the top KE play -----------------------------------------------
-tracking <- tracking |>
-  mutate(
-    # Plays will always go from left to right
-    x = ifelse(playDirection == "left", 120 - x, x),
-    y = ifelse(playDirection == "left", 160 / 3 - y, y),
-    # flip player direction and orientation
-    dir = ifelse(playDirection == "left", dir + 180, dir),
-    dir = ifelse(dir > 360, dir - 360, dir),
-    o = ifelse(playDirection == "left", o + 180, o),
-    o = ifelse(o > 360, o - 360, o)
-  )
 
 library(gganimate)
 library(sportyR)
