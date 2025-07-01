@@ -70,7 +70,8 @@ tracking_bc <- tracking_rb_runs |>
          dis_x = ifelse(gameId == lag(gameId) & playId == lag(playId), x - lag(x), NA),
          work = ifelse(gameId==lag(gameId) & playId == lag(playId), ke-lag(ke), NA),
          positive_work = ifelse(gameId==lag(gameId) & playId == lag(playId), pmax(ke-lag(ke),0), NA),
-         COD = ifelse(gameId==lag(gameId) & playId == lag(playId), abs(dir - lag(dir)), NA))
+         COD = ifelse(gameId==lag(gameId) & playId == lag(playId), abs(dir - lag(dir)), NA),
+         jerk = ifelse(gameId==lag(gameId) & playId ==lag(playId), (a-lag(a))/.1, NA))
 
 
 # Running back metrics per play and for weeks 1-9------------------------------------------------------
@@ -87,7 +88,8 @@ rb_stats_per_play <- tracking_bc |>
             effort_consistency = mean_ke/sd_ke,
             total_pos_work=sum(positive_work, na.rm=TRUE),
             avg_accel = mean(a),
-            avg_COD = mean(COD, na.rm = TRUE) / n()) |> 
+            avg_COD = mean(COD, na.rm = TRUE) / n(),
+            avg_jerk = mean(jerk, na.rm=TRUE)) |> 
   ungroup() |> 
   left_join(select(plays, playId, gameId, yardsGained, expectedPointsAdded))
 
@@ -97,6 +99,7 @@ rb_stats_total <- rb_stats_per_play |>
   summarize(
     total_dis_gained = sum(dis_gained),
     total_dis_gained_x = sum(dis_gained_x, na.rm = TRUE),
+    avg_dis_gained_x = mean(dis_gained_x, na.rm = TRUE) / n(),
     mean_ke = mean(mean_ke),
     avg_sd_ke=mean(sd_ke, na.rm=TRUE),
     avg_sd_work= mean(sd_pos_work, na.rm=TRUE),
@@ -109,7 +112,8 @@ rb_stats_total <- rb_stats_per_play |>
     avg_EPA = mean(expectedPointsAdded),
     num_of_rushes = n(),
     avg_accel = mean(avg_accel),
-    avg_COD = mean(avg_COD)
+    avg_COD = mean(avg_COD),
+    avg_jerk = mean(avg_jerk)
   ) |> 
   ungroup()
 
