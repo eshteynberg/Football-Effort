@@ -127,24 +127,42 @@ rb_stats_total_filtered <- rb_stats_total |>
 
 # GMM ---------------------------------------------------------------------
 # Variables used:
-# Jerk, KE, COD, EPA, avg_dis_gained_x
+# Jerk, KE, avg_dis_gained_x
 library(mclust)
+library(broom)
 
 # Making the ideal "effortful player"
 ideal_player <- data.frame(displayName = "Ideal Player", 
                            mean_ke = max(rb_stats_total_filtered$mean_ke),
-                           avg_COD = max(rb_stats_total_filtered$avg_COD),
+                           # avg_COD = max(rb_stats_total_filtered$avg_COD),
                            avg_jerk = max(rb_stats_total_filtered$avg_jerk),
-                           avg_EPA = max(rb_stats_total_filtered$avg_EPA),
-                           avg_dis_gained_x = max(rb_stats_total_filtered$avg_dis_gained_x))
+                           avg_EPA = max(rb_stats_total_filtered$avg_EPA)
+                           # avg_dis_gained_x = max(rb_stats_total_filtered$avg_dis_gained_x)
+)
 
 # Adding the ideal player to the data set
 rb_gmm_players <- rb_stats_total_filtered |> 
-  select(displayName, mean_ke, avg_COD, avg_jerk, avg_EPA, avg_dis_gained_x) |> 
+  select(displayName, mean_ke, avg_jerk, avg_EPA) |> 
   rbind(ideal_player)
 
 # Scaling the data
-scaled <- rb_gmm_players |> 
-  select(mean_ke, avg_COD, avg_jerk, avg_EPA, avg_dis_gained_x) |> 
-  scale()
+rb_mclust <- rb_gmm_players |> 
+  select(mean_ke, avg_jerk, avg_EPA) |> 
+  Mclust() 
 
+# Viewing results
+rb_mclust |> 
+  tidy() 
+summary(rb_mclust)
+
+rb_gmm_clustered <- rb_mclust |> 
+  augment() |> 
+  mutate(displayName = (rb_gmm_players$displayName))
+
+rb_gmm_probs <- as.tibble(rb_mclust$z)
+colnames(rb_gmm_probs) <- c("cluster1", "cluster2")
+
+rb_gmm_clustered <- rb_gmm_clustered |> 
+  mutate(cluster1 = rb_gmm_probs$cluster1,
+         cluster2 = rb_gmm_probs$cluster2) |> 
+  mutate(effort_score = round(cluster2 * 100, 3))
