@@ -60,6 +60,7 @@ tracking_rb_runs <- tracking_rb_runs |>
   filter(!is.na(frame_handoff), !is.na(frame_end)) |> 
   filter(frameId >= frame_handoff & frameId <= frame_end)
 
+
 ## TRACKING FOR RUNNING BACKS ONLY FOR RUNNING BACK PLAYS
 # Tracking data for ball carriers only
 tracking_bc <- tracking_rb_runs |> 
@@ -73,6 +74,17 @@ tracking_bc <- tracking_rb_runs |>
          COD = ifelse(gameId==lag(gameId) & playId == lag(playId), abs(dir - lag(dir)), NA),
          jerk = ifelse(gameId==lag(gameId) & playId ==lag(playId), (a-lag(a))/.1, NA))
 
+tracking_bc_after_contact <- tracking_bc |> 
+  group_by(gameId, playId) |> 
+  mutate(
+    frame_contact = frameId[which(event == "first_contact")][1],
+    frame_end = frameId[which(event %in% c("out_of_bounds", "tackle", "touchdown"))][1]
+  ) |> 
+  ungroup() |> 
+  filter(!is.na(frame_contact), !is.na(frame_end)) |> 
+  filter(frameId >= frame_contact & frameId <= frame_end)
+
+  
 
 # Running back metrics per play and for weeks 1-9------------------------------------------------------
 # Running back stats per play
@@ -91,7 +103,20 @@ rb_stats_per_play <- tracking_bc |>
             avg_COD = mean(COD, na.rm = TRUE) / n(),
             avg_jerk = mean(jerk, na.rm=TRUE)) |> 
   ungroup() |> 
-  left_join(select(plays, playId, gameId, yardsGained, expectedPointsAdded))
+  left_join(select(plays, playId, gameId, yardsGained, expectedPointsAdded)) |> 
+  left_join(select(player_play, playId, bc_id = nflId, gameId, rushingYards))
+
+# Adding after contact stats
+after_contact <- tracking_bc_after_contact |> 
+  group_by(playId, gameId, bc_id, displayName) |> 
+  summarize(dis_gained_x_ac = sum(dis_x),
+            avg_accel_ac = mean(a)) |> 
+  ungroup()
+
+rb_stats_per_play <- rb_stats_per_play |> 
+  left_join(after_contact) |> 
+  mutate(dis_gained_x_ac = ifelse(is.na(dis_gained_x_ac), 0, dis_gained_x_ac),
+         avg_accel_ac = ifelse(is.na(avg_accel_ac), 0, avg_accel_ac))
 
 # Overall rb stats
 rb_stats_total <- rb_stats_per_play |> 
@@ -113,7 +138,9 @@ rb_stats_total <- rb_stats_per_play |>
     num_of_rushes = n(),
     avg_accel = mean(avg_accel),
     avg_COD = mean(avg_COD),
-    avg_jerk = mean(avg_jerk)
+    avg_jerk = mean(avg_jerk),
+    avg_dis_gained_ac = mean(dis_gained_x_ac),
+    avg_acc_ac = mean(avg_accel_ac)
   ) |> 
   ungroup()
 
@@ -127,7 +154,7 @@ rb_stats_total_filtered <- rb_stats_total |>
 # Visualizations
 # Distance gained x
 distance <- rb_stats_per_play |> 
-  pivot_longer(c(dis_gained, dis_gained_x, yardsGained),
+  pivot_longer(c(dis_gained, dis_gained_x, yardsGained, rushingYards),
                names_to = "distance_type",
                values_to = "dis") |> 
   select(displayName, distance_type, dis)
@@ -179,7 +206,43 @@ rb_stats_per_play |>
   geom_point() +
   scale_x_log10()
 
-# Animating the top KE play -----------------------------------------------
+# jerk and rushing yards
+rb_stats_per_play |> 
+  ggplot((aes(x = avg_jerk, y = rushingYards))) +
+  geom_point()
+
+# KE and rushing yards
+rb_stats_per_play |> 
+  ggplot((aes(x = mean_ke, y = rushingYards))) +
+  geom_point()
+
+# Avg acc and rushing yards
+rb_stats_per_play |> 
+  ggplot((aes(x = avg_accel, y = rushingYards))) +
+  geom_point()
+
+# distance x after contact vs. EPA
+rb_stats_per_play |> 
+  ggplot((aes(x = dis_gained_x_ac, y = expectedPointsAdded))) +
+  geom_point()
+
+# jerk and epa
+rb_stats_per_play |> 
+  ggplot((aes(x = avg_jerk, y = expectedPointsAdded))) +
+  geom_point()
+
+# COD and epa
+rb_stats_per_play |> 
+  ggplot((aes(x = avg_COD, y = expectedPointsAdded))) +
+  geom_point()
+
+# jerk and rushing yards
+rb_stats_per_play |> 
+  ggplot((aes(x = avg_jerk, y = rushingYards))) +
+  geom_point()
+
+
+# Animating the toavg_accel# Animating the top KE play -----------------------------------------------
 
 library(gganimate)
 library(sportyR)
@@ -214,7 +277,7 @@ field_params <- list(
   offensive_half = "springgreen3",
   defensive_half = "springgreen3"
 )
-?geom_football
+
 field_background <- geom_football(
   league = "nfl",
   display_range = "in_bounds_only",

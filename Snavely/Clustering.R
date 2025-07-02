@@ -166,3 +166,62 @@ rb_gmm_clustered <- rb_gmm_clustered |>
   mutate(cluster1 = rb_gmm_probs$cluster1,
          cluster2 = rb_gmm_probs$cluster2) |> 
   mutate(effort_score = round(cluster2 * 100, 3))
+
+
+# k-means -----------------------------------------------------------------
+library(factoextra)
+# Clustering plays
+# PCA
+play_features_pca <- rb_stats_per_play |> 
+  select(mean_ke, rushingYards, avg_jerk, dis_gained_x_ac, expectedPointsAdded) |> 
+  prcomp(center = TRUE, scale. = TRUE)
+
+summary(play_features_pca)
+
+play_features_matrix <- play_features_pca$x
+
+play_features_pca |> 
+  fviz_pca_biplot(label = "var",
+                  alpha.ind = .25,
+                  alpha.var = .75,
+                  label.size = 5,
+                  col.var = "darkblue",
+                  repel = TRUE)
+
+## k-means
+# Scaling data
+play_features <- rb_stats_per_play |> 
+  select(mean_ke, rushingYards, avg_jerk, dis_gained_x_ac, expectedPointsAdded)
+
+play_features_clean <- rb_stats_per_play |> 
+  select(mean_ke, rushingYards, avg_jerk, dis_gained_x_ac, expectedPointsAdded) |> 
+  scale()
+
+# elbow plot
+play_features_clean |> 
+  fviz_nbclust(FUNcluster = kmeans, method = "wss")
+
+# 5 clusters
+kmeans_features <- play_features_clean |> 
+  kmeans(centers = 5, nstart = 100)
+
+# Plotting the clusters
+kmeans_features |> 
+  fviz_cluster(data = play_features,
+               geom = "point",
+               ellipse = FALSE)
+
+# Adding cluster numbers
+plays_clustered <- play_features |> 
+  mutate(cluster = kmeans_features$cluster)
+
+# Summarizing clusters
+cluster_stats <- plays_clustered |> 
+  group_by(cluster) |> 
+  summarize(avg_ke = mean(mean_ke),
+            avg_rushingYards = mean(rushingYards),
+            avg_jerk = mean(avg_jerk),
+            avg_dis_gained_x_ac = mean(dis_gained_x_ac),
+            avg_EPA = mean(expectedPointsAdded))
+# Cluster 2 has the most effortful plays
+table(plays_clustered$cluster)
