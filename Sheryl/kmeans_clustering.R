@@ -3,6 +3,8 @@
 library(tidyverse)
 library(ggrepel)
 library(GGally)
+library(factoextra)
+library(ggthemes)
 
 
 # removing specific dataset from environment
@@ -16,7 +18,7 @@ rb_plays_clust <- rb_stats_per_play |>
   mutate(across(where(is.numeric),
                 ~ (.x - mean(.x)) / sd(.x),
                 .names = "{.col}_sd")) |>
-    slice_sample(n = 50) |>
+   # slice_sample(n = 100) |> sampling only a subset if desired
   select(ends_with("_sd"))
 
 #========================== elbow plot=========================================
@@ -42,7 +44,7 @@ ggplot(elbow_plot, aes(x = k, y = tot.withinss)) +
 ## Clustering standardized variables=============================================
 
 rb_plays_clust_scaled <- rb_plays_clust |>
-  kmeans(centers = 6, nstart = 30) # decide number of clusters with elbow plot
+  kmeans(centers = 8, nstart = 30) # decide number of clusters with elbow plot
 
 # cluster assignments using the standardized data frame and filtered & sampled subset=
 # on Josh Jacobs=================================================================== 
@@ -65,6 +67,29 @@ rb_plays_clust_assig |>
     strip.text = element_text(color = "black"),  # variable names on top of panels
     axis.text = element_text(color = "black")    # axis tick labels
   )
+
+
+##  =========================== PCA clustering ===========================
+
+rb_plays_clust_scaled |> 
+  fviz_cluster(data = rb_plays_clust, 
+             geom = "point",           
+             ellipse = FALSE, 
+             pointsize = 2.3) +         
+  ggthemes::scale_color_colorblind() +      
+  scale_shape_manual(values = rep(16, 8)) +  # force all points to use the same shape
+  theme_light() +
+  labs(
+    title = "Clustering Effort-related metrics for Josh Jacobs' plays"
+  )
+
+
+
+
+
+
+
+
 
 
 
