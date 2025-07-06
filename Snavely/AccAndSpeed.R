@@ -85,7 +85,7 @@ tracking_bc_after_contact <- tracking_bc |>
   filter(frameId >= frame_contact & frameId <= frame_end)
 
 
-#  Saquon's Acc and Speed ----------------------------------------------------
+# Saquon's Acc and Speed ----------------------------------------------------
 library(broom)
 # Plot of acceleration and speed for all players
 tracking_bc |> 
@@ -141,9 +141,9 @@ max_acc |>
   geom_smooth(method = lm, se = TRUE, conf.int = TRUE)
 
 # Adding predicted values to the original df
-preds <- predict(saquon_lm, interval = "confidence")
+confs <- predict(saquon_lm, interval = "confidence")
 max_acc <- max_acc |> 
-  bind_cols(preds)
+  bind_cols(confs)
 
 # Filtering out outliers
 max_acc_clean <- max_acc |> 
@@ -157,18 +157,131 @@ summary(saquon_lm_clean)
 # Maximal acceleration (y-intercept)
 A_0 <- saquon_lm_clean$coefficients[1]
 
-# Maximum speed
-S_0 <- s
-
 # Plotting new regression line
 max_acc_clean |> 
   ggplot(aes(x = speed, y = acceleration)) +
   geom_point() +
   geom_smooth(method = lm, se = TRUE, conf.int = TRUE)
 
-# Finally relaying the line onto the orginal data points
+# Finally relaying the line onto the original data points
 saquon_runs |> 
   ggplot(aes(x = s, y = a)) +
   geom_point() +
   geom_smooth(method = lm, aes(x = speed, y = acceleration), data = max_acc_clean) +
-  geom_abline(intercept = saquon_lm_clean$coefficients[1], slope = saquon_lm_clean$coefficients[2])
+  geom_abline(intercept = saquon_lm_clean$coefficients[1], slope = saquon_lm_clean$coefficients[2]) +
+  xlim(0, 17)
+
+# Finding out how many points are near the line
+test_saquon_a <- data.frame(speed = saquon_runs$s, acceleration = saquon_runs$a)
+test_preds <- predict(saquon_lm_clean, newdata = test_saquon_a)
+
+# Adding the test predictions to the df
+# Definition of effort: within 1 of the predicted fitted values
+saquon_final <- saquon_runs |> 
+  select(a, s) |> 
+  mutate(pred = test_preds) |> 
+  mutate(diff = pred - a) |> 
+  mutate(eff = ifelse(diff <= 1, TRUE, FALSE))
+
+eff_metric <- (sum(saquon_final$eff = TRUE) / nrow(saquon_final)) * 100
+
+
+# Creating a function -----------------------------------------------------
+eff_function <- function(name, graph = FALSE) {
+  # Filtering the data set to only include the inputted player
+  player_runs <- tracking_bc |> 
+    filter(displayName == name)
+  
+  # Making the bins
+  bins <- seq(3, round(max(player_runs$s), 2) + .2, .2)
+  
+  # Picking out the top two accelerations for each speed in each bins
+  max_acc <- map_dfr(1:(length(bins) - 1), function(i) {
+    player_runs |> 
+      filter(s > bins[i], s <= bins[i + 1]) |> 
+      slice_max(a, n = 2, with_ties = FALSE) |> 
+      select(speed = s, acceleration = a)
+  })
+  
+  # Fitting the first regression line
+  player_lm <- lm(acceleration ~ speed, data = max_acc)
+  
+  # Adding confidence intervals
+  confs <- predict(player_lm, interval = "confidence")
+  max_acc <- max_acc |> 
+    bind_cols(confs)
+  
+  # Filtering out outliers (any point that does not fall within a 95% conf interval)
+  max_acc_clean <- max_acc |> 
+    filter(acceleration >= lwr, acceleration <= upr)
+  
+  # Fitting the new regression line (without outliers)
+  player_lm_clean <- lm(acceleration ~ speed, data = max_acc_clean)
+  
+  # Finding out how many points are near the line
+  test_player_a <- data.frame(speed = player_runs$s, acceleration = player_runs$a)
+  test_preds <- predict(player_lm_clean, newdata = test_player_a)
+  
+  # Final calculation for distance away from the fitted line
+  player_final <- player_runs |> 
+    select(a, s) |> 
+    mutate(pred = test_preds) |> 
+    mutate(diff = pred - a) |> 
+    mutate(eff = ifelse(diff <= .25, TRUE, FALSE))
+  
+  # Final effort metric
+  eff <- tibble(
+    eff_metric = sum(player_final$eff == TRUE),
+    eff_metric_perc = sum(player_final$eff == TRUE) / nrow(player_final) * 100
+  )
+  
+  # Building the graph if specified
+  if (graph == TRUE) {
+    player_graph <- player_runs |> 
+      ggplot(aes(x = s, y = a)) +
+      geom_smooth(method = lm, aes(x = speed, y = acceleration), data = max_acc_clean, lwd = 1.5, se = FALSE) +
+      geom_abline(aes(color = "Regression line",
+                      intercept = player_lm_clean$coefficients[1], slope = player_lm_clean$coefficients[2]),
+                      lwd = 1.5,) +
+      geom_abline(aes(color = "Minimum line",
+                  intercept = player_lm_clean$coefficients[1] - .25, slope = player_lm_clean$coefficients[2]), 
+                  lty = 2, lwd = 1.5) +
+      scale_color_manual("Line", values = c("#4B92DB", "#FFB612")) +
+      geom_point(size = 2, alpha = .5, col = "grey2") +
+      xlim(0, 13) +
+      ylim(0, 10) +
+      labs(x = "Speed",
+           y = "Acceleration",
+           title = paste0(name, "'s effort is defined as the percentage of points above the minimum line"),
+           caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
+      theme(plot.title = element_text(face = "bold",
+                                      size = 20, 
+                                      hjust = .5),
+            legend.title = element_text(face = "bold",
+                                        size = 15),
+            axis.title = element_text(face = "bold",
+                                      size = 15),
+            axis.text = element_text(size = 13),
+            plot.caption = element_text(face = "italic",
+                                        size = 8))
+    
+    return(player_graph)
+  }
+  
+  return(eff)
+}
+
+# Test
+eff_function("Saquon Barkley", graph = TRUE)
+eff_function("Jaylen Warren")
+
+
+# Eff metric for all players ----------------------------------------------
+
+rbs <- unique(rb_stats_total_filtered$displayName)
+
+eff_scores <- purrr::map(rbs, eff_function) |> 
+  bind_rows() |> 
+  mutate(displayName = rbs)
+
+eff_scores
