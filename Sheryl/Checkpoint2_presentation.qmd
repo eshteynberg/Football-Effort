@@ -1,0 +1,38 @@
+---
+title: "Quantifying Effort in American Football"
+author: "Emily Shteynberg, Luke Snavely, Sheryl Solorzano"
+format:
+  revealjs:
+    theme: theme.scss
+    smaller: true
+    incremental: true
+    math: mathjax
+    slide-number: c/t
+    embed-resources: true
+    code-line-numbers: false
+    linestretch: 1.25
+    html-math-method:
+      method: mathjax
+---
+
+## Introduction:
+
+-   Describe your project topic/question(s) and why it is important
+
+-   
+
+## Data: 2022 NFL Season
+
+-   Data description and any relevant data pre-processing steps (e.g., whether you consider specific observations, create any meaningful features, etc.—but don’t mention minor steps like column type conversion, filtering out unnecessary rows)
+
+## Plan of Action
+
+\*
+
+\*
+
+## Completed Steps
+
+\*
+
+\*
