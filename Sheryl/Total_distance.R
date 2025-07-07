@@ -1,14 +1,11 @@
 library(tidyverse)
 
 
-rb_stats_dist <- tracking_bc |>
-  filter(displayName %in% rb_stats_total_filtered$displayName)
-
-
 # Calculating total distance covered for each RB by play
 glimpse(tracking_bc)
 
 rb_stats_dist <- tracking_bc |> 
+  filter(displayName %in% rb_stats_total_filtered$displayName) |>
   arrange(gameId, playId, frameId) |> 
   group_by(gameId, playId, bc_id, displayName) |> 
   mutate(dx = x - lag(x),
