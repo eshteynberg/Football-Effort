@@ -273,15 +273,72 @@ eff_function <- function(name, graph = FALSE) {
 
 # Test
 eff_function("Saquon Barkley", graph = TRUE)
-eff_function("Jaylen Warren")
+eff_function("Saquon Barkley")
 
 
 # Eff metric for all players ----------------------------------------------
 
 rbs <- unique(rb_stats_total_filtered$displayName)
 
-eff_scores <- purrr::map(rbs, eff_function) |> 
+eff_movements <- purrr::map(rbs, eff_function) |> 
   bind_rows() |> 
   mutate(displayName = rbs)
 
-eff_scores
+eff_movements_top <- eff_movements |> 
+  slice_max(eff_metric, n = 5) |> 
+  mutate(type = "high")
+
+eff_movements_bottom <- eff_movements |> 
+  slice_min(eff_metric, n = 5) |> 
+  mutate(type = "low")
+
+eff_together <- rbind(eff_movements_top, eff_movements_bottom)
+
+# top 5 vs. bottom 5 eff movements
+eff_together |> 
+  ggplot(aes(x = eff_metric, y = fct_reorder(displayName, eff_metric), fill = type)) +
+  geom_col() +
+  labs(x = "Number of effort movements", 
+       y = "",
+       title = "Top and bottom 5 players for effort movements") +
+  geom_text(aes(label = eff_metric), hjust = 1, nudge_x = -.5, fontface = "bold", size = 5) +
+  scale_fill_manual(values = c("#FFB612", "#4B92DB")) +
+  theme(plot.title = element_text(face = "bold",
+                                  size = 20, 
+                                  hjust = .5),
+        legend.position = "none",
+        axis.title = element_text(face = "bold",
+                                  size = 15),
+        axis.text.y = element_text(face = "italic"),
+        axis.text = element_text(size = 13))
+
+eff_movements_perc_top <- eff_movements |> 
+  slice_max(eff_metric_perc, n = 5) |> 
+  mutate(type = "high")
+
+eff_movements_perc_bottom <- eff_movements |> 
+  slice_min(eff_metric_perc, n = 5) |> 
+  mutate(type = "low")
+
+eff_movements_perc <- rbind(eff_movements_perc_top, eff_movements_perc_bottom) |> 
+  mutate(eff_metric_perc = round(eff_metric_perc, 2)) |> 
+  mutate(perc = paste0(eff_metric_perc, "%"))
+
+
+# Top 5 vs. bottom 5 eff perc
+eff_movements_perc |> 
+  ggplot(aes(x = eff_metric_perc, y = fct_reorder(displayName, eff_metric_perc), fill = type)) +
+  geom_col() +
+  labs(x = "Percentage of movements that are effortful", 
+       y = "",
+       title = "Top and bottom 5 players for effort movement percentages") +
+  geom_text(aes(label = perc), hjust = 1, fontface = "bold", size = 5) +
+  scale_fill_manual(values = c("#FFB612", "#4B92DB")) +
+  theme(plot.title = element_text(face = "bold",
+                                  size = 20, 
+                                  hjust = .5),
+        legend.position = "none",
+        axis.title = element_text(face = "bold",
+                                  size = 15),
+        axis.text.y = element_text(face = "italic"),
+        axis.text = element_text(size = 13))
