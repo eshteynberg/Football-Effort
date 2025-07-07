@@ -245,7 +245,7 @@ saquon_final <- saquon_runs |>
   mutate(diff = pred - a) |> 
   mutate(eff = ifelse(diff <= 1, TRUE, FALSE))
 
-eff_metric <- (sum(saquon_final$eff = TRUE) / nrow(saquon_final)) * 100
+eff_metric <- (sum(saquon_final$eff == TRUE) / nrow(saquon_final)) * 100
 
 
 # Creating a function -----------------------------------------------------
@@ -344,6 +344,7 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
 
 # Test
 eff_function("Rex Burkhead", graph = TRUE)
+eff_function("Saquon Barkley", graph = TRUE)
 eff_function("Saquon Barkley", player_table = TRUE)
 eff_function("Saquon Barkley")
 
@@ -425,3 +426,10 @@ tracking_bc_effort <- purrr::map(rbs, eff_function, player_table = TRUE) |>
 
 tracking_bc_combined <- left_join(tracking_bc_filtered, tracking_bc_effort, 
                                   by = c("gameId", "bc_id", "playId", "frameId", "displayName"))
+
+tracking_bc_play_stats <- tracking_bc_combined |> 
+  group_by(gameId, playId, bc_id, displayName) |> 
+  summarize(mean_ke = mean(ke),
+            mean_jerk = mean(jerk, na.rm = TRUE),
+            num_of_effort_move = sum(eff == TRUE),
+            eff_move_prop = sum(eff == TRUE) / n())
