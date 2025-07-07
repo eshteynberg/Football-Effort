@@ -84,6 +84,68 @@ tracking_bc_after_contact <- tracking_bc |>
   filter(!is.na(frame_contact), !is.na(frame_end)) |> 
   filter(frameId >= frame_contact & frameId <= frame_end)
 
+# Running back stats per play
+rb_stats_per_play <- tracking_bc |> 
+  group_by(playId, gameId, bc_id, displayName) |> 
+  summarize(dis_gained = sum(dis),
+            mean_ke = mean(ke),
+            mean_m_x = mean(m_x),
+            sd_ke=sd(ke),
+            dis_gained_x = sum(dis_x, na.rm = TRUE),
+            mean_pos_work = mean(positive_work, na.rm=TRUE),
+            sd_pos_work = sd(positive_work, na.rm=TRUE),
+            effort_consistency = mean_ke/sd_ke,
+            total_pos_work=sum(positive_work, na.rm=TRUE),
+            avg_accel = mean(a),
+            avg_COD = mean(COD, na.rm = TRUE) / n(),
+            avg_jerk = mean(jerk, na.rm=TRUE)) |> 
+  ungroup() |> 
+  left_join(select(plays, playId, gameId, yardsGained, expectedPointsAdded)) |> 
+  left_join(select(player_play, playId, bc_id = nflId, gameId, rushingYards))
+
+# Adding after contact stats
+after_contact <- tracking_bc_after_contact |> 
+  group_by(playId, gameId, bc_id, displayName) |> 
+  summarize(dis_gained_x_ac = sum(dis_x),
+            avg_accel_ac = mean(a)) |> 
+  ungroup()
+
+rb_stats_per_play <- rb_stats_per_play |> 
+  left_join(after_contact) |> 
+  mutate(dis_gained_x_ac = ifelse(is.na(dis_gained_x_ac), 0, dis_gained_x_ac),
+         avg_accel_ac = ifelse(is.na(avg_accel_ac), 0, avg_accel_ac))
+
+# Overall rb stats
+rb_stats_total <- rb_stats_per_play |> 
+  group_by(bc_id, displayName) |> 
+  summarize(
+    total_dis_gained = sum(dis_gained),
+    total_dis_gained_x = sum(dis_gained_x, na.rm = TRUE),
+    avg_dis_gained_x = mean(dis_gained_x, na.rm = TRUE) / n(),
+    mean_ke = mean(mean_ke),
+    avg_sd_ke=mean(sd_ke, na.rm=TRUE),
+    avg_sd_work= mean(sd_pos_work, na.rm=TRUE),
+    avg_effort_consistency =mean(effort_consistency, na.rm=TRUE),
+    mean_m_x = mean(mean_m_x),
+    mean_pos_work = mean(mean_pos_work, na.rm=TRUE),
+    total_pos_work = sum(total_pos_work, na.rm=TRUE),
+    total_yards_gained = sum(yardsGained),
+    avg_yards_gained = mean(yardsGained),
+    avg_EPA = mean(expectedPointsAdded),
+    num_of_rushes = n(),
+    avg_accel = mean(avg_accel),
+    avg_COD = mean(avg_COD),
+    avg_jerk = mean(avg_jerk),
+    avg_dis_gained_ac = mean(dis_gained_x_ac),
+    avg_acc_ac = mean(avg_accel_ac)
+  ) |> 
+  ungroup()
+
+summary(rb_stats_total$num_of_rushes) # Do a minimum of 20 rushes to eliminate players with low rushes
+
+rb_stats_total_filtered <- rb_stats_total |> 
+  filter(num_of_rushes >= 20)
+
 
 # Saquon's Acc and Speed ----------------------------------------------------
 library(broom)
@@ -187,7 +249,7 @@ eff_metric <- (sum(saquon_final$eff = TRUE) / nrow(saquon_final)) * 100
 
 
 # Creating a function -----------------------------------------------------
-eff_function <- function(name, graph = FALSE) {
+eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   # Filtering the data set to only include the inputted player
   player_runs <- tracking_bc |> 
     filter(displayName == name)
@@ -227,7 +289,12 @@ eff_function <- function(name, graph = FALSE) {
     select(a, s) |> 
     mutate(pred = test_preds) |> 
     mutate(diff = pred - a) |> 
-    mutate(eff = ifelse(diff <= .25, TRUE, FALSE))
+    mutate(eff = ifelse(diff <= .25, TRUE, FALSE)) |> 
+    mutate(gameId = player_runs$gameId, 
+           playId = player_runs$playId, 
+           bc_id = player_runs$bc_id, 
+           displayName = player_runs$displayName,
+           frameId = player_runs$frameId)
   
   # Final effort metric
   eff <- tibble(
@@ -268,11 +335,16 @@ eff_function <- function(name, graph = FALSE) {
     return(player_graph)
   }
   
+  if (player_table == TRUE) {
+    return(player_final)
+  }
+  
   return(eff)
 }
 
 # Test
-eff_function("Saquon Barkley", graph = TRUE)
+eff_function("Rex Burkhead", graph = TRUE)
+eff_function("Saquon Barkley", player_table = TRUE)
 eff_function("Saquon Barkley")
 
 
@@ -342,3 +414,14 @@ eff_movements_perc |>
                                   size = 15),
         axis.text.y = element_text(face = "italic"),
         axis.text = element_text(size = 13))
+
+
+# Effort by play ----------------------------------------------------------
+tracking_bc_filtered <- tracking_bc |> 
+  filter(displayName %in% rbs)
+
+tracking_bc_effort <- purrr::map(rbs, eff_function, player_table = TRUE) |> 
+  bind_rows()
+
+tracking_bc_combined <- left_join(tracking_bc_filtered, tracking_bc_effort, 
+                                  by = c("gameId", "bc_id", "playId", "frameId", "displayName"))
