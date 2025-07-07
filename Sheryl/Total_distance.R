@@ -2,7 +2,7 @@ library(tidyverse)
 
 
 rb_stats_dist <- tracking_bc |>
-  filter(displayName %in% rb_stats_total_filtered$ displayName)
+  filter(displayName %in% rb_stats_total_filtered$displayName)
 
 
 # Calculating total distance covered for each RB by play
