@@ -289,8 +289,10 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
     select(a, s) |> 
     mutate(pred = test_preds) |> 
     mutate(diff = pred - a) |> 
-    mutate(eff = ifelse(diff <= .25, TRUE, FALSE)) |> 
-    mutate(gameId = player_runs$gameId, 
+    mutate(eff = ifelse(diff <= .25, TRUE, FALSE),
+           eff_50 = ifelse(diff <= .5, TRUE, FALSE),
+           eff_75 = ifelse(diff <= .75, TRUE, FALSE)) |> 
+    mutate(gameI_d = player_runs$gameId, 
            playId = player_runs$playId, 
            bc_id = player_runs$bc_id, 
            displayName = player_runs$displayName,
@@ -299,7 +301,11 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   # Final effort metric
   eff <- tibble(
     eff_metric = sum(player_final$eff == TRUE),
-    eff_metric_perc = sum(player_final$eff == TRUE) / nrow(player_final) * 100
+    eff_metric_perc = sum(player_final$eff == TRUE) / nrow(player_final) * 100,
+    eff_metric_50 = sum(player_final$eff_50 == TRUE),
+    eff_metric_perc_50 = sum(player_final$eff_50 == TRUE) / nrow(player_final) * 100,
+    eff_metric_75 = sum(player_final$eff_75 == TRUE),
+    eff_metric_perc_75 = sum(player_final$eff_75 == TRUE) / nrow(player_final) * 100,
   )
   
   # Building the graph if specified
@@ -310,10 +316,16 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
       geom_abline(aes(color = "Regression line",
                       intercept = player_lm_clean$coefficients[1], slope = player_lm_clean$coefficients[2]),
                       lwd = 1.5,) +
-      geom_abline(aes(color = "Minimum line",
+      geom_abline(aes(color = "Minimum line (.25)",
                   intercept = player_lm_clean$coefficients[1] - .25, slope = player_lm_clean$coefficients[2]), 
                   lty = 2, lwd = 1.5) +
-      scale_color_manual("Line", values = c("#4B92DB", "#FFB612")) +
+      geom_abline(aes(color = "Minimum line (.5)",
+                  intercept = player_lm_clean$coefficients[1] - .5, slope = player_lm_clean$coefficients[2]),
+                  lty = 2, lwd = 1.5) +
+      geom_abline(aes(color = "Minimum line (.75)",
+                  intercept = player_lm_clean$coefficients[1] - .75, slope = player_lm_clean$coefficients[2]), 
+                  lty = 2, lwd = 1.5) +
+      scale_color_manual("Line", values = c("#4B92DB", "darkgreen", "turquoise", "#FFB612")) +
       geom_point(size = 2, alpha = .5, col = "grey2") +
       xlim(0, 13) +
       ylim(0, 10) +
@@ -423,6 +435,37 @@ fatigue <- tracking_bc |>
   mutate(fatigue = cumsum(dis)) |> 
   select(gameId, bc_id, playId, frameId, displayName, fatigue)
 
+
+# Adding starter names ----------------------------------------------------
+
+primary_teams <- plays_rb_runs |> 
+  semi_join(rb_stats_total_filtered, by="bc_id") |> #only look at the 69 RBs
+  group_by(bc_id, bc_club) |> 
+  summarise(rushes=n(), .groups="drop") |> #count how many rushes each player had for each team 
+  group_by(bc_id) |> 
+  slice_max(order_by=rushes,n=1,with_ties=FALSE) #top team per player 
+
+
+#append players' primary team names to rb_stats_total_filtered
+rb_stats_teams <- rb_stats_total_filtered |> 
+  left_join(primary_teams, by="bc_id")
+
+#get top rushers per team
+top_rushers_labeled <- rb_stats_teams |> 
+  group_by(bc_club) |> 
+  slice_max(order_by=rushes, n=1, with_ties=FALSE) |> #pick single top rusher for each team
+  mutate(starter=TRUE) #mark the top rushers with starter=TRUE
+
+#join starter labels to rb_stats_teams
+rb_stats_labeled <- rb_stats_teams |> 
+  left_join(top_rushers_labeled |> #join starter label from top rusher df, matching on player name and team
+              select(bc_id, bc_club, starter),
+            by=c("bc_id", "bc_club")) |> 
+  mutate(starter=ifelse(is.na(starter), FALSE, starter)) #if NA after join, then label FALSE for starter column. if not, then label original value from starter column (TRUE)
+
+rb_names <- rb_stats_labeled |> 
+  select(bc_id, starter)
+
 # Effort by play ----------------------------------------------------------
 tracking_bc_filtered <- tracking_bc |> 
   filter(displayName %in% rbs)
@@ -443,8 +486,8 @@ tracking_bc_play_stats <- tracking_bc_combined |>
             num_of_effort_move = sum(eff == TRUE),
             eff_move_prop = sum(eff == TRUE) / n(),
             total_dist_covered_of_game = max(fatigue)) |> 
-  left_join(rb_stats_per_play)
-
+  left_join(rb_stats_per_play) |> 
+  left_join(rb_names)
 
 # Viz ---------------------------------------------------------------------
 # Relation between effortful movements and fatigue
