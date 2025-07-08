@@ -522,36 +522,72 @@ tracking_bc_play_stats |>
   ggplot(aes(x = total_dist_covered_of_game, y = num_of_effort_move)) +
   geom_point()
 
-# Relationship between distance after contact and effort
+## Rushing yards analysis
 tracking_bc_play_stats |> 
-  ggplot(aes(x = dis_gained_x_ac, y = num_of_effort_move)) +
+  ggplot(aes(x = total_dist_covered_of_game, y = rushingYards)) +
   geom_point()
 
-# Relationship between EPA and effort
-# Seems like some effort indicates an increase in points
 tracking_bc_play_stats |> 
-  ggplot(aes(x = expectedPointsAdded, y = num_of_effort_move)) +
-  geom_point()
-tracking_bc_play_stats |> 
-  ggplot(aes(x = expectedPointsAdded, y = eff_move_prop)) +
+  ggplot(aes(x = acc_change, y = rushingYards)) +
   geom_point()
 
-# Relationship between KE and distance after contact
 tracking_bc_play_stats |> 
-  ggplot(aes(x = dis_gained_x_ac, y = mean_ke)) +
+  ggplot(aes(x = num_of_effort_move, y = rushingYards)) +
   geom_point()
 
-# KE and EPA
+tracking_bc_play_stats |> 
+  ggplot(aes(x = eff_move_prop, y = rushingYards)) +
+  geom_point()
+
+tracking_bc_play_stats |> 
+  ggplot(aes(x = mean_ke, y = rushingYards)) +
+  geom_point()
+
+tracking_bc_play_stats |> 
+  ggplot(aes(x = avg_jerk, y = rushingYards)) +
+  geom_point()
+
+tracking_bc_play_stats |> 
+  ggplot(aes(x = effort_consistency, y = rushingYards)) +
+  geom_point()
+
+tracking_bc_play_stats |> 
+  ggplot(aes(x = avg_COD, y = rushingYards)) +
+  geom_point()
+
+## EPA Analysis
+tracking_bc_play_stats |> 
+  ggplot(aes(x = total_dist_covered_of_game, y = expectedPointsAdded)) +
+  geom_point()
+
+tracking_bc_play_stats |> 
+  ggplot(aes(x = acc_change, y = expectedPointsAdded)) +
+  geom_point()
+
+tracking_bc_play_stats |> 
+  ggplot(aes(x = num_of_effort_move, y = expectedPointsAdded)) +
+  geom_point()
+
+tracking_bc_play_stats |> 
+  ggplot(aes(x = eff_move_prop, y = expectedPointsAdded)) +
+  geom_point()
+
 tracking_bc_play_stats |> 
   ggplot(aes(x = mean_ke, y = expectedPointsAdded)) +
   geom_point()
 
-# Distance after contact and EPA
 tracking_bc_play_stats |> 
-  ggplot(aes(x = expectedPointsAdded, y = dis_gained_x_ac)) +
+  ggplot(aes(x = avg_jerk, y = expectedPointsAdded)) +
   geom_point()
 
-# rushing yards and EPA
 tracking_bc_play_stats |> 
-  ggplot(aes(x = rushingYards, y = expectedPointsAdded)) +
+  ggplot(aes(x = effort_consistency, y = expectedPointsAdded)) +
+  geom_point()
+
+tracking_bc_play_stats |> 
+  ggplot(aes(x = avg_COD, y = expectedPointsAdded)) +
+  geom_point()
+
+tracking_bc_play_stats |> 
+  ggplot(aes(x = avg_accel, y = expectedPointsAdded)) +
   geom_point()
