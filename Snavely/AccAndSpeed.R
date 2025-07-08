@@ -466,6 +466,29 @@ rb_stats_labeled <- rb_stats_teams |>
 rb_names <- rb_stats_labeled |> 
   select(bc_id, starter)
 
+
+# Acceleration before contact ---------------------------------------------
+
+#get change in acc 10 and 5 frames before first contact
+acc_before_contact <- tracking_bc |> 
+  #semi_join(rb_stats_teams, by="displayName") |>  #only include plays from the 69 RBs
+  group_by(gameId, playId) |> 
+  mutate(frame_contact = frameId[which(event=="first_contact")][1]) |>  #find first frame ID where event is first_contact and store in new frame_contact column |> 
+filter(!is.na(frame_contact)) |> 
+  #look up acc at 10 and 5 frames before contact, take [1] to avoid multiple matches
+  #reframe() can return multiple rows per group (unlike summarise), we extract the first one
+  #basically collapse each group (play) into one row
+  reframe(
+    displayName=displayName[1],
+    acc_10_before=a[which(frameId == frame_contact-10)][1],
+    acc_5_before=a[which(frameId==frame_contact-5)][1]) |> 
+  filter(!is.na(acc_10_before), !is.na(acc_5_before)) |> 
+  mutate(acc_change=acc_5_before - acc_10_before,
+         label=case_when(
+           acc_change > 0.5 ~ "acc",
+           acc_change < -0.5~ "dec",
+           TRUE ~ "maintain")) 
+
 # Effort by play ----------------------------------------------------------
 tracking_bc_filtered <- tracking_bc |> 
   filter(displayName %in% rbs)
@@ -487,7 +510,11 @@ tracking_bc_play_stats <- tracking_bc_combined |>
             eff_move_prop = sum(eff == TRUE) / n(),
             total_dist_covered_of_game = max(fatigue)) |> 
   left_join(rb_stats_per_play) |> 
-  left_join(rb_names)
+  left_join(rb_names) |> 
+  left_join(acc_before_contact)
+
+tracking_bc_starters_only <- tracking_bc_play_stats |> 
+  filter(starter == TRUE)
 
 # Viz ---------------------------------------------------------------------
 # Relation between effortful movements and fatigue
