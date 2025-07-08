@@ -165,7 +165,7 @@ rb_stats_labeled <- rb_stats_teams |>
 acc_before_contact <- tracking_bc |> 
   #semi_join(rb_stats_teams, by="displayName") |>  #only include plays from the 69 RBs
   group_by(gameId, playId) |> 
-  mutate(frame_contact = frameId[which(event=="first_contact")][1]) #find first frame ID where event is first_contact and store in new frame_contact column |> 
+  mutate(frame_contact = frameId[which(event=="first_contact")][1]) |> #find first frame ID where event is first_contact and store in new frame_contact column 
   filter(!is.na(frame_contact)) |> 
   #look up acc at 10 and 5 frames before contact, take [1] to avoid multiple matches
   #reframe() can return multiple rows per group (unlike summarise), we extract the first one
@@ -180,3 +180,18 @@ acc_before_contact <- tracking_bc |>
            acc_change > 0.5 ~ "acc",
            acc_change < -0.5~ "dec",
            TRUE ~ "maintain")) 
+
+tracking_bc_play_stats_acc <- left_join(tracking_bc_play_stats, acc_before_contact, by=c("gameId", "playId", "displayName"))
+rb_stats_labeled_2 <- rb_stats_labeled |> 
+  select(starter, displayName)
+tracking_bc_play_stats_acc <- left_join(tracking_bc_play_stats_acc, rb_stats_labeled_2, by=c("displayName"))
+
+#number of times player accelerates and percentage of time out of their plays
+num_acc_player <- tracking_bc_play_stats_acc |> 
+  group_by(displayName) |> 
+  filter(starter==TRUE) |> 
+  summarise(num_frames = sum(!is.na(label)),
+  num_acc_frames = sum(label=="acc", na.rm=TRUE),
+  acc_frames_ratio = num_acc_frames/num_frames
+  ) |> 
+  ungroup()
