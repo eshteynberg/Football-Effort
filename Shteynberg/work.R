@@ -58,6 +58,19 @@ tracking <- tracking |>
     a_y = dir_y * a
   )  
 
+tracking <- tracking |>
+  mutate(
+    # Plays will always go from left to right
+    x = ifelse(playDirection == "left", 120 - x, x),
+    y = ifelse(playDirection == "left", 160 / 3 - y, y),
+    # flip player direction and orientation
+    dir = ifelse(playDirection == "left", dir + 180, dir),
+    dir = ifelse(dir > 360, dir - 360, dir),
+    o = ifelse(playDirection == "left", o + 180, o),
+    o = ifelse(o > 360, o - 360, o)
+  )
+
+
 # Filtering for all running back plays
 # bc_id = ball carrier id, bc_club = team id
 plays_rb_runs <- player_play |> 
@@ -93,7 +106,8 @@ tracking_bc <- tracking_rb_runs |>
          dis_x = ifelse(gameId == lag(gameId) & playId == lag(playId), x - lag(x), NA),
          work = ifelse(gameId==lag(gameId) & playId == lag(playId), ke-lag(ke), NA),
          positive_work = ifelse(gameId==lag(gameId) & playId == lag(playId), pmax(ke-lag(ke),0), NA),
-         jerk = ifelse(gameId==lag(gameId) & playId ==lag(playId), (a-lag(a))/.1, NA))
+         jerk = ifelse(gameId==lag(gameId) & playId ==lag(playId), (a-lag(a))/.1, NA),
+         COD = ifelse(gameId==lag(gameId) & playId == lag(playId), abs(dir - lag(dir)), NA))
 
 View(tracking_bc)
 
@@ -111,7 +125,8 @@ rb_stats_per_play <- tracking_bc |>
             effort_consistency = mean_ke/sd_ke,
             total_pos_work=sum(positive_work, na.rm=TRUE),
             avg_accel = mean(a),
-            avg_jerk = mean(jerk, na.rm=TRUE)) |> 
+            avg_jerk = mean(jerk, na.rm=TRUE),
+            avg_COD = mean(COD, na.rm = TRUE) / n()) |> 
   ungroup() |> 
   left_join(select(plays, playId, gameId, yardsGained, expectedPointsAdded))
 
@@ -121,6 +136,7 @@ rb_stats_total <- rb_stats_per_play |>
   summarize(
     total_dis_gained = sum(dis_gained),
     total_dis_gained_x = sum(dis_gained_x, na.rm = TRUE),
+    avg_dis_gained_x = mean(dis_gained_x, na.rm=TRUE) / n(),
     mean_ke = mean(mean_ke),
     avg_sd_ke=mean(sd_ke, na.rm=TRUE),
     avg_sd_work= mean(sd_pos_work, na.rm=TRUE),
@@ -133,7 +149,8 @@ rb_stats_total <- rb_stats_per_play |>
     avg_EPA = mean(expectedPointsAdded),
     num_of_rushes = n(),
     avg_accel = mean(avg_accel),
-    avg_jerk = mean(avg_jerk)
+    avg_jerk = mean(avg_jerk),
+    avg_COD = mean(avg_COD)
   ) |> 
   ungroup()
 
@@ -561,3 +578,33 @@ KE_high_low_plot <- KE_combined |>
   )
 
 ggsave("KE_high_low_plot.png", plot = KE_high_low_plot, width = 10, height = 6, dpi = 300, bg="white")
+
+
+
+# GMM ---------------------------------------------------------------------
+# Variables used:
+# Jerk, KE, COD, EPA, avg_dis_gained_x
+library(mclust)
+
+# Making the ideal "effortful player"
+ideal_player <- data.frame(displayName = "Ideal Player", 
+                           mean_ke = max(rb_stats_total_filtered$mean_ke),
+                           avg_COD = max(rb_stats_total_filtered$avg_COD),
+                           avg_jerk = max(rb_stats_total_filtered$avg_jerk),
+                           avg_EPA = max(rb_stats_total_filtered$avg_EPA),
+                           avg_dis_gained_x = max(rb_stats_total_filtered$avg_dis_gained_x))
+
+# Adding the ideal player to the data set
+rb_gmm_players <- rb_stats_total_filtered |> 
+  select(displayName, mean_ke, avg_COD, avg_jerk, avg_EPA, avg_dis_gained_x) |> 
+  rbind(ideal_player)
+
+# Scaling the data
+scaled <- rb_gmm_players |> 
+  select(mean_ke, avg_COD, avg_jerk, avg_EPA, avg_dis_gained_x) |> 
+  scale()
+
+
+
+
+
