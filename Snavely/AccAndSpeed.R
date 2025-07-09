@@ -107,13 +107,16 @@ rb_stats_per_play <- tracking_bc |>
 after_contact <- tracking_bc_after_contact |> 
   group_by(playId, gameId, bc_id, displayName) |> 
   summarize(dis_gained_x_ac = sum(dis_x),
-            avg_accel_ac = mean(a)) |> 
-  ungroup()
+            avg_accel_ac = mean(a),
+            time_ac = n() / 10,
+            mean_ke_ac = mean(ke)) |> 
+  ungroup() |> 
+  mutate(weighted_ke_ac = (1 + sqrt(time_ac)) * mean_ke_ac)
 
 rb_stats_per_play <- rb_stats_per_play |> 
   left_join(after_contact) |> 
   mutate(dis_gained_x_ac = ifelse(is.na(dis_gained_x_ac), 0, dis_gained_x_ac),
-         avg_accel_ac = ifelse(is.na(avg_accel_ac), 0, avg_accel_ac))
+         avg_accel_ac = ifelse(is.na(avg_accel_ac), 0, avg_accel_ac)) 
 
 # Overall rb stats
 rb_stats_total <- rb_stats_per_play |> 
@@ -292,7 +295,7 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
     mutate(eff = ifelse(diff <= .25, TRUE, FALSE),
            eff_50 = ifelse(diff <= .5, TRUE, FALSE),
            eff_75 = ifelse(diff <= .75, TRUE, FALSE)) |> 
-    mutate(gameI_d = player_runs$gameId, 
+    mutate(gameId = player_runs$gameId, 
            playId = player_runs$playId, 
            bc_id = player_runs$bc_id, 
            displayName = player_runs$displayName,
