@@ -6,6 +6,7 @@ library(mgcv)
 library(caret)
 library(rpart)
 library(rpart.plot)
+library(ranger)
 
 
 # Continuous EPA ----------------------------------------------------------
@@ -118,13 +119,32 @@ EPA_binary_cv <- function(x) {
                  data = train_data,
                  family = binomial(),
                  method = "REML")
+  pos_epa_rf <- ranger(pos_EPA ~ mean_ke + mean_jerk + eff_move_prop +
+                       total_dist_covered_of_game + avg_COD + acc_change, 
+                       num.trees = 500, importance = "impurity", data = test_data)
   
   # Predictions
   out <- tibble(
-    logit_pred = predict(logit_fit, newdata = hr_test, type = "response"),
-    gam_pred = predict(gam_fit, newdata = hr_test, type = "response"),
+    logit_pred = predict(logit_fit, newdata = test_data, type = "response"),
+    gam_pred = predict(gam_fit, newdata = test_data, type = "response"),
+    rf_pred = pos_epa_rf$predictions,
     test_actual = test_data$pos_EPA,
     test_fold = x
   )
   return(out)
 }
+
+pos_EPA_preds <- map(1:N_FOLDS, EPA_binary_cv) |> 
+  bind_rows()
+
+# Determining accuracy
+pos_EPA_preds |> 
+  pivot_longer(logit_pred:rf_pred,
+               names_to = "method",
+               values_to = "test_pred") |> 
+  mutate(test_pred_class = round(test_pred)) |> 
+  group_by(method, test_fold) |> 
+  summarize(accuracy = mean(test_actual == test_pred_class)) |> 
+  group_by(method) |> 
+  summarize(cv_accuracy = mean(accuracy),
+            se_accuracy = sd(accuracy) / sqrt(N_FOLDS))
