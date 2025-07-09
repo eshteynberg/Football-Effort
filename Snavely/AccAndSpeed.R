@@ -511,7 +511,8 @@ tracking_bc_play_stats <- tracking_bc_combined |>
             total_dist_covered_of_game = max(fatigue)) |> 
   left_join(rb_stats_per_play) |> 
   left_join(rb_names) |> 
-  left_join(acc_before_contact)
+  left_join(acc_before_contact) |> 
+  ungroup()
 
 tracking_bc_starters_only <- tracking_bc_play_stats |> 
   filter(starter == TRUE)
