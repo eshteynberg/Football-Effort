@@ -89,7 +89,7 @@ tracking_bc_quang <- tracking_rb_runs |>
 tracking_def <- tracking_rb_runs |> 
   filter(club != bc_club, displayName != "football") |> 
   left_join(select(tracking_bc_quang, gameId, playId, frameId,
-                   bc_x, bc_y, adj_bc_x, adj_bc_y),
+                   bc_x, bc_y, adj_bc_x, adj_bc_y, bc_s, bc_a),
             by = c("gameId", "playId", "frameId")) |> 
   mutate(dist_to_bc = sqrt((x - bc_x) ^ 2 + (y - bc_y) ^ 2)) |> 
   group_by(gameId, playId, frameId) |>
