@@ -520,6 +520,12 @@ tracking_bc_play_stats <- tracking_bc_combined |>
 tracking_bc_starters_only <- tracking_bc_play_stats |> 
   filter(starter == TRUE)
 
+rb_effort_games <- tracking_bc_play_stats |> 
+  group_by(displayName, bc_id) |> 
+  summarize(num_of_effort_plays = sum(num_of_effort_move > 1),
+            num_of_effort_plays_prop = sum(num_of_effort_move > 1) / n()) |> 
+  ungroup()
+
 # Viz ---------------------------------------------------------------------
 # Relation between effortful movements and fatigue
 tracking_bc_play_stats |> 
@@ -594,4 +600,13 @@ tracking_bc_play_stats |>
 
 tracking_bc_play_stats |> 
   ggplot(aes(x = avg_accel, y = expectedPointsAdded)) +
+  geom_point()
+
+## Acceleration and KE
+tracking_bc_combined |> 
+  ggplot(aes(x = ke, y = a.x)) +
+  geom_point()
+
+tracking_bc |> 
+  ggplot(aes(x = ke, y = a)) +
   geom_point()

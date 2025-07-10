@@ -32,12 +32,12 @@ EPA_cv <- function(x) {
   # Models
   reg_fit <- lm(expectedPointsAdded ~ mean_ke + mean_jerk + eff_move_prop +
                 total_dist_covered_of_game + avg_COD + acc_change, 
-                data = rb_modeling)
+                data = train_data)
   ridge_fit <- cv.glmnet(train_x, train_data$expectedPointsAdded, alpha = 0)
   lasso_fit <- cv.glmnet(train_x, train_data$expectedPointsAdded, alpha = 1)
   gam_fit <- gam(expectedPointsAdded ~ s(mean_ke) + s(mean_jerk) + s(eff_move_prop) +
                  s(total_dist_covered_of_game) + s(avg_COD) + s(acc_change),
-                 data = rb_modeling,
+                 data = train_data,
                  family = gaussian(),
                  method = "REML")
   
@@ -148,60 +148,3 @@ pos_EPA_preds |>
   group_by(method) |> 
   summarize(cv_accuracy = mean(accuracy),
             se_accuracy = sd(accuracy) / sqrt(N_FOLDS))
-
-
-# Distance after contact --------------------------------------------------
-N_FOLDS <- 5
-rb_modeling_ac <- tracking_bc_play_stats |> 
-  na.omit() |> 
-  select(mean_ke, mean_jerk, eff_move_prop, 
-         total_dist_covered_of_game, avg_COD, acc_change, 
-         dis_gained_x_ac) |> 
-  mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
-
-YAC_cv <- function(x) {
-  test_data <- rb_modeling |> 
-    filter(fold == x)
-  train_data <- rb_modeling |> 
-    filter(fold != x)
-  
-  # For lasso and ridge
-  test_x <- as.matrix(select(test_data, -dis_gained_x_ac))
-  train_x <- as.matrix(select(train_data, -dis_gained_x_ac))
-  
-  # Models
-  reg_fit <- lm(dis_gained_x_ac ~ mean_ke + mean_jerk + eff_move_prop +
-                  total_dist_covered_of_game + avg_COD + acc_change, 
-                data = rb_modeling_ac)
-  ridge_fit <- cv.glmnet(train_x, train_data$dis_gained_x_ac, alpha = 0)
-  lasso_fit <- cv.glmnet(train_x, train_data$dis_gained_x_ac, alpha = 1)
-  gam_fit <- gam(dis_gained_x_ac ~ s(mean_ke) + s(mean_jerk) + s(eff_move_prop) +
-                   s(total_dist_covered_of_game) + s(avg_COD) + s(acc_change),
-                 data = rb_modeling_ac,
-                 family = gaussian(),
-                 method = "REML")
-  
-  out <- tibble(
-    reg_pred = predict(reg_fit, newdata = test_data),
-    ridge_pred = as.numeric(predict(ridge_fit, newx = test_x)),
-    lasso_pred = as.numeric(predict(lasso_fit, newx = test_x)),
-    gam_pred = predict(gam_fit, newdata = test_data, type = "response"),
-    epa_actual = test_data$dis_gained_x_ac,
-    test_fold = x
-  )
-  return(out)
-}
-
-YAC_test_preds <- map(1:N_FOLDS, YAC_cv) |> 
-  bind_rows()
-
-# Comparing RMSE and SE_RSE
-YAC_test_preds |> 
-  pivot_longer(reg_pred:gam_pred,
-               names_to = "method",
-               values_to = "test_pred") |> 
-  group_by(method, test_fold) |> 
-  summarize(rmse = sqrt(mean((epa_actual - test_pred) ^ 2))) |> 
-  group_by(method) |> 
-  summarize(cv_rmse = mean(rmse),
-            se_rse = sd(rmse) / sqrt(N_FOLDS))
