@@ -98,3 +98,15 @@ tracking_def <- tracking_rb_runs |>
   ungroup() |> 
   filter(player_dist_bc_rank == 1) |> 
   arrange(gameId, playId, frameId)
+
+
+# Joining cols from plays with the tracking_def data frame
+plays_filtered <- plays |> 
+  select(gameId, playId, preSnapVisitorScore, preSnapHomeScore, quarter, down, yardsToGo, yards_from_endzone)
+
+tracking_def <- tracking_def |> 
+  left_join(plays_filtered, by=c("gameId", "playId")) |> 
+  left_join(select(games, gameId, homeTeamAbbr, visitorTeamAbbr)) |> 
+  left_join(select(players, bc_id = nflId, weight)) |> 
+  mutate(score_diff = ifelse(bc_club == visitorTeamAbbr, preSnapVisitorScore - preSnapHomeScore, 
+                             preSnapHomeScore - preSnapVisitorScore))
