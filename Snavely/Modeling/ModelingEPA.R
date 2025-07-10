@@ -10,7 +10,7 @@ library(ranger)
 
 
 # Continuous EPA ----------------------------------------------------------
-
+set.seed(1)
 N_FOLDS <- 5
 rb_modeling <- tracking_bc_play_stats |> 
   na.omit() |> 
