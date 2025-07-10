@@ -84,3 +84,17 @@ tracking_bc_quang <- tracking_rb_runs |>
   mutate(adj_bc_x_from_first_down = adj_bc_x - adj_x_first_down,
          bc_position = "RB",
          bc_type = "rusher")
+
+# Finding the nearest defender
+tracking_def <- tracking_rb_runs |> 
+  filter(club != bc_club, displayName != "football") |> 
+  left_join(select(tracking_bc_quang, gameId, playId, frameId,
+                   bc_x, bc_y, adj_bc_x, adj_bc_y),
+            by = c("gameId", "playId", "frameId")) |> 
+  mutate(dist_to_bc = sqrt((x - bc_x) ^ 2 + (y - bc_y) ^ 2)) |> 
+  group_by(gameId, playId, frameId) |>
+  arrange(dist_to_bc) |> 
+  mutate(player_dist_bc_rank = row_number()) |> 
+  ungroup() |> 
+  filter(player_dist_bc_rank == 1) |> 
+  arrange(gameId, playId, frameId)
