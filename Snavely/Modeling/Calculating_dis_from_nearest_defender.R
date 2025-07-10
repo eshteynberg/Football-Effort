@@ -1,6 +1,11 @@
 library(tidyverse)
 
-# Data cleaning -----------------------------------------------------------
+# Data cleaning  -----------------------------------------------------------
+tracking <- arrow::read_parquet("data/tracking.parquet")
+games <- read_csv("data/games.csv")
+players <- read_csv("data/players.csv")
+player_play <- read_csv("data/player_play.csv")
+plays <- read_csv("data/plays.csv")
 
 tracking <- tracking |>
   mutate(
@@ -35,6 +40,12 @@ tracking <- tracking |>
     a_y = dir_y * a
   )  
 
+# Calculating yards from the endzone and yards til a first down
+plays <- plays |> 
+  mutate(yards_from_endzone = ifelse((possessionTeam != yardlineSide) | (yardlineNumber == 50), 
+                                     yardlineNumber, 100 - yardlineNumber),
+         adj_x_first_down = yards_from_endzone - yardsToGo)
+
 # Filtering for all running back plays
 # bc_id = ball carrier id, bc_club = team id
 plays_rb_runs <- player_play |> 
@@ -60,10 +71,16 @@ tracking_rb_runs <- tracking_rb_runs |>
   filter(!is.na(frame_handoff), !is.na(frame_end)) |> 
   filter(frameId >= frame_handoff & frameId <= frame_end)
 
-
-# Finding distance from nearest defender ----------------------------------
-dis_from_defender <- tracking_rb_runs |> 
-  group_by(gameId, playId, nflId, displayName, frameId, bc_id) |> 
-  filter(nflId == bc_id | club != bc_club) |>
-  mutate(running_back_x = )
-
+# This data frame shows tracking only for running backs
+tracking_bc_quang <- tracking_rb_runs |> 
+  filter(nflId == bc_id) |> 
+  select(gameId, playId, frameId, 
+         bc_id, bc_club,
+         bc_x = x, bc_y = y, bc_s = s, bc_a = a,
+         bc_dis = dis, bc_o = o, bc_dir = dir) |> 
+  mutate(adj_bc_x = 110 - bc_x, # Adjusting for the endzone
+         adj_bc_y = bc_y - (160 / 6)) |> 
+  left_join(select(plays, gameId, playId, adj_x_first_down)) |> 
+  mutate(adj_bc_x_from_first_down = adj_bc_x - adj_x_first_down,
+         bc_position = "RB",
+         bc_type = "rusher")
