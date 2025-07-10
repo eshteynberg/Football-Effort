@@ -1,7 +1,14 @@
+# This file is to load all the data
 library(tidyverse)
 
-# Data cleaning -----------------------------------------------------------
+# Original data frames
+tracking <- arrow::read_parquet("data/tracking.parquet")
+games <- read_csv("data/games.csv")
+players <- read_csv("data/players.csv")
+player_play <- read_csv("data/player_play.csv")
+plays <- read_csv("data/plays.csv")
 
+# Putting plays in the correct direction
 tracking <- tracking |>
   mutate(
     # Plays will always go from left to right
@@ -59,7 +66,6 @@ tracking_rb_runs <- tracking_rb_runs |>
   ungroup() |> 
   filter(!is.na(frame_handoff), !is.na(frame_end)) |> 
   filter(frameId >= frame_handoff & frameId <= frame_end)
-
 
 ## TRACKING FOR RUNNING BACKS ONLY FOR RUNNING BACK PLAYS
 # Tracking data for ball carriers only
@@ -144,114 +150,12 @@ rb_stats_total <- rb_stats_per_play |>
   ) |> 
   ungroup()
 
-summary(rb_stats_total$num_of_rushes) # Do a minimum of 20 rushes to eliminate players with low rushes
-
 rb_stats_total_filtered <- rb_stats_total |> 
   filter(num_of_rushes >= 20)
 
 
-# Saquon's Acc and Speed ----------------------------------------------------
-library(broom)
-# Plot of acceleration and speed for all players
-tracking_bc |> 
-  ggplot(aes(x = s, y = a)) +
-  geom_point(alpha = .3)
-
-saquon_runs <- tracking_bc |> 
-  filter(displayName == "Saquon Barkley")
-
-# Saquon's speed and acceleration
-saquon_runs |> 
-  ggplot(aes(x = s, y = a)) +
-  geom_point()
-
-max(saquon_runs$s) # 10.4 is Barkley's max speed
-
-# Making speed bins
-bins <- seq(3, 10.4, .2)
-
-# finding the maximum acceleration for each speed bin
-max_acc <- map_dfr(1:(length(bins) - 1), function(i) {
-  saquon_runs |> 
-    filter(s > bins[i], s <= bins[i + 1]) |> 
-    slice_max(a, n = 2, with_ties = FALSE) |> 
-    select(speed = s, acceleration = a)
-})
-
-# Test to see if code worked
-saquon_runs |> 
-  filter(s > 10.0 & s <= 10.2) |> 
-  slice_max(a, n = 2, with_ties = FALSE) |> 
-  select(s, a)
-  
-# plotting the maximum accelerations per bin
-max_acc |> 
-  ggplot(aes(x = speed, y = acceleration)) +
-  geom_point()
-
-# fitting a regression line 
-saquon_lm <- lm(acceleration ~ speed, data = max_acc)
-
-# Looking for outliers
-saquon_tidy <- saquon_lm |> 
-  tidy(conf.int = TRUE)
-summary(saquon_lm)
-
-saquon_tidy
-
-# Plotting speed and acceleartion with first regression line
-max_acc |> 
-  ggplot(aes(x = speed, y = acceleration)) +
-  geom_point() +
-  geom_smooth(method = lm, se = TRUE, conf.int = TRUE)
-
-# Adding predicted values to the original df
-confs <- predict(saquon_lm, interval = "confidence")
-max_acc <- max_acc |> 
-  bind_cols(confs)
-
-# Filtering out outliers
-max_acc_clean <- max_acc |> 
-  filter(acceleration >= lwr, acceleration <= upr)
-
-# New regression line
-saquon_lm_clean <- lm(acceleration ~ speed, data = max_acc_clean)
-tidy(saquon_lm_clean)
-summary(saquon_lm_clean)
-
-# Maximal acceleration (y-intercept)
-A_0 <- saquon_lm_clean$coefficients[1]
-
-# Plotting new regression line
-max_acc_clean |> 
-  ggplot(aes(x = speed, y = acceleration)) +
-  geom_point() +
-  geom_smooth(method = lm, se = TRUE, conf.int = TRUE)
-
-# Finally relaying the line onto the original data points
-saquon_runs |> 
-  ggplot(aes(x = s, y = a)) +
-  geom_point() +
-  geom_smooth(method = lm, aes(x = speed, y = acceleration), data = max_acc_clean) +
-  geom_abline(intercept = saquon_lm_clean$coefficients[1], slope = saquon_lm_clean$coefficients[2]) +
-  xlim(0, 17)
-
-# Finding out how many points are near the line
-test_saquon_a <- data.frame(speed = saquon_runs$s, acceleration = saquon_runs$a)
-test_preds <- predict(saquon_lm_clean, newdata = test_saquon_a)
-
-# Adding the test predictions to the df
-# Definition of effort: within 1 of the predicted fitted values
-saquon_final <- saquon_runs |> 
-  select(a, s) |> 
-  mutate(pred = test_preds) |> 
-  mutate(diff = pred - a) |> 
-  mutate(eff = ifelse(diff <= 1, TRUE, FALSE))
-
-eff_metric <- (sum(saquon_final$eff == TRUE) / nrow(saquon_final)) * 100
-
-
-# Creating a function -----------------------------------------------------
+# Effort Function ---------------------------------------------------------
+# Effort function
 eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   # Filtering the data set to only include the inputted player
   player_runs <- tracking_bc |> 
@@ -318,15 +222,15 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
       geom_smooth(method = lm, aes(x = speed, y = acceleration), data = max_acc_clean, lwd = 1.5, se = FALSE) +
       geom_abline(aes(color = "Regression line",
                       intercept = player_lm_clean$coefficients[1], slope = player_lm_clean$coefficients[2]),
-                      lwd = 1.5,) +
+                  lwd = 1.5,) +
       geom_abline(aes(color = "Minimum line (.25)",
-                  intercept = player_lm_clean$coefficients[1] - .25, slope = player_lm_clean$coefficients[2]), 
+                      intercept = player_lm_clean$coefficients[1] - .25, slope = player_lm_clean$coefficients[2]), 
                   lty = 2, lwd = 1.5) +
       geom_abline(aes(color = "Minimum line (.5)",
-                  intercept = player_lm_clean$coefficients[1] - .5, slope = player_lm_clean$coefficients[2]),
+                      intercept = player_lm_clean$coefficients[1] - .5, slope = player_lm_clean$coefficients[2]),
                   lty = 2, lwd = 1.5) +
       geom_abline(aes(color = "Minimum line (.75)",
-                  intercept = player_lm_clean$coefficients[1] - .75, slope = player_lm_clean$coefficients[2]), 
+                      intercept = player_lm_clean$coefficients[1] - .75, slope = player_lm_clean$coefficients[2]), 
                   lty = 2, lwd = 1.5) +
       scale_color_manual("Line", values = c("#4B92DB", "darkgreen", "turquoise", "#FFB612")) +
       geom_point(size = 2, alpha = .5, col = "grey2") +
@@ -357,87 +261,16 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   return(eff)
 }
 
-# Test
-eff_function("Rex Burkhead", graph = TRUE)
-eff_function("Saquon Barkley", graph = TRUE)
-eff_function("Saquon Barkley", player_table = TRUE)
-eff_function("Saquon Barkley")
-
-
-# Eff metric for all players ----------------------------------------------
-
 rbs <- unique(rb_stats_total_filtered$displayName)
 
 eff_movements <- purrr::map(rbs, eff_function) |> 
   bind_rows() |> 
   mutate(displayName = rbs)
-
-eff_movements_top <- eff_movements |> 
-  slice_max(eff_metric, n = 5) |> 
-  mutate(type = "high")
-
-eff_movements_bottom <- eff_movements |> 
-  slice_min(eff_metric, n = 5) |> 
-  mutate(type = "low")
-
-eff_together <- rbind(eff_movements_top, eff_movements_bottom)
-
-# top 5 vs. bottom 5 eff movements
-eff_together |> 
-  ggplot(aes(x = eff_metric, y = fct_reorder(displayName, eff_metric), fill = type)) +
-  geom_col() +
-  labs(x = "Number of effort movements", 
-       y = "",
-       title = "Top and bottom 5 players for effort movements") +
-  geom_text(aes(label = eff_metric), hjust = 1, nudge_x = -.5, fontface = "bold", size = 5) +
-  scale_fill_manual(values = c("#FFB612", "#4B92DB")) +
-  theme(plot.title = element_text(face = "bold",
-                                  size = 20, 
-                                  hjust = .5),
-        legend.position = "none",
-        axis.title = element_text(face = "bold",
-                                  size = 15),
-        axis.text.y = element_text(face = "italic"),
-        axis.text = element_text(size = 13))
-
-eff_movements_perc_top <- eff_movements |> 
-  slice_max(eff_metric_perc, n = 5) |> 
-  mutate(type = "high")
-
-eff_movements_perc_bottom <- eff_movements |> 
-  slice_min(eff_metric_perc, n = 5) |> 
-  mutate(type = "low")
-
-eff_movements_perc <- rbind(eff_movements_perc_top, eff_movements_perc_bottom) |> 
-  mutate(eff_metric_perc = round(eff_metric_perc, 2)) |> 
-  mutate(perc = paste0(eff_metric_perc, "%"))
-
-
-# Top 5 vs. bottom 5 eff perc
-eff_movements_perc |> 
-  ggplot(aes(x = eff_metric_perc, y = fct_reorder(displayName, eff_metric_perc), fill = type)) +
-  geom_col() +
-  labs(x = "Percentage of movements that are effortful", 
-       y = "",
-       title = "Top and bottom 5 players for effort movement percentages") +
-  geom_text(aes(label = perc), hjust = 1, fontface = "bold", size = 5) +
-  scale_fill_manual(values = c("#FFB612", "#4B92DB")) +
-  theme(plot.title = element_text(face = "bold",
-                                  size = 20, 
-                                  hjust = .5),
-        legend.position = "none",
-        axis.title = element_text(face = "bold",
-                                  size = 15),
-        axis.text.y = element_text(face = "italic"),
-        axis.text = element_text(size = 13))
-
-# Adding fatigue ----------------------------------------------------------
-
+# Fatigue -----------------------------------------------------------------
 fatigue <- tracking_bc |> 
   group_by(gameId, bc_id, displayName) |> 
   mutate(fatigue = cumsum(dis)) |> 
   select(gameId, bc_id, playId, frameId, displayName, fatigue)
-
 
 # Adding starter names ----------------------------------------------------
 
@@ -468,16 +301,13 @@ rb_stats_labeled <- rb_stats_teams |>
 
 rb_names <- rb_stats_labeled |> 
   select(bc_id, starter)
-
-
 # Acceleration before contact ---------------------------------------------
-
 #get change in acc 10 and 5 frames before first contact
 acc_before_contact <- tracking_bc |> 
   #semi_join(rb_stats_teams, by="displayName") |>  #only include plays from the 69 RBs
   group_by(gameId, playId) |> 
   mutate(frame_contact = frameId[which(event=="first_contact")][1]) |>  #find first frame ID where event is first_contact and store in new frame_contact column |> 
-filter(!is.na(frame_contact)) |> 
+  filter(!is.na(frame_contact)) |> 
   #look up acc at 10 and 5 frames before contact, take [1] to avoid multiple matches
   #reframe() can return multiple rows per group (unlike summarise), we extract the first one
   #basically collapse each group (play) into one row
@@ -491,8 +321,8 @@ filter(!is.na(frame_contact)) |>
            acc_change > 0.5 ~ "acc",
            acc_change < -0.5~ "dec",
            TRUE ~ "maintain")) 
+# Final Data Frame --------------------------------------------------------
 
-# Effort by play ----------------------------------------------------------
 tracking_bc_filtered <- tracking_bc |> 
   filter(displayName %in% rbs)
 
@@ -512,72 +342,7 @@ tracking_bc_play_stats <- tracking_bc_combined |>
             num_of_effort_move = sum(eff == TRUE),
             eff_move_prop = sum(eff == TRUE) / n(),
             total_dist_covered_of_game = max(fatigue)) |> 
+  ungroup() |> 
   left_join(rb_stats_per_play) |> 
   left_join(rb_names) |> 
   left_join(acc_before_contact)
-
-tracking_bc_starters_only <- tracking_bc_play_stats |> 
-  filter(starter == TRUE)
-
-rb_effort_games <- tracking_bc_play_stats |> 
-  group_by(displayName, bc_id) |> 
-  summarize(num_of_effort_plays = sum(num_of_effort_move > 1),
-            num_of_effort_plays_prop = sum(num_of_effort_move > 1) / n()) |> 
-  ungroup()
-
-# Viz ---------------------------------------------------------------------
-# Relation between effortful movements and fatigue
-tracking_bc_play_stats |> 
-  ggplot(aes(x = total_dist_covered_of_game, y = num_of_effort_move)) +
-  geom_point()
-
-# Relationship between distance after contact and effort
-tracking_bc_play_stats |> 
-  ggplot(aes(x = dis_gained_x_ac, y = num_of_effort_move)) +
-  geom_point()
-
-# Relationship between EPA and effort
-# Seems like some effort indicates an increase in points
-tracking_bc_play_stats |> 
-  ggplot(aes(x = expectedPointsAdded, y = num_of_effort_move)) +
-  geom_point()
-tracking_bc_play_stats |> 
-  ggplot(aes(x = expectedPointsAdded, y = eff_move_prop)) +
-  geom_point()
-
-# Relationship between KE and distance after contact
-tracking_bc_play_stats |> 
-  ggplot(aes(x = dis_gained_x_ac, y = mean_ke)) +
-  geom_point()
-
-# KE and EPA
-tracking_bc_play_stats |> 
-  ggplot(aes(x = mean_ke, y = expectedPointsAdded)) +
-  geom_point()
-
-# Distance after contact and EPA
-tracking_bc_play_stats |> 
-  ggplot(aes(x = expectedPointsAdded, y = dis_gained_x_ac)) +
-  geom_point()
-
-# rushing yards and EPA
-tracking_bc_play_stats |> 
-  ggplot(aes(x = effort_consistency, y = expectedPointsAdded)) +
-  geom_point()
-
-tracking_bc_play_stats |> 
-  ggplot(aes(x = avg_COD, y = expectedPointsAdded)) +
-  geom_point()
-
-tracking_bc_play_stats |> 
-  ggplot(aes(x = avg_accel, y = expectedPointsAdded)) +
-  geom_point()
-
-## Acceleration and KE
-tracking_bc_combined |> 
-  ggplot(aes(x = ke, y = a.x)) +
-  geom_point()
-
-tracking_bc |> 
-  ggplot(aes(x = ke, y = a)) +
-  geom_point()
