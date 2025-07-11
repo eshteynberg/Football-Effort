@@ -34,6 +34,7 @@ speed_cv <- function(x) {
   # Models
   reg_fit <- lm(bc_s ~ ., data = train_data)
   ridge_fit <- cv.glmnet(train_x, train_data$bc_s, alpha = 0)
+  quant_reg <- rq(bc_s ~ ., data = train_data)
   lasso_fit <- cv.glmnet(train_x, train_data$bc_s, alpha = 1)
   gam_fit <- gam(bc_s ~ s(adj_bc_x) + s(adj_bc_y) + s(dist_to_bc) +
                  down + quarter + s(yardsToGo) + s(yards_from_endzone) +
@@ -45,6 +46,7 @@ speed_cv <- function(x) {
   out <- tibble(
     reg_pred = predict(reg_fit, newdata = test_data),
     ridge_pred = as.numeric(predict(ridge_fit, newx = test_x)),
+    quant_pred = predict(quant_reg, newdata = test_data),
     lasso_pred = as.numeric(predict(lasso_fit, newx = test_x)),
     gam_pred = predict(gam_fit, newdata = test_data, type = "response"),
     speed_actual = test_data$bc_s,
@@ -93,3 +95,14 @@ speed_test_preds |>
   ggplot(aes(x = reg_pred, y = speed_actual)) +
   geom_point(alpha = .2) +
   geom_abline(intercept = 0, slope = 1, col = "blue")
+
+
+# Quant Regression
+speed_test_preds |> 
+  ggplot(aes(x = quant_pred, y = speed_actual)) +
+  geom_point(alpha = .2) +
+  geom_abline(intercept = 0, slope = 1, col = "blue")
+
+
+
+
