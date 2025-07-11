@@ -533,3 +533,46 @@ eff_together |>
 
 
 
+
+
+# Quantile regression -----------------------------------------------------
+library(quantreg)
+
+
+# Creating a function -----------------------------------------------------
+eff_function <- function(name, graph = FALSE) {
+  # Filtering the data set to only include the inputted player
+  player_runs <- tracking_bc |> 
+    filter(displayName == name)
+
+  N_FOLDS <- 5
+  player_runs_modeling <- player_runs |> 
+    select(s, a) |> 
+    mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
+  
+  player_runs_cv <- function(x){
+    test_data <- player_runs_modeling |> 
+      filter(fold == x)
+    train_data <- player_runs_modeling |> 
+      filter(fold != x)
+    
+  #quantile regression
+  player_runs_rq <- rq(a ~ s, tau=.9, data=train_data)
+  
+  player_runs_nlrq <- nlrq(a ~ s, tau=.9, data=train_data)
+  
+  
+  # Predictions
+  out <- tibble(
+    rq_pred = predict.rq(player_runs_rq, newdata = test_data),
+    nlrq_pred = predict.nlrq(player_runs_nlrq, newdata = test_data),
+    test_actual = test_data$a,
+    test_fold = x
+  )
+  return(out)
+  }
+  return()
+}
+
+
+

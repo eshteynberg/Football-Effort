@@ -189,9 +189,16 @@ tracking_bc_play_stats_acc <- left_join(tracking_bc_play_stats_acc, rb_stats_lab
 #number of times player accelerates and percentage of time out of their plays
 num_acc_player <- tracking_bc_play_stats_acc |> 
   group_by(displayName) |> 
-  filter(starter==TRUE) |> 
+  #filter(starter==TRUE) |> 
   summarise(num_frames = sum(!is.na(label)),
   num_acc_frames = sum(label=="acc", na.rm=TRUE),
   acc_frames_ratio = num_acc_frames/num_frames
   ) |> 
   ungroup()
+
+
+rb_stats_labeled <- left_join(rb_stats_labeled, num_acc_player, by="displayName")
+
+rb_stats_labeled |> 
+  ggplot(aes(x = num_acc_frames, y = avg_EPA)) +
+  geom_point()
