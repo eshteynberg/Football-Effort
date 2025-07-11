@@ -538,7 +538,7 @@ eff_together |>
 # Quantile regression -----------------------------------------------------
 library(quantreg)
 
-
+set.seed(1)
 # Creating a function -----------------------------------------------------
 eff_function <- function(name, graph = FALSE) {
   # Filtering the data set to only include the inputted player
@@ -559,20 +559,23 @@ eff_function <- function(name, graph = FALSE) {
   #quantile regression
   player_runs_rq <- rq(a ~ s, tau=.9, data=train_data)
   
-  player_runs_nlrq <- nlrq(a ~ s, tau=.9, data=train_data)
-  
   
   # Predictions
   out <- tibble(
     rq_pred = predict.rq(player_runs_rq, newdata = test_data),
-    nlrq_pred = predict.nlrq(player_runs_nlrq, newdata = test_data),
     test_actual = test_data$a,
+    res_rq = test_actual-rq_pred,
     test_fold = x
   )
   return(out)
   }
-  return()
+  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
+    bind_rows()
+  return(player_runs_test_preds)
 }
 
+player_runs_rq_output <- eff_function("Saquon Barkley")
+#View(player_runs_rq_output)
 
+sum(player_runs_rq_output$res_rq<0)/nrow(player_runs_rq_output)
 
