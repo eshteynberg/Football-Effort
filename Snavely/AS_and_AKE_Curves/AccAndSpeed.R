@@ -2,6 +2,13 @@ library(tidyverse)
 
 # Data cleaning -----------------------------------------------------------
 
+tracking <- arrow::read_parquet("data/tracking.parquet")
+
+games <- read_csv("data/games.csv")
+players <- read_csv("data/players.csv")
+player_play <- read_csv("data/player_play.csv")
+plays <- read_csv("data/plays.csv")
+
 tracking <- tracking |>
   mutate(
     # Plays will always go from left to right

@@ -53,20 +53,11 @@ speed_cv <- function(x) {
   return(out)
 }
 
-# Random Forrest
-speed_rf <- ranger(bc_s ~ ., 
-                   num.trees = 500, importance = "impurity", 
-                   data = rb_model_as)
-
 speed_test_preds <- map(1:N_FOLDS, speed_cv) |> 
   bind_rows()
 
-speed_test_preds <- speed_test_preds |> 
-  mutate(rf_pred = speed_rf$predictions) |> 
-  select(reg_pred:gam_pred, rf_pred, speed_actual, test_fold)
-
 speed_test_preds |> 
-  pivot_longer(reg_pred:rf_pred,
+  pivot_longer(reg_pred:gam_fit,
                names_to = "method",
                values_to = "test_pred") |> 
   group_by(method, test_fold) |> 
@@ -75,16 +66,30 @@ speed_test_preds |>
   summarize(cv_rmse = mean(rmse),
             se_rse = sd(rmse) / sqrt(N_FOLDS))
 
+# Random Forrest
+set.seed(1)
+speed_rf <- ranger(bc_s ~ ., 
+                   num.trees = 500, importance = "impurity", 
+                   data = rb_model_as)
+
+rf_preds <- speed_rf$predictions
+
+rf_results <- data.frame(rf_preds, speed_actual = rb_model_as$bc_s)
+  
+# RMSE
+rf_results |> 
+  summarize(rmse = sqrt(mean((speed_actual - rf_preds) ^ 2)))
+
 ## Looking at predictions for speed
-# GAM
-speed_test_preds |> 
-  ggplot(aes(x = gam_pred, y = speed_actual)) +
+# Random Forrest
+rf_results |> 
+  ggplot(aes(x = rf_preds, y = speed_actual)) +
   geom_point(alpha = .2) +
   geom_abline(intercept = 0, slope = 1, col = "blue")
 
-# Random Forrest
+# GAM
 speed_test_preds |> 
-  ggplot(aes(x = rf_pred, y = speed_actual)) +
+  ggplot(aes(x = gam_pred, y = speed_actual)) +
   geom_point(alpha = .2) +
   geom_abline(intercept = 0, slope = 1, col = "blue")
 
