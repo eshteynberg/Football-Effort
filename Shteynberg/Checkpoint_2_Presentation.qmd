@@ -1,0 +1,18 @@
+---
+title: "Quantifying Effort in American Football"
+author: "Emily Shteynberg, Luke Snavely, Sheryl Solorzano"
+format:
+  revealjs:
+    theme: theme.scss
+    smaller: true
+    incremental: true
+    math: mathjax
+    slide-number: c/t
+    embed-resources: true
+    code-line-numbers: false
+    linestretch: 1.25
+    html-math-method:
+      method: mathjax
+      url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+---
+
