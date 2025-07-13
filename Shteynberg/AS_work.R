@@ -611,8 +611,8 @@ eff_function_rqss <- function(name, graph=FALSE){
              s <= min(s_range[2], 9))  #<= min of training upper bound and 9
     #nonparametric quantile reg using smooth spline
     #fit a smooth spline of acc as a function of speed
-    #lambda controls smoothness (highr =smoother/less wiggly, lower=more flexible)
-    rq_fit <- rqss(a~qss(s, lambda=1), tau=.9, data=train_data)
+    #lambda controls smoothness (higher =smoother/less wiggly, lower=more flexible)
+    rq_fit <- rqss(a~qss(s, lambda=3), tau=.9, data=train_data)
     
     out <- tibble(
       rq_pred = predict(rq_fit, newdata=test_data),
@@ -632,7 +632,7 @@ eff_function_rqss <- function(name, graph=FALSE){
     player_graph <- player_runs |> 
       ggplot(aes(x = s, y = a)) +
       geom_point(alpha=.5, color="grey2")+
-      stat_smooth(method="rqss", formula=y~qss(x,lambda=1),
+      stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
                   method.args=list(tau=0.9), se=FALSE, color="blue", size=1.2)+
       labs(x = "Speed",
            y = "Acceleration",
@@ -658,7 +658,7 @@ eff_function_rqss <- function(name, graph=FALSE){
 
 
 # Test
-eff_function_rqss("Rex Burkhead", graph = TRUE)
+eff_function_rqss("Latavius Murray", graph = TRUE)
 eff_function_rqss("Saquon Barkley", graph = TRUE)
 eff_function_rqss("Saquon Barkley")
 
@@ -674,108 +674,216 @@ eff_scores <- purrr::map(rbs, eff_function_rqss) |>
 eff_scores
 
 
+# # Gamma function ----------------------------------------------------------
+# set.seed(1)
+# eff_gamma <- function(name, graph= FALSE){
+#   player_runs <- tracking_bc |> 
+#     filter(displayName==name) |> 
+#     select(s,a) |> 
+#     filter(s>0)
+#   
+#   N_FOLDS <- 5
+#   player_runs_modeling <- player_runs |> 
+#     mutate(fold=sample(rep(1:N_FOLDS, length.out=n())))
+#   
+#   player_runs_cv <- function(x){
+#     test_data <- player_runs_modeling |> filter(fold == x)
+#     train_data <- player_runs_modeling |> filter(fold != x)
+#     
+#     
+#     #fit model with shape of gamma function
+#     # a= b_0 * s^b_1 * e^{-b_2*s}
+#     #b0 is scale 
+#     #b1 is rise
+#     #b2 is decay
+#     gamma_fit <- tryCatch(
+#       nls(a~b0*s^b1*exp(-b2 * s),
+#           data=train_data,
+#           start=list(b0 = 3, b1 = 2, b2 = 0.15),
+#           control=list(maxiter=500)),
+#       error=function(e) return(NULL))
+#     if(is.null(gamma_fit)) return(NULL)
+#     
+#     rq_pred <- predict(gamma_fit, newdata = test_data)
+#     
+#     out <- tibble(
+#       rq_pred = rq_pred,
+#       test_actual = test_data$a,
+#       res_rq = test_actual - rq_pred,
+#       test_fold = x
+#     )
+#     return(out)
+#   }
+#   player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
+#     compact() |> 
+#     list_rbind()
+# 
+#   #proportion of points that fall below predicted curve
+#   eff_below <- mean(player_runs_test_preds$res_rq < 0)
+#   
+#   if (graph == TRUE) {
+#     
+#     #refit for viz
+#     gamma_fit_viz <- tryCatch(
+#       nls(a ~ b0 * s^b1 * exp(-b2 * s),
+#           data = player_runs,
+#           start = list(b0 = 3, b1 = 2, b2 = 0.15),
+#           control = list(maxiter = 500)),
+#       error = function(e) return(NULL)
+#     )
+#     
+#     if (is.null(gamma_fit_viz)) return(NULL)
+#     
+#     b0 <- coef(gamma_fit_viz)[1]
+#     b1 <- coef(gamma_fit_viz)[2]
+#     b2 <- coef(gamma_fit_viz)[3]
+#     
+#     player_graph <- player_runs |> 
+#       ggplot(aes(x = s, y = a)) +
+#       geom_point(alpha = 0.5, color = "grey2") +
+#       stat_function(fun = function(x) b0 * x^b1 * exp(-b2 * x),
+#                     color = "blue", size = 1.2) +
+#       labs(x = "Speed",
+#            y = "Acceleration",
+#            title = paste0(name, "'s effort gamma curve"),
+#            caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
+#       theme(plot.title = element_text(face = "bold", size = 20, hjust = .5),
+#             legend.title = element_text(face = "bold", size = 15),
+#             axis.title = element_text(face = "bold", size = 15),
+#             axis.text = element_text(size = 13),
+#             plot.caption = element_text(face = "italic", size = 8))
+#     
+#     return(player_graph)
+#   }
+#   
+#   return(tibble(displayName = name, effort_ratio = 1 - eff_below))
+#   
+# }
+# 
+# 
+# 
+# # Test
+# eff_gamma("Rex Burkhead", graph = TRUE)
+# eff_gamma("Saquon Barkley", graph = TRUE)
+# eff_gamma("Saquon Barkley")
+# 
+# 
+# # Eff metric for all players ----------------------------------------------
+# 
+# rbs <- unique(rb_stats_total_filtered$displayName)
+# 
+# eff_scores <- purrr::map(rbs, eff_gamma) |> 
+#   bind_rows() |> 
+#   mutate(displayName = rbs)
+# 
+# eff_scores
+# View(eff_scores)
 
-# Gamma function ----------------------------------------------------------
+
+
+
+
+
+
+
+# Nonparam regression 2 splines  ------------------------------------------
+
+# Nonparametric quantile regression -------------------------------------------
 set.seed(1)
-eff_gamma <- function(name, graph= FALSE){
+eff_function_rqss <- function(name, graph=FALSE){
   player_runs <- tracking_bc |> 
-    filter(displayName==name) |> 
-    select(s,a) |> 
-    filter(s>0)
+    filter(displayName == name)
   
   N_FOLDS <- 5
   player_runs_modeling <- player_runs |> 
-    mutate(fold=sample(rep(1:N_FOLDS, length.out=n())))
+    select(s, a) |> 
+    mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
   
   player_runs_cv <- function(x){
-    test_data <- player_runs_modeling |> filter(fold == x)
-    train_data <- player_runs_modeling |> filter(fold != x)
+    test_data <- player_runs_modeling |> 
+      filter(fold==x)
+    train_data <- player_runs_modeling |> 
+      filter(fold != x)
     
-    
-    #fit model with shape of gamma function
-    # a= b_0 * s^b_1 * e^{-b_2*s}
-    #b0 is scale 
-    #b1 is rise
-    #b2 is decay
-    gamma_fit <- tryCatch(
-      nls(a~b0*s^b1*exp(-b2 * s),
-          data=train_data,
-          start=list(b0 = 3, b1 = 2, b2 = 0.15),
-          control=list(maxiter=500)),
-      error=function(e) return(NULL))
-    if(is.null(gamma_fit)) return(NULL)
-    
-    rq_pred <- predict(gamma_fit, newdata = test_data)
+    s_range <- range(train_data$s)
+    test_data <- test_data |>
+      filter(s >= max(s_range[1], 1),  #>= max of training lower bound and 1
+             s <= min(s_range[2], 9))  #<= min of training upper bound and 9
+    #nonparametric quantile reg using smooth spline
+    #fit a smooth spline of acc as a function of speed
+    #lambda controls smoothness (higher =smoother/less wiggly, lower=more flexible)
+    rq_fit_95 <- rqss(a~qss(s, lambda=3), tau=.95, data=train_data)
+    rq_fit_50 <- rqss(a~qss(s, lambda=3), tau=.5, data=train_data)
     
     out <- tibble(
-      rq_pred = rq_pred,
+      rq_pred_95 = predict(rq_fit_95, newdata=test_data),
+      rq_pred_50 = predict(rq_fit_50, newdata=test_data),
       test_actual = test_data$a,
-      res_rq = test_actual - rq_pred,
-      test_fold = x
+      x_values = test_data$s,
+      res_rq_95 = test_actual - rq_pred_95,
+      res_rq_50 = test_actual - rq_pred_50,
+      test_fold=x
     )
     return(out)
   }
+  
+  spline_fn_95 <- splinefun(out$x_values,out$rq_pred_95)
+  spline_fn_90 <- splinefun(out$x_values,out$rq_pred_90)
+  
+  auc_95 <- integrate(spline_fn_95, lower=min(out$x_values), upper=max(out$x_values))$value
+  auc_90 <- integrate(spline_fn_90, lower=min(out$x_values), upper=max(out$x_values))$value
+  
   player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
-    compact() |> 
     list_rbind()
-
-  #proportion of points that fall below predicted curve
-  eff_below <- mean(player_runs_test_preds$res_rq < 0)
+  
+  #percentage of points below quantile line (not top 10%)
+  eff_score <- mean(player_runs_test_preds$res_rq <0)
   
   if (graph == TRUE) {
-    
-    #refit for viz
-    gamma_fit_viz <- tryCatch(
-      nls(a ~ b0 * s^b1 * exp(-b2 * s),
-          data = player_runs,
-          start = list(b0 = 3, b1 = 2, b2 = 0.15),
-          control = list(maxiter = 500)),
-      error = function(e) return(NULL)
-    )
-    
-    if (is.null(gamma_fit_viz)) return(NULL)
-    
-    b0 <- coef(gamma_fit_viz)[1]
-    b1 <- coef(gamma_fit_viz)[2]
-    b2 <- coef(gamma_fit_viz)[3]
-    
     player_graph <- player_runs |> 
       ggplot(aes(x = s, y = a)) +
-      geom_point(alpha = 0.5, color = "grey2") +
-      stat_function(fun = function(x) b0 * x^b1 * exp(-b2 * x),
-                    color = "blue", size = 1.2) +
+      geom_point(alpha=.5, color="grey2")+
+      stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
+                  method.args=list(tau=0.95), se=FALSE, color="blue", size=1.2)+
+      stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
+                  method.args=list(tau=0.5), se=FALSE, color="red", size=1.2)+
       labs(x = "Speed",
            y = "Acceleration",
-           title = paste0(name, "'s effort gamma curve"),
+           title = paste0(name, "'s effort quantile curves (95 and 50)"),
            caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
-      theme(plot.title = element_text(face = "bold", size = 20, hjust = .5),
-            legend.title = element_text(face = "bold", size = 15),
-            axis.title = element_text(face = "bold", size = 15),
+      theme(plot.title = element_text(face = "bold",
+                                      size = 20, 
+                                      hjust = .5),
+            legend.title = element_text(face = "bold",
+                                        size = 15),
+            axis.title = element_text(face = "bold",
+                                      size = 15),
             axis.text = element_text(size = 13),
-            plot.caption = element_text(face = "italic", size = 8))
-    
+            plot.caption = element_text(face = "italic",
+                                        size = 8))
     return(player_graph)
   }
   
-  return(tibble(displayName = name, effort_ratio = 1 - eff_below))
-  
+  #percentage of points above 90th percentile curve
+  #eff_score is perc of points below, 1-eff_score is above
+  return(tibble(displayName=name, effort_ratio_90 = 1-eff_score, auc_diff = auc_95-auc_90))
 }
 
 
-
 # Test
-eff_gamma("Rex Burkhead", graph = TRUE)
-eff_gamma("Saquon Barkley", graph = TRUE)
-eff_gamma("Saquon Barkley")
+eff_function_rqss("Latavius Murray", graph = TRUE)
+eff_function_rqss("Saquon Barkley", graph = TRUE)
+eff_function_rqss("Saquon Barkley")
 
 
 # Eff metric for all players ----------------------------------------------
 
 rbs <- unique(rb_stats_total_filtered$displayName)
 
-eff_scores <- purrr::map(rbs, eff_gamma) |> 
+eff_scores <- purrr::map(rbs, eff_function_rqss) |> 
   bind_rows() |> 
   mutate(displayName = rbs)
 
 eff_scores
-View(eff_scores)
+
+
