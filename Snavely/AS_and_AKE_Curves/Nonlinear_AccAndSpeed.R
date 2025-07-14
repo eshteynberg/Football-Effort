@@ -1,12 +1,13 @@
 library(quantreg)
 library(tidyverse)
 library(mgcv)
+library(ranger)
 
 # Player test -------------------------------------------------------------
 
 set.seed(1)
 player_runs <- tracking_bc |> 
-  filter(displayName == "Latavius Murray")
+  filter(displayName == "Saquon Barkley")
   
 N_FOLDS <- 5
 player_runs_modeling <- player_runs |> 
@@ -131,17 +132,17 @@ player_runs_modeling <- player_runs |>
     if (graph == TRUE) {
       player_graph <- player_runs |> 
         ggplot(aes(x = s, y = a)) +
-        geom_point(alpha=.5, color="grey2")+
+        geom_point(alpha=.3, color="grey2")+
         stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
                     method.args=list(tau=0.95), se=FALSE, aes(color="95th Quartile Line"), size=1.2)+
-        stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
-                    method.args=list(tau=0.5), se=FALSE, aes(color="Median Line"), size=1.2)+
+        # stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
+        #             method.args=list(tau=0.5), se=FALSE, aes(color="Median Line"), size=1.2)+
         stat_smooth(method="gam", formula=y~s(x),
-                    se=FALSE, aes(color="GAM Line"), size=1.2) + 
-        scale_color_manual("Line", values = c("blue", "limegreen", "#FFB612")) +
+                    se=FALSE, aes(color="Expected acceleration line"), size=1.2, lty = 2) + 
+        scale_color_manual("Line", values = c("darkblue", "#FFB612")) +
         labs(x = "Speed",
              y = "Acceleration",
-             title = paste0(name, "'s effort quantile curves (95 and 50)"),
+             title = paste0(name, "'s effort is defined as the mean distance of points \npast the 95th quartile line to the expected acceleration line"),
              caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
         theme(plot.title = element_text(face = "bold",
                                         size = 20, 
@@ -186,4 +187,4 @@ View(eff_function_rqss("Saquon Barkley"))
     group_by(displayName) |> 
     summarize(mean_diffMedian = mean(dis_metric_median),
               mean_diffMean = mean(dis_metric_mean))
-  
+

@@ -106,15 +106,19 @@ plays_folds <- tracking_def |>
   mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
   
 # Data to be modeled
-rb_model_as <- tracking_def |> 
+rb_model_before <- tracking_def |> 
   select(adj_bc_x, adj_bc_y, dist_to_bc,
          down, quarter, yardsToGo,
          yards_from_endzone, weight,
-         score_diff, bc_s_mph, playId) |> 
-  left_join(plays_folds) |> 
-  select(-playId)
+         score_diff, bc_s_mph, def_s_mph, 
+         angle_with_bc, playId, bc_id, gameId, frameId) |> 
+  left_join(plays_folds)
 
+rb_model_as <- rb_model_before |> 
+  select(-c(playId, bc_id, gameId, frameId))
+  
 
+# Function to estimate speed
 speed_cv <- function(x) {
   test_data <- rb_model_as |> 
     filter(fold == x)
@@ -140,7 +144,7 @@ speed_cv <- function(x) {
                      data = train_data)
   
   
-  
+  # Predictions
   out <- tibble(
     reg_pred = predict(reg_fit, newdata = test_data),
     ridge_pred = as.numeric(predict(ridge_fit, newx = test_x)),
@@ -153,9 +157,11 @@ speed_cv <- function(x) {
   return(out)
 }
 
+# Binding predictions for folds together
 speed_test_preds <- map(1:N_FOLDS, speed_cv) |> 
   bind_rows()
 
+# Comparing RMSE of models
 speed_results <- speed_test_preds |> 
   pivot_longer(reg_pred:rf_pred,
                names_to = "method",
@@ -166,11 +172,8 @@ speed_results <- speed_test_preds |>
   summarize(cv_rmse = mean(rmse),
             se_rse = sd(rmse) / sqrt(N_FOLDS))
 
-
-
-
 ## Looking at predictions for speed
-# Random Forrest
+# Random Forest
 speed_test_preds |> 
   ggplot(aes(x = rf_pred, y = speed_actual)) +
   geom_point(alpha = .2) +
@@ -188,7 +191,6 @@ speed_test_preds |>
   geom_point(alpha = .2) +
   geom_abline(intercept = 0, slope = 1, col = "blue")
 
-
 # Lasso Regression
 speed_test_preds |> 
   ggplot(aes(x = lasso_pred, y = speed_actual)) +
@@ -197,4 +199,17 @@ speed_test_preds |>
 
 
 
+# Adding expected velocity back into the df -------------------------------
+# Random Forest is best model, so take predictions from that
+expected_speed <- speed_test_preds |> 
+  select(rf_pred)
 
+# Joining back to data set
+ids_modeling_speed <- rb_model_before |> 
+  mutate(expected_speed = expected_speed$rf_pred) |> 
+  select(bc_id, gameId, playId, frameId, expected_speed)
+
+tracking_bc_expected <- tracking_bc |> 
+  left_join(ids_modeling_speed, by = c("bc_id", "gameId", "playId", "frameId")) |> 
+  mutate(expected_acceleration = ifelse(gameId==lag(gameId) & playId ==lag(playId), 
+                                        abs((expected_speed - lag(expected_speed)) / .1), NA))
