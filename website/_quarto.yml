@@ -1,0 +1,20 @@
+project:
+  type: website
+
+# Can customize this section with options from the following page:
+# https://quarto.org/docs/websites/website-navigation.html
+website:
+  title: "Quantifying effort"
+  navbar:
+    left:
+      - href: index.qmd # Must be included as index.qmd
+        text: "Home"
+        icon: house # Get icon names: https://icons.getbootstrap.com/?q=home
+        
+format:
+  html:
+    date: last-modified
+    published-title: "Last updated"
+    date-format: "MMMM D, YYYY"
+    bibliography: "library.bib" # Edit the contents of this file
+    bibliographystyle: apa
