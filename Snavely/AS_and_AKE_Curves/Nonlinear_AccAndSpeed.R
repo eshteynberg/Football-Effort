@@ -133,11 +133,12 @@ player_runs_modeling <- player_runs |>
         ggplot(aes(x = s, y = a)) +
         geom_point(alpha=.5, color="grey2")+
         stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
-                    method.args=list(tau=0.95), se=FALSE, color="blue", size=1.2)+
+                    method.args=list(tau=0.95), se=FALSE, aes(color="95th Quartile Line"), size=1.2)+
         stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
-                    method.args=list(tau=0.5), se=FALSE, color="red", size=1.2)+
+                    method.args=list(tau=0.5), se=FALSE, aes(color="Median Line"), size=1.2)+
         stat_smooth(method="gam", formula=y~s(x),
-                    se=FALSE, color="gold", size=1.2) + 
+                    se=FALSE, aes(color="GAM Line"), size=1.2) + 
+        scale_color_manual("Line", values = c("blue", "limegreen", "#FFB612")) +
         labs(x = "Speed",
              y = "Acceleration",
              title = paste0(name, "'s effort quantile curves (95 and 50)"),
