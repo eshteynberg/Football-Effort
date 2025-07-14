@@ -1,5 +1,6 @@
 library(quantreg)
 library(tidyverse)
+library(mgcv)
 
 # Player test -------------------------------------------------------------
 
@@ -58,7 +59,7 @@ player_runs_modeling <- player_runs |>
   
 
 # Function ----------------------------------------------------------------
-  eff_function_rqss <- function(name, graph=FALSE){
+  eff_function_rqss <- function(name, graph = FALSE, area = FALSE, dis = FALSE){
     player_runs <- tracking_bc |> 
       filter(displayName == name)
     
@@ -80,16 +81,25 @@ player_runs_modeling <- player_runs |>
       #nonparametric quantile reg using smooth spline
       #fit a smooth spline of acc as a function of speed
       #lambda controls smoothness (higher =smoother/less wiggly, lower=more flexible)
-      rq_fit_95 <- rqss(a~qss(s, lambda=3), tau=.95, data=train_data)
-      rq_fit_50 <- rqss(a~qss(s, lambda=3), tau=.5, data=train_data)
+      rq_fit_95 <- rqss(a~qss(s, lambda=3), tau=.95, data = train_data)
+      rq_fit_50 <- rqss(a~qss(s, lambda=3), tau=.5, data = train_data)
+      
+      # GAM fit
+      gam_fit <- gam(a ~ s(s), 
+                     data = train_data, 
+                     family = gaussian(),
+                     method = "REML")
       
       out <- tibble(
+        displayName = name,
         rq_pred_95 = predict(rq_fit_95, newdata=test_data),
         rq_pred_50 = predict(rq_fit_50, newdata=test_data),
+        gam_pred = predict(gam_fit, newdata=test_data),
         test_actual = test_data$a,
         x_values = test_data$s,
         res_rq_95 = test_actual - rq_pred_95,
         res_rq_50 = test_actual - rq_pred_50,
+        res_gam = test_actual - gam_pred,
         test_fold=x
       )
       return(out)
@@ -98,13 +108,25 @@ player_runs_modeling <- player_runs |>
     player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
       list_rbind()
     
-    spline_fn_95 <- splinefun(player_runs_test_preds$x_values, player_runs_test_preds$rq_pred_95)
-    spline_fn_50 <- splinefun(player_runs_test_preds$x_values, player_runs_test_preds$rq_pred_50)
+    if (area == TRUE) {
+      spline_fn_95 <- splinefun(player_runs_test_preds$x_values, player_runs_test_preds$rq_pred_95)
+      spline_fn_50 <- splinefun(player_runs_test_preds$x_values, player_runs_test_preds$rq_pred_50)
+      
+      auc_95 <- integrate(spline_fn_95, lower=min(player_runs_test_preds$x_values), 
+                          upper=max(player_runs_test_preds$x_values), subdivisions = 2000)$value
+      auc_50 <- integrate(spline_fn_50, lower=min(player_runs_test_preds$x_values), 
+                          upper=max(player_runs_test_preds$x_values), subdivisions = 2000)$value
+      
+      return(tibble(displayName = name, area = auc_95 - auc_50))
+    }
     
-    auc_95 <- integrate(spline_fn_95, lower=min(player_runs_test_preds$x_values), 
-                        upper=max(player_runs_test_preds$x_values), subdivisions = 2000)$value
-    auc_50 <- integrate(spline_fn_50, lower=min(player_runs_test_preds$x_values), 
-                        upper=max(player_runs_test_preds$x_values), subdivisions = 2000)$value
+    if (dis == TRUE) {
+      dis_table <- player_runs_test_preds |> 
+        filter(test_actual >= rq_pred_95) |> 
+        select(displayName, dis_metric_median = res_rq_50, dis_metric_mean = res_gam)
+      
+      return(dis_table)
+    }
     
     if (graph == TRUE) {
       player_graph <- player_runs |> 
@@ -114,6 +136,8 @@ player_runs_modeling <- player_runs |>
                     method.args=list(tau=0.95), se=FALSE, color="blue", size=1.2)+
         stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
                     method.args=list(tau=0.5), se=FALSE, color="red", size=1.2)+
+        stat_smooth(method="gam", formula=y~s(x),
+                    se=FALSE, color="gold", size=1.2) + 
         labs(x = "Speed",
              y = "Acceleration",
              title = paste0(name, "'s effort quantile curves (95 and 50)"),
@@ -130,24 +154,35 @@ player_runs_modeling <- player_runs |>
                                           size = 8))
       return(player_graph)
     }
-    
-    #percentage of points above 90th percentile curve
-    #eff_score is perc of points below, 1-eff_score is above
-    return(tibble(displayName=name, area = auc_95 - auc_50))
-  }
+    return(player_runs_test_preds)
+}
 
   
 # Test
 eff_function_rqss("Saquon Barkley", graph = TRUE)
+eff_function_rqss("Rex Burkhead", graph = TRUE)
 eff_function_rqss("Travis Etienne", graph = TRUE)
+View(eff_function_rqss("Saquon Barkley"))
 
-# Eff metric for all players ----------------------------------------------
+# Area calc for all players ----------------------------------------------
   
   rbs <- unique(rb_stats_total_filtered$displayName)
   
-  area_scores <- purrr::map(rbs, eff_function_rqss) |> 
-    bind_rows() |> 
-    mutate(displayName = rbs)
+  area_scores <- purrr::map(rbs, eff_function_rqss, area = TRUE) |> 
+    bind_rows()
   
   View(area_scores)
+
+# Dis calc for all players ----------------------------------------------
+  rbs <- unique(rb_stats_total_filtered$displayName)
+  
+  dis_scores <- purrr::map(rbs, eff_function_rqss, dis = TRUE) |> 
+    bind_rows()
+  
+  View(dis_scores)
+
+  mean_dis_scores <- dis_scores |> 
+    group_by(displayName) |> 
+    summarize(mean_diffMedian = mean(dis_metric_median),
+              mean_diffMean = mean(dis_metric_mean))
   
