@@ -103,6 +103,148 @@ eff_function_rqss("Saquon Barkley", graph = TRUE)
 ```
 
 
+```{r}
+# Function ----------------------------------------------------------------
+  eff_function_rqss <- function(name, graph = FALSE, area = FALSE, dis = FALSE){
+    player_runs <- tracking_bc |> 
+      filter(displayName == name)
+    
+    N_FOLDS <- 5
+    player_runs_modeling <- player_runs |> 
+      select(s, a) |> 
+      mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
+    
+    player_runs_cv <- function(x){
+      test_data <- player_runs_modeling |> 
+        filter(fold == x)
+      train_data <- player_runs_modeling |> 
+        filter(fold != x)
+      
+      s_range <- range(train_data$s)
+      test_data <- test_data |>
+        filter(s >= max(s_range[1], 1),  #>= max of training lower bound and 1
+               s <= min(s_range[2], 9))  #<= min of training upper bound and 9
+      #nonparametric quantile reg using smooth spline
+      #fit a smooth spline of acc as a function of speed
+      #lambda controls smoothness (higher =smoother/less wiggly, lower=more flexible)
+      rq_fit_95 <- rqss(a~qss(s, lambda=3), tau=.95, data = train_data)
+      rq_fit_50 <- rqss(a~qss(s, lambda=3), tau=.5, data = train_data)
+      
+      # GAM fit
+      gam_fit <- gam(a ~ s(s), 
+                     data = train_data, 
+                     family = gaussian(),
+                     method = "REML")
+      
+      tibble(
+      displayName = name,
+      rq_pred_95 = predict(rq_fit_95, newdata = test_data),
+      rq_pred_50 = predict(rq_fit_50, newdata = test_data),
+      gam_pred = predict(gam_fit, newdata = test_data),
+      test_actual = test_data$a,
+      x_values = test_data$s,
+      res_rq_95 = test_actual - predict(rq_fit_95, newdata = test_data),
+      res_rq_50 = test_actual - predict(rq_fit_50, newdata = test_data),
+      res_gam = test_actual - predict(gam_fit, newdata = test_data),
+      test_fold = x
+    )
+  }
+  
+  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
+    list_rbind()
+  
+  if (area == TRUE) {
+    spline_fn_95 <- splinefun(player_runs_test_preds$x_values, player_runs_test_preds$rq_pred_95)
+    spline_fn_50 <- splinefun(player_runs_test_preds$x_values, player_runs_test_preds$rq_pred_50)
+    
+    auc_95 <- integrate(spline_fn_95, lower = min(player_runs_test_preds$x_values),
+                        upper = max(player_runs_test_preds$x_values),
+                        subdivisions = 2000)$value
+    auc_50 <- integrate(spline_fn_50, lower = min(player_runs_test_preds$x_values),
+                        upper = max(player_runs_test_preds$x_values),
+                        subdivisions = 2000)$value
+    
+    return(tibble(displayName = name, area = auc_95 - auc_50))
+  }
+  
+  if (dis == TRUE) {
+    dis_table <- player_runs_test_preds |> 
+      filter(test_actual >= rq_pred_95) |> 
+      select(displayName, dis_metric_median = res_rq_50, dis_metric_mean = res_gam)
+    
+    return(dis_table)
+  }
+  
+  if (graph == TRUE) {
+    # adding text so user can hover over datapoints to see the exact speed/acceleration 
+    # each point gets diff. 95th quant, median and GAM acceleration value prediction because 
+    # they all have a different speed
+    player_runs_test_preds <- player_runs_test_preds |> 
+      mutate(hover_text = paste(
+        "Speed:", round(x_values, 2),
+        "<br>Acceleration:", round(test_actual, 2),
+        "<br>95th Quantile:", round(rq_pred_95, 2),
+        "<br>Median:", round(rq_pred_50, 2),
+        "<br>GAM:", round(gam_pred, 2)
+      ))
+    
+    # clean dataset (instead of folds) to plot the models with stat_smooth
+    player_plot_data <- player_runs |> 
+      select(s, a)
+    
+    # interactive plot  
+    ms <- ggplot() +
+      geom_point(
+        data = player_runs_test_preds,
+        aes(x = x_values, y = test_actual, text = hover_text),
+        color = "grey30", alpha = 0.5) +
+      stat_smooth(
+        data = player_plot_data,
+        aes(x = s, y = a, color = "95th Quantile Line"),
+        method = "rqss", formula = y ~ qss(x, lambda = 3),
+        method.args = list(tau = 0.95), se = FALSE, size = 1.2) +
+      stat_smooth(
+        data = player_plot_data,
+        aes(x = s, y = a, color = "Median Line"),
+        method = "rqss", formula = y ~ qss(x, lambda = 3),
+        method.args = list(tau = 0.5), se = FALSE, size = 1.2 ) +
+      stat_smooth(
+        data = player_plot_data,
+        aes(x = s, y = a, color = "GAM Line"),
+        method = "gam", formula = y ~ s(x),
+        se = FALSE, size = 1.2) +
+      scale_color_manual(values = c(
+        "95th Quantile Line" = "blue",
+        "Median Line" = "limegreen",
+        "GAM Line" = "#FFB612")) +
+      labs(
+        title = paste0(name, "'s Effort Quantile Curves (95 and 50)"),
+        x = "Speed",
+        y = "Acceleration",
+        color = "Line") +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(face = "bold", size = 20, hjust = 0.5),
+        axis.title = element_text(face = "bold", size = 14),
+        axis.text = element_text(size = 12),
+        legend.title = element_text(face = "bold", size = 13),
+        legend.text = element_text(size = 11)
+      )
+    
+    return(ggplotly(ms, tooltip = "text"))
+  }
+  
+  return(player_runs_test_preds)
+}
+
+
+  
+# Test
+eff_function_rqss("Saquon Barkley", graph = TRUE)
+# eff_function_rqss("Rex Burkhead", graph = TRUE)
+# eff_function_rqss("Travis Etienne", graph = TRUE)
+# View(eff_function_rqss("Saquon Barkley"))
+```
 
 
 
