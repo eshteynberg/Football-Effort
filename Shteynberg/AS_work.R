@@ -828,10 +828,10 @@ eff_function_rqss <- function(name, graph=FALSE){
   }
   
   spline_fn_95 <- splinefun(out$x_values,out$rq_pred_95)
-  spline_fn_90 <- splinefun(out$x_values,out$rq_pred_90)
+  spline_fn_50 <- splinefun(out$x_values,out$rq_pred_50)
   
   auc_95 <- integrate(spline_fn_95, lower=min(out$x_values), upper=max(out$x_values))$value
-  auc_90 <- integrate(spline_fn_90, lower=min(out$x_values), upper=max(out$x_values))$value
+  auc_50 <- integrate(spline_fn_50, lower=min(out$x_values), upper=max(out$x_values))$value
   
   player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
     list_rbind()
