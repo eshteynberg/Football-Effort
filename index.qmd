@@ -1,0 +1,10 @@
+---
+title: "Quantifying Effort in 2022 NFL Running backs"
+subtitle: "How to evaluate "
+author: 
+- "Emily Shteynberg"
+- "Luke Snavely"
+- "Sheryl Solorzano"
+
+abstract: "........"
+---
