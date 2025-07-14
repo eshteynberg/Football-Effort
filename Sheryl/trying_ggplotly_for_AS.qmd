@@ -65,13 +65,14 @@ eff_function_rqss <- function(name, graph = FALSE) {
     pred_df$a <- predict(rq_fit, newdata = pred_df)
 
     # Interactive ggplot
-    p <- ggplot(player_runs, aes(
+    p <- ggplot() +
+      geom_point(data = player_runs, aes(
       x = s, 
       y = a,
       text = paste0("Speed: ", round(s, 2),
-                    "<br>Acceleration: ", round(a, 2))
-    )) +
-      geom_point(alpha = 0.5, color = "grey40") +
+                    "<br>Acceleration: ", round(a, 2))), 
+      alpha = 0.5, 
+      color = "grey40") +
       geom_line(data = pred_df, aes(x = s, y = a), 
                 color = "blue", size = 1.2) +
       scale_x_continuous(name = "Speed") +
