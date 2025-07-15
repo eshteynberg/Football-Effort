@@ -517,3 +517,101 @@ tracking_def <- tracking_def |>
   mutate(expected_accel_new = rollmean(rf_pred_accel, k=3, fill=NA, align="center"))
 
 
+
+# Sam Suggestion ----------------------------------------------------------
+
+#FIX TO BE FROM NONLINEAR EXPECTED ACC AND SPEED
+#NEED FRAMES FROM SAME PLAY TO BE IN SAME FOLD
+#NEED mph 
+#this one is old
+
+eff_function_rqss_new <- function(name, graph=FALSE){
+  player_runs <- tracking_bc |> 
+    filter(displayName == name)
+  
+  N_FOLDS <- 5
+  player_runs_modeling <- player_runs |> 
+    select(s, a) |> 
+    mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
+  
+  player_runs_cv <- function(x) {
+    test_data <- player_runs_modeling |> filter(fold == x)
+    train_data <- player_runs_modeling |> filter(fold != x)
+    
+    s_range <- range(train_data$s)
+    test_data <- test_data |>
+      filter(s >= max(s_range[1], 1),
+             s <= min(s_range[2], 9))
+    
+    rq_fit_99 <- rqss(a ~ qss(s, lambda = 8), tau = 0.99, data = train_data)
+    pred_99 <- predict(rq_fit_99, newdata = test_data)
+    
+    out <- tibble(
+      displayName = name,
+      s = test_data$s,
+      a = test_data$a,
+      pred_99 = pred_99,
+      res_99 = test_data$a - pred_99
+    )
+    
+    return(out)
+  }
+  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
+    list_rbind()
+  
+  #cap points above curve
+  player_runs_test_preds <- player_runs_test_preds |> 
+    mutate(adj_res = ifelse(res_99 > 0, 0, abs(res_99)),
+           dist_score = 1 / (1 + adj_res))
+  
+  #mean 
+  final_score <- mean(player_runs_test_preds$dist_score)
+
+  #percent above relaxed line metric
+  relaxed_line <- player_runs_test_preds$pred_99 - 0.25
+  perc_above_relaxed_99 <- mean(player_runs_test_preds$a > relaxed_line) 
+  
+  
+  if (graph == TRUE) {
+    player_graph <- player_runs |> 
+      ggplot(aes(x = s, y = a)) +
+      geom_point(alpha = 0.3, color = "grey2") +
+      stat_smooth(method = "rqss", formula = y ~ qss(x, lambda = 8),
+                  method.args = list(tau = 0.99), se = FALSE,
+                  aes(color = "99th Percentile Line"), size = 1.2) +
+      geom_line(data = player_runs_test_preds |> 
+                  mutate(relaxed_99 = pred_99 - 0.25),
+                aes(x = s, y = relaxed_99, color = "Relaxed 99th Percentile Line"),
+                linetype = "dashed", size = 1.2) +
+      scale_color_manual("Line", values = c("99th Percentile Line" = "darkblue", "Relaxed 99th Percentile Line" = "orange")) +
+      labs(x = "Speed",
+           y = "Acceleration",
+           title = paste0(name, "'s 99th percentile effort relaxed"),
+           caption = "Relaxed line = 99th percentile - 0.25") +
+      theme(plot.title = element_text(face = "bold", size = 20, hjust = .5),
+            legend.title = element_text(face = "bold", size = 15),
+            axis.title = element_text(face = "bold", size = 15),
+            axis.text = element_text(size = 13),
+            plot.caption = element_text(face = "italic", size = 8))
+    return(player_graph)
+    
+  }
+  return(tibble(
+    displayName = name,
+    eff_99_metric = eff_99_metric,
+    perc_above_relaxed_99 = perc_above_relaxed_99
+  ))
+}
+
+
+eff_function_rqss_new("Saquon Barkley", graph=TRUE)
+
+#for all players
+rbs <- unique(rb_stats_total_filtered$displayName)
+
+eff_scores <- purrr::map(rbs, eff_function_rqss_new) |> 
+  bind_rows()
+
+View(eff_scores)
+
+

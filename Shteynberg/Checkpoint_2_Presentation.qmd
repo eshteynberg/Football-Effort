@@ -34,7 +34,6 @@ format:
 [^1]: Morin, et al. 2021. “Individual Acceleration-Speed Profile in-Situ: A Proof of Concept in Professional Football Players.” Journal of Biomechanics 123: 110524.
 
 
-
 ## Our Data: 2022 NFL Season 
 
 * Game, play, player, tracking data from Weeks 1-9 [^1]
@@ -45,5 +44,21 @@ format:
 
 [^1]: Courtesy of NFL Big Data Bowl 2025
 
+## Morin, et al. tells us how
+
+## Plan of action
+
+* Define research question and scope ✅
+
+* Data cleaning and preprocessing, EDA ✅
+
+* Select effort metric(s)
+
+* Use chosen metric(s) to answer questions related to effort (residual effort, tackle outcome probabilities, minimum required effort per play, etc)
+
+* Interpret results, complete report and presentation
+
+
+# Appendix 
 
 
