@@ -422,7 +422,7 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
       geom_abline(aes(color = "Regression line",
                       intercept = player_lm_clean$coefficients[1], slope = player_lm_clean$coefficients[2]),
                       lwd = 1.5,) +
-      geom_abline(aes(color = "Relaxed regression line (.25)",
+      geom_abline(aes(color = "Regression line - .25",
                   intercept = player_lm_clean$coefficients[1] - .25, slope = player_lm_clean$coefficients[2]), 
                   lty = 2, lwd = 1.5) +
       # geom_abline(aes(color = "Minimum line (.5)",
@@ -431,14 +431,13 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
       # geom_abline(aes(color = "Minimum line (.75)",
       #             intercept = player_lm_clean$coefficients[1] - .75, slope = player_lm_clean$coefficients[2]), 
       #             lty = 2, lwd = 1.5) +
-      scale_color_manual("Line", values = c("#4B92DB", "orange")) +
+      scale_color_manual("Line", values = c("#0072B2", "#D55E00")) +
       geom_point(size = 2, alpha = .5, col = "grey2") +
       labs(x = "Speed (mph)",
-           y = "Acceleration (mph / s)",
-           title = paste0(name, "'s effort is defined as the percentage of \npoints above the .25 adjusted minimum line"),
-           caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
+           y = "Acceleration (mph/s)",
+           title = paste0(name)) +
       theme_minimal(base_size=16) +
-      theme(plot.title = element_text(face = "bold",
+      theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
                                       hjust = .5),
             legend.title = element_text(face = "bold"),
@@ -462,7 +461,6 @@ eff_function("Rex Burkhead", graph = TRUE)
 eff_function("Saquon Barkley", graph = TRUE)
 eff_function("Saquon Barkley", player_table = TRUE)
 eff_function("Saquon Barkley")
-
 
 # Eff metric for all players ----------------------------------------------
 

@@ -134,7 +134,7 @@ player_runs_modeling <- player_runs |>
         ggplot(aes(x = s, y = a)) +
         geom_point(alpha=.3, color="grey2")+
         stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
-                    method.args=list(tau=0.95), se=FALSE, aes(color="95th Quartile Line"), size=1.2)+
+                    method.args=list(tau=0.99), se=FALSE, aes(color="99th Quartile Line"), size=1.2)+
         # stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
         #             method.args=list(tau=0.5), se=FALSE, aes(color="Median Line"), size=1.2)+
         stat_smooth(method="gam", formula=y~s(x),

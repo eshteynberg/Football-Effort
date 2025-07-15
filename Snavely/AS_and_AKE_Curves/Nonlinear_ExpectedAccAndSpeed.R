@@ -70,7 +70,7 @@ auc_95 - auc_50
 
 
 
-# Function (accleration expected) ----------------------------------------------------------------
+# Function (acceleration expected) ----------------------------------------------------------------
 eff_function_expected <- function(name, graph = FALSE, area = FALSE, dis = FALSE){
   player_runs <- tracking_bc_expected |> 
     filter(displayName == name)
