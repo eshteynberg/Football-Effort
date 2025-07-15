@@ -264,4 +264,10 @@ ids_modeling_speed <- rb_model_before |>
 tracking_bc_expected <- tracking_bc |> 
   left_join(ids_modeling_speed, by = c("bc_id", "gameId", "playId", "frameId")) |> 
   mutate(expected_acceleration = ifelse(gameId==lag(gameId) & playId ==lag(playId), 
-                                        abs((expected_speed - lag(expected_speed)) / .1), NA))
+                                        abs((expected_speed - lag(expected_speed)) / .1), NA),
+         speed_residual = s - expected_speed)
+
+# Plotting residuals
+tracking_bc_expected |> 
+  ggplot(aes(x = speed_residual)) +
+  geom_histogram()
