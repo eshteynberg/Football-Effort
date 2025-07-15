@@ -80,7 +80,8 @@ tracking_bc <- tracking_rb_runs |>
          positive_work = ifelse(gameId==lag(gameId) & playId == lag(playId), pmax(ke-lag(ke),0), NA),
          COD = ifelse(gameId==lag(gameId) & playId == lag(playId), abs(dir - lag(dir)), NA),
          jerk = ifelse(gameId==lag(gameId) & playId ==lag(playId), (a-lag(a))/.1, NA),
-         s_mph = s * (3600 / 1760))
+         s_mph = s * (3600 / 1760),
+         a_mpsh = a * (3600 / 1760))
 
 tracking_bc_after_contact <- tracking_bc |> 
   group_by(gameId, playId) |> 
@@ -258,6 +259,100 @@ saquon_final <- saquon_runs |>
 
 eff_metric <- (sum(saquon_final$eff == TRUE) / nrow(saquon_final)) * 100
 
+# Saquon's Acc and Speed (now in mph) ----------------------------------------------------
+library(broom)
+# Plot of acceleration and speed for all players
+tracking_bc |> 
+  ggplot(aes(x = s_mph, y = a_mpsh)) +
+  geom_point(alpha = .3)
+
+saquon_runs <- tracking_bc |> 
+  filter(displayName == "Saquon Barkley")
+
+# Saquon's speed and acceleration
+saquon_runs |> 
+  ggplot(aes(x = s_mph, y = a_mpsh)) +
+  geom_point()
+
+max(saquon_runs$s_mph) # 10.4 is Barkley's max speed
+
+# Making speed bins
+bins <- seq(3, 21.2, .2)
+
+# finding the maximum acceleration for each speed bin
+max_acc <- map_dfr(1:(length(bins) - 1), function(i) {
+  saquon_runs |> 
+    filter(s_mph > bins[i], s_mph <= bins[i + 1]) |> 
+    slice_max(a_mpsh, n = 2, with_ties = FALSE) |> 
+    select(speed = s_mph, acceleration = a_mpsh)
+})
+
+# plotting the maximum accelerations per bin
+max_acc |> 
+  ggplot(aes(x = speed, y = acceleration)) +
+  geom_point()
+
+# fitting a regression line 
+saquon_lm <- lm(acceleration ~ speed, data = max_acc)
+
+# Looking for outliers
+saquon_tidy <- saquon_lm |> 
+  tidy(conf.int = TRUE)
+summary(saquon_lm)
+
+saquon_tidy
+
+# Plotting speed and acceleartion with first regression line
+max_acc |> 
+  ggplot(aes(x = speed, y = acceleration)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE, conf.int = TRUE)
+
+# Adding predicted values to the original df
+confs <- predict(saquon_lm, interval = "confidence")
+max_acc <- max_acc |> 
+  bind_cols(confs)
+
+# Filtering out outliers
+max_acc_clean <- max_acc |> 
+  filter(acceleration >= lwr, acceleration <= upr)
+
+# New regression line
+saquon_lm_clean <- lm(acceleration ~ speed, data = max_acc_clean)
+tidy(saquon_lm_clean)
+summary(saquon_lm_clean)
+
+# Maximal acceleration (y-intercept)
+A_0 <- saquon_lm_clean$coefficients[1]
+
+# Plotting new regression line
+max_acc_clean |> 
+  ggplot(aes(x = speed, y = acceleration)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE, conf.int = TRUE)
+
+# Finally relaying the line onto the original data points
+saquon_runs |> 
+  ggplot(aes(x = s_mph, y = a_mpsh)) +
+  geom_point() +
+  geom_smooth(method = lm, aes(x = speed, y = acceleration), data = max_acc_clean) +
+  geom_abline(intercept = saquon_lm_clean$coefficients[1], slope = saquon_lm_clean$coefficients[2]) +
+  xlim(0, 17)
+
+# Finding out how many points are near the line
+test_saquon_a <- data.frame(speed = saquon_runs$s_mph, acceleration = saquon_runs$a_mpsh)
+test_preds <- predict(saquon_lm_clean, newdata = test_saquon_a)
+
+# Adding the test predictions to the df
+# Definition of effort: within 1 of the predicted fitted values
+saquon_final <- saquon_runs |> 
+  select(a_mpsh, s_mph) |> 
+  mutate(pred = test_preds) |> 
+  mutate(diff = pred - a_mpsh) |> 
+  mutate(eff = ifelse(diff <= 1, TRUE, FALSE))
+
+eff_metric <- (sum(saquon_final$eff == TRUE) / nrow(saquon_final)) * 100
+
 
 # Creating a function -----------------------------------------------------
 eff_function <- function(name, graph = FALSE, player_table = FALSE) {
@@ -272,8 +367,8 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   max_acc <- map_dfr(1:(length(bins) - 1), function(i) {
     player_runs |> 
       filter(s_mph > bins[i], s_mph <= bins[i + 1]) |> 
-      slice_max(a, n = 2, with_ties = FALSE) |> 
-      select(speed = s_mph, acceleration = a)
+      slice_max(a_mpsh, n = 2, with_ties = FALSE) |> 
+      select(speed = s_mph, acceleration = a_mpsh)
   })
   
   # Fitting the first regression line
@@ -292,14 +387,14 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   player_lm_clean <- lm(acceleration ~ speed, data = max_acc_clean)
   
   # Finding out how many points are near the line
-  test_player_a <- data.frame(speed = player_runs$s_mph, acceleration = player_runs$a)
+  test_player_a <- data.frame(speed = player_runs$s_mph, acceleration = player_runs$a_mpsh)
   test_preds <- predict(player_lm_clean, newdata = test_player_a)
   
   # Final calculation for distance away from the fitted line
   player_final <- player_runs |> 
-    select(a, s_mph) |> 
+    select(a_mpsh, s_mph) |> 
     mutate(pred = test_preds) |> 
-    mutate(diff = pred - a) |> 
+    mutate(diff = pred - a_mpsh) |> 
     mutate(eff = ifelse(diff <= .25, TRUE, FALSE),
            eff_50 = ifelse(diff <= .5, TRUE, FALSE),
            eff_75 = ifelse(diff <= .75, TRUE, FALSE)) |> 
@@ -322,36 +417,33 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   # Building the graph if specified
   if (graph == TRUE) {
     player_graph <- player_runs |> 
-      ggplot(aes(x = s_mph, y = a)) +
+      ggplot(aes(x = s_mph, y = a_mpsh)) +
       # geom_smooth(method = lm, aes(x = speed, y = acceleration), data = max_acc_clean, lwd = 1.5, se = FALSE) +
       geom_abline(aes(color = "Regression line",
                       intercept = player_lm_clean$coefficients[1], slope = player_lm_clean$coefficients[2]),
                       lwd = 1.5,) +
-      geom_abline(aes(color = "Minimum line (.25)",
+      geom_abline(aes(color = "Relaxed regression line (.25)",
                   intercept = player_lm_clean$coefficients[1] - .25, slope = player_lm_clean$coefficients[2]), 
                   lty = 2, lwd = 1.5) +
-      geom_abline(aes(color = "Minimum line (.5)",
-                  intercept = player_lm_clean$coefficients[1] - .5, slope = player_lm_clean$coefficients[2]),
-                  lty = 2, lwd = 1.5) +
-      geom_abline(aes(color = "Minimum line (.75)",
-                  intercept = player_lm_clean$coefficients[1] - .75, slope = player_lm_clean$coefficients[2]), 
-                  lty = 2, lwd = 1.5) +
-      scale_color_manual("Line", values = c("#4B92DB", "darkgreen", "turquoise", "#FFB612")) +
+      # geom_abline(aes(color = "Minimum line (.5)",
+      #             intercept = player_lm_clean$coefficients[1] - .5, slope = player_lm_clean$coefficients[2]),
+      #             lty = 2, lwd = 1.5) +
+      # geom_abline(aes(color = "Minimum line (.75)",
+      #             intercept = player_lm_clean$coefficients[1] - .75, slope = player_lm_clean$coefficients[2]), 
+      #             lty = 2, lwd = 1.5) +
+      scale_color_manual("Line", values = c("#4B92DB", "orange")) +
       geom_point(size = 2, alpha = .5, col = "grey2") +
-      xlim(0, 13) +
-      ylim(0, 10) +
       labs(x = "Speed (mph)",
-           y = "Acceleration",
-           title = paste0(name, "'s effort is defined as the percentage of points above the minimum line"),
+           y = "Acceleration (mph / s)",
+           title = paste0(name, "'s effort is defined as the percentage of \npoints above the .25 adjusted minimum line"),
            caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
+      theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold",
-                                      size = 20, 
+                                      size = 18, 
                                       hjust = .5),
-            legend.title = element_text(face = "bold",
-                                        size = 15),
-            axis.title = element_text(face = "bold",
-                                      size = 15),
-            axis.text = element_text(size = 13),
+            legend.title = element_text(face = "bold"),
+            axis.title = element_text(face = "bold"),
+            legend.text=element_text(size=15),
             plot.caption = element_text(face = "italic",
                                         size = 8))
     
