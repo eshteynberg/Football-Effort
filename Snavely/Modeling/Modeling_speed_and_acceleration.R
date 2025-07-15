@@ -205,8 +205,7 @@ set.seed(1)
 N_FOLDS <- 5
 
 rb_model_acceleration <- rb_model_before |> 
-  select(-c(playId, bc_id, gameId, frameId, bc_s_mph, def_s_mph))
-
+  select(-c(playId, bc_id, gameId, frameId))
 
 # Function to estimate speed
 acceleration_cv <- function(x) {
@@ -216,8 +215,8 @@ acceleration_cv <- function(x) {
     filter(fold != x)
   
   # For lasso and ridge
-  test_x <- as.matrix(select(test_data, -bc_s_mph))
-  train_x <- as.matrix(select(train_data, -bc_s_mph))
+  test_x <- as.matrix(select(test_data, -bc_a_mpsh))
+  train_x <- as.matrix(select(train_data, -bc_a_mpsh))
   
   # Models
   reg_fit <- lm(bc_a_mpsh ~ ., data = train_data)
@@ -229,7 +228,7 @@ acceleration_cv <- function(x) {
   #                data = train_data,
   #                family = gaussian(),
   #                method = "REML")
-  speed_rf <- ranger(bc_a_mpsh ~ ., 
+  acceleration_rf <- ranger(bc_a_mpsh ~ ., 
                      num.trees = 500, importance = "impurity", 
                      data = train_data)
   
@@ -240,16 +239,40 @@ acceleration_cv <- function(x) {
     ridge_pred = as.numeric(predict(ridge_fit, newx = test_x)),
     lasso_pred = as.numeric(predict(lasso_fit, newx = test_x)),
     # gam_pred = predict(gam_fit, newdata = test_data, type = "response"),
-    rf_pred = (predict(speed_rf, data = test_data))$predictions,
-    acceleration_actual = test_data$bbc_a_mpsh,
+    rf_pred = (predict(acceleration_rf, data = test_data))$predictions,
+    acceleration_actual = test_data$bc_a_mpsh,
     test_fold = x
   )
   return(out)
 }
 
 # Binding predictions for folds together
-acceleration_test_preds <- map(1:N_FOLDS, speed_cv) |> 
+acceleration_test_preds <- map(1:N_FOLDS, acceleration_cv) |> 
   bind_rows()
+
+# Comparing RMSE of models
+acceleration_results <- acceleration_test_preds |> 
+  pivot_longer(reg_pred:rf_pred,
+               names_to = "method",
+               values_to = "test_pred") |> 
+  group_by(method, test_fold) |> 
+  summarize(rmse = sqrt(mean((acceleration_actual - test_pred) ^ 2))) |> 
+  group_by(method) |> 
+  summarize(cv_rmse = mean(rmse),
+            se_rse = sd(rmse) / sqrt(N_FOLDS))
+
+## Looking at predictions for acceleration
+# Random Forest
+acceleration_test_preds |> 
+  ggplot(aes(x = rf_pred, y = acceleration_actual)) +
+  geom_point(alpha = .2) +
+  geom_abline(intercept = 0, slope = 1, col = "blue")
+
+# Linear regression
+acceleration_test_preds |> 
+  ggplot(aes(x = rf_pred, y = acceleration_actual)) +
+  geom_point(alpha = .2) +
+  geom_abline(intercept = 0, slope = 1, col = "blue")
 
 # Adding expected velocity back into the df -------------------------------
 # Random Forest is best model, so take predictions from that
