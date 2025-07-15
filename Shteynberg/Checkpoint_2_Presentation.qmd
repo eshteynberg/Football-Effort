@@ -35,4 +35,15 @@ format:
 
 
 
+## Our Data: 2022 NFL Season 
+
+* Game, play, player, tracking data from Weeks 1-9 [^1]
+
+* Running plays where a running back (RB) is the ball carrier
+
+* Trimmed each play to frames between handoff and end of play
+
+[^1]: Courtesy of NFL Big Data Bowl 2025
+
+
 
