@@ -97,7 +97,7 @@ tracking_def <- tracking_rb_runs |>
   filter(player_dist_bc_rank == 1) |> 
   select(gameId, playId, frameId, playDirection,
          nflId, displayName,
-         dist_to_bc, def_x = x, def_y = y, def_s = s,
+         dist_to_bc, def_x = x, def_y = y, def_s = s, def_a = a,
          bc_x, bc_y, adj_bc_x, adj_bc_y) |> 
   mutate(adj_x = 110 - def_x,
          adj_y = def_y - (160 / 6),
@@ -122,6 +122,8 @@ tracking_def <- tracking_def |>
                              preSnapHomeScore - preSnapVisitorScore),
          bc_s_mph = bc_s * (3600 / 1760),
          def_s_mph = def_s * (3600 / 1760),
+         bc_a_mpsh = bc_a * (3600 / 1760),
+         def_a_mpsh = def_a * (3600 / 1760),
          down = as.factor(down),
          quarter = as.factor(quarter))
 

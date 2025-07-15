@@ -67,7 +67,7 @@ tracking_def <- tracking_rb_runs |>
   filter(player_dist_bc_rank == 1) |> 
   select(gameId, playId, frameId, playDirection,
          nflId, displayName,
-         dist_to_bc, def_x = x, def_y = y, def_s = s,
+         dist_to_bc, def_x = x, def_y = y, def_s = s, def_a = a,
          bc_x, bc_y, adj_bc_x, adj_bc_y) |> 
   mutate(adj_x = 110 - def_x,
          adj_y = def_y - (160 / 6),
@@ -92,6 +92,8 @@ tracking_def <- tracking_def |>
                              preSnapHomeScore - preSnapVisitorScore),
          bc_s_mph = bc_s * (3600 / 1760),
          def_s_mph = def_s * (3600 / 1760),
+         bc_a_mpsh = bc_a * (3600 / 1760),
+         def_a_mpsh = def_a * (3600 / 1760),
          down = as.factor(down),
          quarter = as.factor(quarter))
 
@@ -110,19 +112,19 @@ rb_model_before <- tracking_def |>
   select(adj_bc_x, adj_bc_y, dist_to_bc,
          down, quarter, yardsToGo,
          yards_from_endzone, weight,
-         score_diff, bc_s_mph, def_s_mph, 
+         score_diff, bc_s_mph, bc_a_mpsh, def_s_mph, def_a_mpsh,
          angle_with_bc, playId, bc_id, gameId, frameId) |> 
   left_join(plays_folds)
 
-rb_model_as <- rb_model_before |> 
-  select(-c(playId, bc_id, gameId, frameId))
+rb_model_speed <- rb_model_before |> 
+  select(-c(playId, bc_id, gameId, frameId, bc_a_mpsh, def_a_mpsh))
   
 
 # Function to estimate speed
 speed_cv <- function(x) {
-  test_data <- rb_model_as |> 
+  test_data <- rb_model_speed |> 
     filter(fold == x)
-  train_data <- rb_model_as |> 
+  train_data <- rb_model_speed |> 
     filter(fold != x)
   
   # For lasso and ridge
@@ -198,6 +200,56 @@ speed_test_preds |>
   geom_abline(intercept = 0, slope = 1, col = "blue")
 
 
+# Modeling acceleration ----------------------------------------------------------
+set.seed(1)
+N_FOLDS <- 5
+
+rb_model_acceleration <- rb_model_before |> 
+  select(-c(playId, bc_id, gameId, frameId, bc_s_mph, def_s_mph))
+
+
+# Function to estimate speed
+acceleration_cv <- function(x) {
+  test_data <- rb_model_acceleration |> 
+    filter(fold == x)
+  train_data <- rb_model_acceleration |> 
+    filter(fold != x)
+  
+  # For lasso and ridge
+  test_x <- as.matrix(select(test_data, -bc_s_mph))
+  train_x <- as.matrix(select(train_data, -bc_s_mph))
+  
+  # Models
+  reg_fit <- lm(bc_a_mpsh ~ ., data = train_data)
+  ridge_fit <- cv.glmnet(train_x, train_data$bc_a_mpsh, alpha = 0)
+  lasso_fit <- cv.glmnet(train_x, train_data$bc_a_mpsh, alpha = 1)
+  # gam_fit <- gam(bc_s ~ s(adj_bc_x) + s(adj_bc_y) + s(dist_to_bc) +
+  #                down + quarter + s(yardsToGo) + s(yards_from_endzone) +
+  #                weight + s(score_diff),
+  #                data = train_data,
+  #                family = gaussian(),
+  #                method = "REML")
+  speed_rf <- ranger(bc_a_mpsh ~ ., 
+                     num.trees = 500, importance = "impurity", 
+                     data = train_data)
+  
+  
+  # Predictions
+  out <- tibble(
+    reg_pred = predict(reg_fit, newdata = test_data),
+    ridge_pred = as.numeric(predict(ridge_fit, newx = test_x)),
+    lasso_pred = as.numeric(predict(lasso_fit, newx = test_x)),
+    # gam_pred = predict(gam_fit, newdata = test_data, type = "response"),
+    rf_pred = (predict(speed_rf, data = test_data))$predictions,
+    acceleration_actual = test_data$bbc_a_mpsh,
+    test_fold = x
+  )
+  return(out)
+}
+
+# Binding predictions for folds together
+acceleration_test_preds <- map(1:N_FOLDS, speed_cv) |> 
+  bind_rows()
 
 # Adding expected velocity back into the df -------------------------------
 # Random Forest is best model, so take predictions from that
