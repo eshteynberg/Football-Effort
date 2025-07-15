@@ -294,3 +294,10 @@ tracking_bc_expected <- tracking_bc |>
 tracking_bc_expected |> 
   ggplot(aes(x = speed_residual)) +
   geom_histogram()
+
+# Finding the players with the most points of speed above expected
+speed_above_expected <- tracking_bc_expected |> 
+  group_by(displayName) |> 
+  summarize(points_above_expected = sum(speed_residual > 0),
+            percentage_above_expected = sum(speed_residual > 0) / n()) |> 
+  ungroup()

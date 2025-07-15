@@ -156,8 +156,8 @@ eff_function_expected <- function(name, graph = FALSE, area = FALSE, dis = FALSE
       stat_smooth(method="rqss", formula=y~qss(x,lambda=3),
                   method.args=list(tau=0.5), se=FALSE, aes(color="Median Line"), size=1.2)+
       stat_smooth(method="gam", formula=y~s(x),
-                  se=FALSE, aes(color="Expected acceleration line"), size=1.2, lty = 2) + 
-      scale_color_manual("Line", values = c("darkblue", "darkgreen", "#FFB612")) +
+                  se=FALSE, aes(color="Expected acceleration line"), size=1.2) + 
+      scale_color_manual("Line", values = c("darkblue", "hotpink", "#FFB612")) +
       labs(x = "Adjusted Speed",
            y = "Adjusted Acceleration",
            title = paste0(name, "'s effort is defined as the mean distance of points \npast the 95th quartile line to the expected acceleration line"),
@@ -181,7 +181,7 @@ eff_function_expected("Saquon Barkley", graph = TRUE)
 eff_function_expected("Rex Burkhead", graph = TRUE)
 eff_function_expected("Jaylen Warren", graph = TRUE)
 
-# Function (accleration normal) ----------------------------------------------------------------
+# Function (acceleration normal) ----------------------------------------------------------------
 eff_function_normal <- function(name, graph = FALSE, area = FALSE, dis = FALSE){
   player_runs <- tracking_bc_expected |> 
     filter(displayName == name)

@@ -79,7 +79,8 @@ tracking_bc <- tracking_rb_runs |>
          work = ifelse(gameId==lag(gameId) & playId == lag(playId), ke-lag(ke), NA),
          positive_work = ifelse(gameId==lag(gameId) & playId == lag(playId), pmax(ke-lag(ke),0), NA),
          COD = ifelse(gameId==lag(gameId) & playId == lag(playId), abs(dir - lag(dir)), NA),
-         jerk = ifelse(gameId==lag(gameId) & playId ==lag(playId), (a-lag(a))/.1, NA))
+         jerk = ifelse(gameId==lag(gameId) & playId ==lag(playId), (a-lag(a))/.1, NA),
+         s_mph = s * (3600 / 1760))
 
 tracking_bc_after_contact <- tracking_bc |> 
   group_by(gameId, playId) |> 
@@ -265,14 +266,14 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
     filter(displayName == name)
   
   # Making the bins
-  bins <- seq(3, round(max(player_runs$s), 2) + .2, .2)
+  bins <- seq(3, round(max(player_runs$s_mph), 2) + .2, .2)
   
   # Picking out the top two accelerations for each speed in each bins
   max_acc <- map_dfr(1:(length(bins) - 1), function(i) {
     player_runs |> 
-      filter(s > bins[i], s <= bins[i + 1]) |> 
+      filter(s_mph > bins[i], s_mph <= bins[i + 1]) |> 
       slice_max(a, n = 2, with_ties = FALSE) |> 
-      select(speed = s, acceleration = a)
+      select(speed = s_mph, acceleration = a)
   })
   
   # Fitting the first regression line
@@ -291,12 +292,12 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   player_lm_clean <- lm(acceleration ~ speed, data = max_acc_clean)
   
   # Finding out how many points are near the line
-  test_player_a <- data.frame(speed = player_runs$s, acceleration = player_runs$a)
+  test_player_a <- data.frame(speed = player_runs$s_mph, acceleration = player_runs$a)
   test_preds <- predict(player_lm_clean, newdata = test_player_a)
   
   # Final calculation for distance away from the fitted line
   player_final <- player_runs |> 
-    select(a, s) |> 
+    select(a, s_mph) |> 
     mutate(pred = test_preds) |> 
     mutate(diff = pred - a) |> 
     mutate(eff = ifelse(diff <= .25, TRUE, FALSE),
@@ -321,8 +322,8 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   # Building the graph if specified
   if (graph == TRUE) {
     player_graph <- player_runs |> 
-      ggplot(aes(x = s, y = a)) +
-      geom_smooth(method = lm, aes(x = speed, y = acceleration), data = max_acc_clean, lwd = 1.5, se = FALSE) +
+      ggplot(aes(x = s_mph, y = a)) +
+      # geom_smooth(method = lm, aes(x = speed, y = acceleration), data = max_acc_clean, lwd = 1.5, se = FALSE) +
       geom_abline(aes(color = "Regression line",
                       intercept = player_lm_clean$coefficients[1], slope = player_lm_clean$coefficients[2]),
                       lwd = 1.5,) +
@@ -339,7 +340,7 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
       geom_point(size = 2, alpha = .5, col = "grey2") +
       xlim(0, 13) +
       ylim(0, 10) +
-      labs(x = "Speed",
+      labs(x = "Speed (mph)",
            y = "Acceleration",
            title = paste0(name, "'s effort is defined as the percentage of points above the minimum line"),
            caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
