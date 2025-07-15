@@ -16,3 +16,23 @@ format:
       url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
 ---
 
+## Background and Motivation
+
+* Not all rushing yards are equal 
+
+* Traditional stats miss the "how" behind yards gained
+
+* Previous research has explored athletes reaching theoretical max capacity [^1]
+
+* Can we "measure" effort using tracking data?
+
+* Multiple ways of evaluating effort 
+
+  - Intangible and subjective
+  - Depends on player position, defense faced, game context, snap count/play volume, play call/assignment
+
+[^1]: Morin, et al. 2021. “Individual Acceleration-Speed Profile in-Situ: A Proof of Concept in Professional Football Players.” Journal of Biomechanics 123: 110524.
+
+
+
+
