@@ -1,0 +1,17 @@
+---
+title: "NFL Effort Report"
+subtitle: "Saving Datasets"
+author: "Emily, Luke, and Sheryl"
+format: pdf
+---
+
+
+```{r}
+
+#| label: save-datasets
+
+save(tracking_bc,
+     file = "data/dataset.Rdata")
+
+
+```
