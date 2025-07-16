@@ -82,7 +82,7 @@ Describe your results. This can include tables and plots showing your results, a
 
 ## Discussion
 
-Give your conclusions and summarize what you have learned with regards to your question of interest. Are there any limitations with the approaches you used? What do you think are the next steps to follow-up your project? \cite{AS}
+Give your conclusions and summarize what you have learned with regards to your question of interest. Are there any limitations with the approaches you used? What do you think are the next steps to follow-up your project?
 
 ## Appendix
 

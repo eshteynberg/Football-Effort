@@ -182,9 +182,9 @@ player_runs_modeling <- player_runs |>
 
 player_runs_cv <- function(x){
   test_data <- player_runs_modeling |> 
-    filter(fold == 1)
+    filter(fold == x)
   train_data <- player_runs_modeling |> 
-    filter(fold != 1)
+    filter(fold != x)
   
   # Modeling
   qgam_fit <- qgam(a_mpsh ~ s(s_mph, k = 35, bs = "ad"),
