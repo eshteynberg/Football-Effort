@@ -166,6 +166,78 @@ eff_function_rqss("Saquon Barkley", graph = TRUE)
 # 
 # fig
 
+
+
+
+
+
+
+# # do SB, RB, Craig Reynolds, Boston Scott, Austin Ekeler, Chase Edmonds
+# 
+# rb_list <- c("Saquon Barkley", "Rex Burkhead", "Craig Reynolds", "Boston Scott", "Austin Ekeler", "Chase Edmonds")
+# 
+# # function iterating through the rb_list vector with all running backs 
+# 
+# plots <- map(rb_list, ~ ggplotly(eff_function_rqss(.x, graph = TRUE)))
+# 
+# fig <- plot_ly()
+# trace_counts <- c()
+# 
+# for (i in seq_along(plots)) {
+#   p <- plots[[i]]
+#   trace_counts[i] <- length(p$x$data)
+#   for (trace in p$x$data) {
+#     fig <- fig |> add_trace(
+#       x = trace$x,
+#       y = trace$y,
+#       type = trace$type,
+#       mode = trace$mode,
+#       line = trace$line,
+#       marker = trace$marker,
+#       name = trace$name,
+#       text = trace$text,
+#       hoverinfo = trace$hoverinfo,
+#       visible = if (i == 1) TRUE else FALSE  # show first player initially
+#     )
+#   }
+# }
+# 
+# trace_offsets <- cumsum(c(0, trace_counts))
+# visibility_masks <- map(seq_along(plots), function(i) {
+#   total_traces <- sum(trace_counts)
+#   vis <- rep(FALSE, total_traces)
+#   vis[(trace_offsets[i] + 1):trace_offsets[i + 1]] <- TRUE
+#   vis
+# })
+# 
+# buttons <- map2(
+#   visibility_masks, player_names,
+#   ~ list(
+#     method = "restyle",
+#     args = list("visible", .x),
+#     label = .y
+#   )
+# )
+# 
+# fig <- fig |>
+#   layout(
+#   title = "Effort Quantile Curves by Player",
+#   updatemenus = list(
+#     list(
+#       type = "dropdown",
+#       y = 0.8,
+#       x = 1.05,
+#       direction = "down",
+#       buttons = buttons,
+#       active = 0
+#     )
+#   ),
+#   xaxis = list(title = "Speed"),
+#   yaxis = list(title = "Acceleration")
+# )
+# 
+# fig
+
 ```
 
 

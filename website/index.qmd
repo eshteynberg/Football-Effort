@@ -170,6 +170,8 @@ eff_function_rqss <- function(name, graph = FALSE) {
   return(tibble(displayName = name, effort_ratio_90 = 1 - eff_score))
 }
 
+#================ [Interactive drop down menu to select any running backs]================
+
 g1 <- ggplotly(eff_function_rqss("Saquon Barkley", graph = TRUE))
 g2 <- ggplotly(eff_function_rqss("Rex Burkhead", graph = TRUE))
 
