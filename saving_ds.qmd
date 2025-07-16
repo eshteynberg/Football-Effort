@@ -1,0 +1,16 @@
+---
+title: "data"
+format: html
+---
+
+```{r}
+# saving datasets 
+
+save(tracking_bc,
+     file = "website/web_data/tracking_bc.Rdata")
+
+save(player_runs_modeling,
+     file = "website/web_data/player_runs_modeling.Rdata")
+```
+
+

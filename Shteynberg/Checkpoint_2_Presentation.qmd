@@ -44,7 +44,17 @@ format:
 
 [^1]: Courtesy of NFL Big Data Bowl 2025
 
-## Morin, et al. tells us how
+## Motivation: acceleration-speed (AS) profiles tell us about players' acceleration capacities at different speeds
+
+![](Checkpoint_2_Images/paper_AS_profile.png){fig-align="center" width=90%}
+
+## Effort is defined as the percentage of points above the relaxed line
+
+![](Checkpoint_2_Images/Rex_Saquon_AS.png){width="100%" height="400"}
+
+* Biased toward backups because of lower sample size.. or are they just working harder after all? Are starters fatigued or pacing themselves? 
+
+* Unrealistic theoretical max speeds
 
 ## Plan of action
 
@@ -54,9 +64,9 @@ format:
 
 * Select effort metric(s)
 
-* Use chosen metric(s) to answer questions related to effort (residual effort, tackle outcome probabilities, minimum required effort per play, etc)
+* Evaluate effort metric(s) by correlating it to effort-related outcomes
 
-* Interpret results, complete report and presentation
+* Use chosen metric(s) to answer questions related to effort (residual effort, tackle outcome probabilities, minimum required effort per play, etc)
 
 
 # Appendix 
