@@ -153,7 +153,7 @@ rb_stats_total <- rb_stats_per_play |>
   ungroup()
 
 rb_stats_total_filtered <- rb_stats_total |> 
-  filter(num_of_rushes >= 20)
+  filter(num_of_rushes >= 20) 
 
 
 # Effort Function ---------------------------------------------------------
@@ -263,7 +263,15 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   return(eff)
 }
 
-rbs <- unique(rb_stats_total_filtered$displayName)
+rbs <- rb_stats_total_filtered |> 
+  group_by(displayName) |> 
+  distinct(gameId) |> 
+  summarize(games=n()) |>
+  ungroup() |> 
+  filter(games >= 5) |> 
+  select(displayName)
+
+rbs_names <- unique(rbs$displayName)
 
 eff_movements <- purrr::map(rbs, eff_function) |> 
   bind_rows() |> 
