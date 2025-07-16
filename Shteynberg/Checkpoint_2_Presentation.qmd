@@ -58,11 +58,22 @@ format:
 
 ## Quantile regression provides a better way of evaluating players' acceleration capacities 
 
+![](Checkpoint_2_Images/Rex_Saquon_qgam.png){width="100%" height="400"}
+
 ## New ways of looking at effort 
 
-* Effort v1 = $\left(n_{\text{above}}+\sum\limits_{i=1}^{n_{\text{below}}} {\frac{1}{1+d_i}}\right)\bigg/n_{\text{total}}$
+::: {.callout-note title="Effort v1" style="font-size: 1.5em;"}
+$$
+\left(\sum\limits_{i=1}^{n_{\text{below}}} {\frac{1}{1+d_i}}\right)\bigg/n_{\text{below}}
+$$
+➜️ Quantifies *how close* a player comes to his "best" (99th percentile) accelerations
+:::
 
-* Effort v2 = percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$
+::: {.callout-note title="Effort v2" style="font-size: 1.5em;"}
+Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$
+
+➜ Quantifies *how often* a player comes close to his "best" (99th percentile) accelerations
+:::
 
 ## Concerns and limitations
 
