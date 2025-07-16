@@ -171,7 +171,62 @@ eff_function_rqss <- function(name, graph = FALSE) {
 }
 
 
-eff_function_rqss("Saquon Barkley", graph = TRUE)
+
+g1 <- ggplotly(eff_function_rqss("Saquon Barkley", graph = TRUE))
+g2 <- ggplotly(eff_function_rqss("Rex Burkhead", graph = TRUE))
+
+# Step 3: Initialize new figure
+fig <- plot_ly()
+# Step 4: Extract and add only the visible trace(s)
+for (trace in g1$x$data) {
+  trace$visible <- TRUE
+  fig <- fig %>% add_trace(
+    x = trace$x,
+    y = trace$y,
+    type = trace$type,
+    mode = trace$mode,
+    line = trace$line,
+    name = trace$name,
+    visible = TRUE
+  )
+}
+for (trace in g2$x$data) {
+  fig <- fig %>% add_trace(
+    x = trace$x,
+    y = trace$y,
+    type = trace$type,
+    mode = trace$mode,
+    line = trace$line,
+    name = trace$name,
+    visible = FALSE  # initially hidden
+  )
+}
+# Step 5: Create visibility vectors
+n1 <- length(g1$x$data)
+n2 <- length(g2$x$data)
+
+vis_sine <- c(rep(TRUE, n1), rep(FALSE, n2))
+vis_cos  <- c(rep(FALSE, n1), rep(TRUE, n2))
+# Step 6: Add dropdown menu
+fig <- fig %>% layout(
+  title = "Toggle between ggplotly Sine and Cosine",
+  updatemenus = list(
+    list(
+      type = "dropdown",
+      y = 0.8,
+      buttons = list(
+        list(method = "restyle",
+               args = list("visible", list(TRUE, FALSE)),
+               label = "Saquon Barkley"),
+          list(method = "restyle",
+               args = list("visible", list(FALSE, TRUE)),
+               label = "Rex Burkhead")
+      )
+    )
+  )
+)
+fig
+
 ```
 
 

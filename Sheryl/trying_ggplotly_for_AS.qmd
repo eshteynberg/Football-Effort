@@ -96,8 +96,28 @@ eff_function_rqss <- function(name, graph = FALSE) {
 }
 
 
+fig1 <- eff_function_rqss("Saquon Barkley", graph = TRUE)
+fig2 <- eff_function_rqss("Rex Burkhead", graph = TRUE)
 
-eff_function_rqss("Saquon Barkley", graph = TRUE)
+fig <- subplot(fig1, fig2, nrows = 1, shareX = TRUE, shareY = TRUE) %>%
+  layout(
+    updatemenus = list(
+      list(
+        type = "dropdown",
+        y = 0.8,
+        buttons = list(
+          list(method = "restyle",
+               args = list("visible", list(TRUE, FALSE)),
+               label = "SB"),
+          list(method = "restyle",
+               args = list("visible", list(FALSE, TRUE)),
+               label = "RB")
+        )
+      )
+    )
+  )
+# Show only the first trace by default
+fig$x$data[[2]]$visible <- FALSE
 
 
 ```
