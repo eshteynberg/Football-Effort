@@ -170,14 +170,15 @@ eff_function_rqss <- function(name, graph = FALSE) {
   return(tibble(displayName = name, effort_ratio_90 = 1 - eff_score))
 }
 
-
-
 g1 <- ggplotly(eff_function_rqss("Saquon Barkley", graph = TRUE))
 g2 <- ggplotly(eff_function_rqss("Rex Burkhead", graph = TRUE))
 
-# Step 3: Initialize new figure
+
+
+# Step 2: Initialize plotly figure
 fig <- plot_ly()
-# Step 4: Extract and add only the visible trace(s)
+
+# Step 3: Add Saquon traces (visible)
 for (trace in g1$x$data) {
   trace$visible <- TRUE
   fig <- fig %>% add_trace(
@@ -187,10 +188,15 @@ for (trace in g1$x$data) {
     mode = trace$mode,
     line = trace$line,
     name = trace$name,
+    text = trace$text,
+    hoverinfo = trace$hoverinfo,
     visible = TRUE
   )
 }
+
+# Step 4: Add Rex traces (initially hidden)
 for (trace in g2$x$data) {
+  trace$visible <- FALSE
   fig <- fig %>% add_trace(
     x = trace$x,
     y = trace$y,
@@ -198,33 +204,39 @@ for (trace in g2$x$data) {
     mode = trace$mode,
     line = trace$line,
     name = trace$name,
-    visible = FALSE  # initially hidden
+    text = trace$text,
+    hoverinfo = trace$hoverinfo,
+    visible = FALSE
   )
 }
-# Step 5: Create visibility vectors
+
+# Step 5: Construct correct visibility vectors
 n1 <- length(g1$x$data)
 n2 <- length(g2$x$data)
 
-vis_sine <- c(rep(TRUE, n1), rep(FALSE, n2))
-vis_cos  <- c(rep(FALSE, n1), rep(TRUE, n2))
-# Step 6: Add dropdown menu
+vis_saquon <- c(rep(TRUE, n1), rep(FALSE, n2))
+vis_rex    <- c(rep(FALSE, n1), rep(TRUE, n2))
+
+# Step 6: Add dropdown menu with correct visibility toggles
 fig <- fig %>% layout(
-  title = "Toggle between ggplotly Sine and Cosine",
+  title = "Acceleration vs Speed Curve by Player",
   updatemenus = list(
     list(
       type = "dropdown",
       y = 0.8,
+      x = 1.1,
       buttons = list(
         list(method = "restyle",
-               args = list("visible", list(TRUE, FALSE)),
-               label = "Saquon Barkley"),
-          list(method = "restyle",
-               args = list("visible", list(FALSE, TRUE)),
-               label = "Rex Burkhead")
+             args = list("visible", vis_saquon),
+             label = "Saquon Barkley"),
+        list(method = "restyle",
+             args = list("visible", vis_rex),
+             label = "Rex Burkhead")
       )
     )
   )
 )
+
 fig
 
 ```

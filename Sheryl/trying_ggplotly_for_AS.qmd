@@ -95,30 +95,76 @@ eff_function_rqss <- function(name, graph = FALSE) {
   return(tibble(displayName = name, effort_ratio_90 = 1 - eff_score))
 }
 
+eff_function_rqss("Saquon Barkley", graph = TRUE)
 
-fig1 <- eff_function_rqss("Saquon Barkley", graph = TRUE)
-fig2 <- eff_function_rqss("Rex Burkhead", graph = TRUE)
-
-fig <- subplot(fig1, fig2, nrows = 1, shareX = TRUE, shareY = TRUE) %>%
-  layout(
-    updatemenus = list(
-      list(
-        type = "dropdown",
-        y = 0.8,
-        buttons = list(
-          list(method = "restyle",
-               args = list("visible", list(TRUE, FALSE)),
-               label = "SB"),
-          list(method = "restyle",
-               args = list("visible", list(FALSE, TRUE)),
-               label = "RB")
-        )
-      )
-    )
-  )
-# Show only the first trace by default
-fig$x$data[[2]]$visible <- FALSE
-
+# g1 <- ggplotly(eff_function_rqss("Saquon Barkley", graph = TRUE))
+# g2 <- ggplotly(eff_function_rqss("Rex Burkhead", graph = TRUE))
+# 
+# 
+# 
+# # Step 2: Initialize plotly figure
+# fig <- plot_ly()
+# 
+# # Step 3: Add Saquon traces (visible)
+# for (trace in g1$x$data) {
+#   trace$visible <- TRUE
+#   fig <- fig %>% add_trace(
+#     x = trace$x,
+#     y = trace$y,
+#     type = trace$type,
+#     mode = trace$mode,
+#     line = trace$line,
+#     name = trace$name,
+#     text = trace$text,
+#     hoverinfo = trace$hoverinfo,
+#     visible = TRUE
+#   )
+# }
+# 
+# # Step 4: Add Rex traces (initially hidden)
+# for (trace in g2$x$data) {
+#   trace$visible <- FALSE
+#   fig <- fig %>% add_trace(
+#     x = trace$x,
+#     y = trace$y,
+#     type = trace$type,
+#     mode = trace$mode,
+#     line = trace$line,
+#     name = trace$name,
+#     text = trace$text,
+#     hoverinfo = trace$hoverinfo,
+#     visible = FALSE
+#   )
+# }
+# 
+# # Step 5: Construct correct visibility vectors
+# n1 <- length(g1$x$data)
+# n2 <- length(g2$x$data)
+# 
+# vis_saquon <- c(rep(TRUE, n1), rep(FALSE, n2))
+# vis_rex    <- c(rep(FALSE, n1), rep(TRUE, n2))
+# 
+# # Step 6: Add dropdown menu with correct visibility toggles
+# fig <- fig %>% layout(
+#   title = "Acceleration vs Speed Curve by Player",
+#   updatemenus = list(
+#     list(
+#       type = "dropdown",
+#       y = 0.8,
+#       x = 1.1,
+#       buttons = list(
+#         list(method = "restyle",
+#              args = list("visible", vis_saquon),
+#              label = "Saquon Barkley"),
+#         list(method = "restyle",
+#              args = list("visible", vis_rex),
+#              label = "Rex Burkhead")
+#       )
+#     )
+#   )
+# )
+# 
+# fig
 
 ```
 
