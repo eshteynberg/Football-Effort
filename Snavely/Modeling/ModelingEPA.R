@@ -13,7 +13,7 @@ library(ranger)
 set.seed(1)
 N_FOLDS <- 5
 rb_modeling <- tracking_bc_play_stats |> 
-  na.omit() |> 
+  na.omit() |>
   select(mean_ke, mean_jerk, eff_move_prop, 
          total_dist_covered_of_game, avg_COD, acc_change, 
          expectedPointsAdded) |> 
