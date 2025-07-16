@@ -265,8 +265,8 @@ eff_function_qgam <- function(name, graph = FALSE) {
     player_graph <- player_runs_test_preds |> 
       ggplot(aes(x = actual_speed, y = qgam_pred)) +
       geom_point(aes(y = actual_acc), alpha=.3, color="grey2")+
-      stat_smooth(method="gam", formula=y~s(x),se=FALSE, aes(color="99th percentile line"), size=1.2) + 
-      stat_smooth(method="gam", formula=y~s(x),se=FALSE, aes(y=qgam_pred_minus_3, color="99th percentile line - 3"), size=1.2) + 
+      stat_smooth(method="gam", formula=y~s(x),se=FALSE, lwd = 1.5, aes(color="99th percentile line"), size=1.2) + 
+      stat_smooth(method="gam", formula=y~s(x),se=FALSE, lty = 2, lwd = 1.5, aes(y=qgam_pred_minus_3, color="99th percentile line - 3"), size=1.2) + 
       scale_color_manual("Line", values = c("#0072B2", "#D55E00")) +
       labs(x = "Speed",
            y = "Acceleration",
@@ -287,6 +287,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
 
 # Test
 eff_function_qgam("Saquon Barkley", graph = TRUE)
+eff_function_qgam("Rex Burkhead", graph = TRUE)
 eff_function_qgam("Craig Reynolds", graph = TRUE)
 eff_function_qgam("Boston Scott", graph = TRUE)
 

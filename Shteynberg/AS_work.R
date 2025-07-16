@@ -780,6 +780,7 @@ eff_scores
 # View(eff_scores)
 
 library(magick)
+#basic 
 Saquon <- image_read("Shteynberg/Checkpoint_2_Images/Saquon_AS.png")
 Rex <- image_read("Shteynberg/Checkpoint_2_Images/Rex_AS.png")
 Saquon <- image_scale(Saquon, "x500") 
@@ -788,7 +789,14 @@ Rex <- image_scale(Rex, "x500")
 Rex_Saquon_AS <- image_append(c(Saquon, Rex)) 
 image_write(Rex_Saquon_AS, "Rex_Saquon_AS.png")
 
+# qgam plot
+Saquon_qgam <- image_read("Shteynberg/Checkpoint_2_Images/Saquon_qgam.png")
+Rex_qgam <- image_read("Shteynberg/Checkpoint_2_Images/Rex_qgam.png")
+Saquon_qgam <- image_scale(Saquon_qgam, "x500") 
+Rex_qgam <- image_scale(Rex_qgam, "x500") 
 
+Rex_Saquon_qgam <- image_append(c(Saquon_qgam, Rex_qgam)) 
+image_write(Rex_Saquon_qgam, "Rex_Saquon_qgam.png")
 
 
 # Nonparam regression 2 splines  ------------------------------------------
