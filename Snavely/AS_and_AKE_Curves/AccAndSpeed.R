@@ -435,7 +435,7 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
       geom_point(size = 2, alpha = .5, col = "grey2") +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name)) +
+           title = paste0(name, "'s effort: ", round(eff$eff_metric_perc,2), "%")) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 

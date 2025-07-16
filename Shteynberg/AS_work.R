@@ -779,9 +779,14 @@ eff_scores
 # eff_scores
 # View(eff_scores)
 
+library(magick)
+Saquon <- image_read("Shteynberg/Checkpoint_2_Images/Saquon_AS.png")
+Rex <- image_read("Shteynberg/Checkpoint_2_Images/Rex_AS.png")
+Saquon <- image_scale(Saquon, "x500") 
+Rex <- image_scale(Rex, "x500") 
 
-
-
+Rex_Saquon_AS <- image_append(c(Saquon, Rex)) 
+image_write(Rex_Saquon_AS, "Rex_Saquon_AS.png")
 
 
 
