@@ -157,15 +157,7 @@ rb_stats_total <- rb_stats_per_play |>
 rb_stats_total_filtered <- rb_stats_total |> 
   filter(num_of_rushes >= 20) 
 
-rbs <- rb_stats_total_filtered |> 
-  group_by(displayName) |> 
-  distinct(gameId) |> 
-  summarize(games=n()) |>
-  ungroup() |> 
-  filter(games >= 5) |> 
-  select(displayName)
-
-rbs_names <- unique(rbs$displayName)
+rbs_names <- unique(rb_stats_total_filtered$displayName)
 
 
 # Player test -------------------------------------------------------------
@@ -316,7 +308,7 @@ Austin |>
   ungroup()
 
 # Running the function for every player
-rbs_names <- unique(rbs$displayName)
+rbs_names <- unique(rb_stats_total_filtered$displayName)
 
 # Note: This will take A LONG TIME to run!!!!!!
 percentile_dists <- purrr::map(rbs, eff_function_qgam) |> 
