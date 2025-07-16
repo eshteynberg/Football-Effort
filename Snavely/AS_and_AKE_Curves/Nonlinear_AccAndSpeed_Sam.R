@@ -238,7 +238,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
     # Modeling
     n_rows <- nrow(train_data)
     k_val <- max(20, min(100, round(n_rows * 0.08))) # Optimizes k (k should roughly be 8% of the nrows)
-    qgam_fit <- qgam(a_mpsh ~ s(s_mph),
+    qgam_fit <- qgam(a_mpsh ~ s(s_mph, k = 15, bs = "ad"),
                      data = train_data,
                      qu = .99,
                      multicore = TRUE,
@@ -316,8 +316,10 @@ Austin |>
 rbs_names <- unique(rb_stats_total_filtered$displayName)
 
 # Note: This will take A LONG TIME to run!!!!!!
-percentile_dists <- furrr::future_map(rbs_names, eff_function_qgam) |> 
-  bind_rows()
+# percentile_dists <- purrr::map(rbs_names, eff_function_qgam) |> 
+#   bind_rows()
+
+test <- read_csv("data/percentile_dists.csv")
 
 # Finding the effort component of each frame
 percentile_dists_adj <- percentile_dists |> 
