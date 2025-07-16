@@ -164,7 +164,10 @@ rbs_names <- unique(rb_stats_total_filtered$displayName)
 set.seed(1)
 # Choosing player name
 player_runs <- tracking_bc |> 
-  filter(displayName == "Saquon Barkley")
+  filter(displayName == "Derrick Henry")
+qgam_fit <- qgam(a_mpsh ~ s(s_mph),
+                 data = player_runs,
+                 qu = .99)
 
 # 5 folds
 N_FOLDS <- 5
@@ -235,9 +238,11 @@ eff_function_qgam <- function(name, graph = FALSE) {
     # Modeling
     n_rows <- nrow(train_data)
     k_val <- max(20, min(100, round(n_rows * 0.08))) # Optimizes k (k should roughly be 8% of the nrows)
-    qgam_fit <- qgam(a_mpsh ~ s(s_mph, k = k_val, bs = "ad"),
+    qgam_fit <- qgam(a_mpsh ~ s(s_mph),
                      data = train_data,
-                     qu = .99)
+                     qu = .99,
+                     multicore = TRUE,
+                     ncores = 7)
     
     out <- tibble(
       displayName = name,
@@ -311,7 +316,7 @@ Austin |>
 rbs_names <- unique(rb_stats_total_filtered$displayName)
 
 # Note: This will take A LONG TIME to run!!!!!!
-percentile_dists <- purrr::map(rbs, eff_function_qgam) |> 
+percentile_dists <- furrr::future_map(rbs_names, eff_function_qgam) |> 
   bind_rows()
 
 # Finding the effort component of each frame
