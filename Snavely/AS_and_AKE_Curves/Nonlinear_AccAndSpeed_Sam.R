@@ -317,116 +317,68 @@ rbs_names <- unique(rb_stats_total_filtered$displayName)
 # percentile_dists <- purrr::map(rbs_names, eff_function_qgam) |> 
 #   bind_rows()
 
-test <- read_csv("data/percentile_dists.csv")
+percentile_dists_k15 <- read_csv("created_data/percentile_dists.csv")
 
 # Finding the effort component of each frame
-percentile_dists_adj <- percentile_dists |> 
-  mutate(res_adj = ifelse(actual_acc >= qgam_pred, 0, res),
-         indiv_dis_score = 1 / (1 + res_adj))
+points_below_k15 <- percentile_dists_k15 |>
+  filter(actual_acc < qgam_pred) |> 
+  mutate(frame_dis_score = 1 / (1 + res),
+         between_lines = ifelse(actual_acc > qgam_pred_minus_3,
+                                TRUE, FALSE))
 
 # Finding the effort score of each player
-dis_scores_players <- percentile_dists_adj |> 
+dis_scores_players_k15 <- points_below_k15 |> 
   group_by(displayName) |> 
-  summarize(dis_score = sum(indiv_dis_score / n()),
-            prop_of_points_above_99 = sum(res_adj == 0) / n()) |> 
+  summarize(dis_score_below = sum(frame_dis_score) / n(),
+            prop_between = mean(between_lines)) |> 
   ungroup()
 
-# Function (rqss) ----------------------------------------------------------------
-eff_function_rqss_new <- function(name, graph = FALSE) {
-  set.seed(1)
-  # Choosing player name
-  player_runs <- tracking_bc |> 
-    filter(displayName == name)
-  
-  # 5 folds
-  N_FOLDS <- 5
-  
-  # # Making sure plays are in the same fold
-  plays_folds <- player_runs |>
-    distinct(gameId) |> 
-    mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
-  
-  # Making the modeling data frame
-  player_runs_modeling <- player_runs |> 
-    select(s_mph, a_mpsh, gameId) |> 
-    left_join(plays_folds) |>
-    select(-gameId)
-  
-  player_runs_cv <- function(x){
-    test_data <- player_runs_modeling |> 
-      filter(fold == x)
-    train_data <- player_runs_modeling |> 
-      filter(fold != x)
-    
-    s_range <- range(train_data$s_mph)
-    test_data <- test_data |>
-      filter(s_mph >= max(s_range[1]), 
-             s_mph <= min(s_range[2])) 
-    #nonparametric quantile reg using smooth spline
-    #fit a smooth spline of acc as a function of speed
-    #lambda controls smoothness (higher =smoother/less wiggly, lower=more flexible)
-    rqss_fit_99 <- rqss(a_mpsh~qss(s_mph, lambda=20), tau=.99, data = train_data)
-    
-    out <- tibble(
-      displayName = name,
-      rqss_99_pred = predict(rqss_fit_99, newdata = test_data),
-      actual_acc = test_data$a_mpsh,
-      actual_speed = test_data$s_mph,
-      res = abs(actual_acc - rqss_99_pred),
-      rqss_99_pred_minus_3 = rqss_99_pred - 3,
-      test_fold = x
-    )
-    return(out)
-  }
-  
-  # Doing cross fold validation
-  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
-    bind_rows()
-  
-  if (graph == TRUE) {
-    player_graph <- player_runs_test_preds |> 
-      ggplot(aes(x = actual_speed, y = actual_acc)) +
-      geom_point(aes(y = actual_acc), alpha=.3, color="grey2")+
-      stat_smooth(method="rqss", formula=y~qss(x, lambda = 20),
-                  method.args=list(tau = .99), se=FALSE, aes(color="99th percentile line"), size=1.2) + 
-      stat_smooth(method="rqss", formula=(y - 3)~qss(x, lambda = 20),
-                  method.args=list(tau=.99), se=FALSE, aes(color="Relaxed 99th percentile line"), size=1.2) + 
-      labs(x = "Speed (mph)",
-           y = "Acceleration (mph/s)",
-           title = paste0(name, "'s effort is defined as the mean distance of points \npast the 95th quartile line to the expected acceleration line"),
-           caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
-      theme(plot.title = element_text(face = "bold",
-                                      size = 20, 
-                                      hjust = .5),
-            legend.title = element_text(face = "bold",
-                                        size = 15),
-            axis.title = element_text(face = "bold",
-                                      size = 15),
-            axis.text = element_text(size = 13),
-            plot.caption = element_text(face = "italic",
-                                        size = 8))
-    return(player_graph)
-  }
-  return(player_runs_test_preds)
-}
-
-# Test
-eff_function_rqss_new("Saquon Barkley", graph = TRUE)
-eff_function_rqss_new("Chase Edmonds", graph = TRUE)
-
-# Running the function for every player
-rbs_names <- unique(rbs$displayName)
-
-percentile_dists_rqss <- purrr::map(rbs_names, eff_function_rqss_new) |> 
-  bind_rows()
-
-dists_rqss_adj <- percentile_dists_rqss |> 
-  mutate(res_adj = ifelse(actual_acc >= rqss_99_pred, 0, res),
-         indiv_dis_score = 1 / (1 + res_adj))
-
-dis_scores_players_rqss <- dists_rqss_adj |> 
+# Looking at points above the line
+points_above <- percentile_dists_k15 |> 
+  filter(actual_acc >= qgam_pred) |> 
   group_by(displayName) |> 
-  summarize(dis_score = sum(indiv_dis_score / n()),
-            prop_of_points_above_99 = sum(res_adj == 0) / n()) |> 
+  summarize(dis_score_above = mean(res)) |> 
   ungroup()
+  
+
+# Looking at all points
+points_all <- percentile_dists_k15 |> 
+  group_by(displayName) |> 
+  summarize(prop_of_points_above = sum(actual_acc >= qgam_pred) / n()) |> 
+  ungroup()
+
+# Joining
+dis_scores <- dis_scores_players_k15 |> 
+  left_join(points_above) |> 
+  left_join(points_all)
+
+# Looking at relationship between eff metrics
+dis_scores |> 
+  ggplot(aes(x = dis_score_below, y = prop_between)) +
+  geom_point()
+
+dis_scores |> 
+  ggplot(aes(x = dis_score_above, y = prop_between)) +
+  geom_point()
+
+# Checking to see if the proportion of points above the line correlate with eff metrics
+dis_scores |> 
+  ggplot(aes(x = dis_score_below, y = prop_of_points_above)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color="#0072B2")+
+  labs(title = "No relationship suggests \nqgam problem is negligible",
+       x = "Distance score of points \nbelow 99th percentile",
+       y = "Proportion of points \nabove 99th percentile") +
+  theme_minimal(base_size = 16)+
+  theme(plot.title = element_text(face = "bold",
+                                  hjust = .5),
+        axis.title = element_text(face = "bold", size=14),
+        legend.position = "none")
+        
+dis_scores |> 
+  ggplot(aes(x = dis_score_above, y = prop_of_points_above)) +
+  geom_point()
+  
+
+# Player case (ellipse) ----------------------------------------------------------------
 

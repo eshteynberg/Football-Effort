@@ -67,22 +67,34 @@ $$
 \left(\sum\limits_{i=1}^{n_{\text{below}}} {\frac{1}{1+d_i}}\right)\bigg/n_{\text{below}}
 $$
 ➜️ Quantifies *how close* a player comes to his "best" (99th percentile) accelerations
+
+➜ Saquon Barkley: 0.152 
+
+➜ Rex Burkhead: 0.149
 :::
 
 ::: {.callout-note title="Effort v2" style="font-size: 1.5em;"}
 Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$
 
 ➜ Quantifies *how often* a player comes close to his "best" (99th percentile) accelerations
+
+➜ Saquon Barkley: 0.074 
+
+➜ Rex Burkhead: 0.069
 :::
 
 ## Concerns and limitations
 
+* Unsure about threshold for relaxed percentile line in Effort v2
+
 * Problem with `qgam`: some players have more than 1% of points above 99th percentile
   - Account for this without penalizing players who simply have large raw number of points above the line
 
-* Potential fix: Effort v3 = $\left(\sum\limits_{i=1}^{n_{\text{below}}} {\frac{1}{1+d_i}} + \frac{.01}{\text{% of points above } P_{99}}\right)\bigg/n_{\text{total}}$
+::: {.fragment}
 
-* Unsure about threshold for relaxed percentile line in Effort v2
+![](Checkpoint_2_Images/prop_vs_dis_score.png){width="90%"}
+
+:::
   
 ## Plan of action
 
