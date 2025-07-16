@@ -265,24 +265,21 @@ eff_function_qgam <- function(name, graph = FALSE) {
     player_graph <- player_runs_test_preds |> 
       ggplot(aes(x = actual_speed, y = qgam_pred)) +
       geom_point(aes(y = actual_acc), alpha=.3, color="grey2")+
-      stat_smooth(method="gam", formula=y~s(x),
-                  method.args=list(se=FALSE), aes(color="99th percentile line"), size=1.2) + 
-      stat_smooth(method="gam", formula=y~s(x),
-                  method.args=list(se=FALSE), aes(y=qgam_pred_minus_3, color="Relaxed 99th percentile line"), size=1.2) + 
+      stat_smooth(method="gam", formula=y~s(x),se=FALSE, aes(color="99th percentile line"), size=1.2) + 
+      stat_smooth(method="gam", formula=y~s(x),se=FALSE, aes(y=qgam_pred_minus_3, color="99th percentile line - 3"), size=1.2) + 
+      scale_color_manual("Line", values = c("#0072B2", "#D55E00")) +
       labs(x = "Speed",
            y = "Acceleration",
-           title = paste0(name, "'s effort is defined as the mean distance of points \npast the 95th quartile line to the expected acceleration line"),
+           title = paste0(name),
            caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
-      theme(plot.title = element_text(face = "bold",
-                                      size = 20, 
+      theme_minimal(base_size=16) +
+      theme(plot.title = element_text(face = "bold.italic",
+                                      size = 18, 
                                       hjust = .5),
-            legend.title = element_text(face = "bold",
-                                        size = 15),
-            axis.title = element_text(face = "bold",
-                                      size = 15),
-            axis.text = element_text(size = 13),
-            plot.caption = element_text(face = "italic",
-                                        size = 8))
+            legend.title = element_text(face = "bold"),
+            axis.title = element_text(face = "bold"),
+            legend.text=element_text(size=15),
+            plot.caption = element_text(face = "italic", size = 8))
     return(player_graph)
   }
   return(player_runs_test_preds)

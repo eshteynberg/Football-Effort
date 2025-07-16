@@ -36,39 +36,52 @@ format:
 
 ## Our Data: 2022 NFL Season 
 
-* Game, play, player, tracking data from Weeks 1-9 [^1]
+* Game, play, player, tracking data from Weeks 1-9 [^2]
 
 * Running plays where a running back (RB) is the ball carrier
 
 * Trimmed each play to frames between handoff and end of play
 
-[^1]: Courtesy of NFL Big Data Bowl 2025
+[^2]: Courtesy of NFL Big Data Bowl 2025
 
-## Motivation: acceleration-speed (AS) profiles tell us about players' acceleration capacities at different speeds
+## Motivation: acceleration-speed (AS) profiles tell us about players' acceleration capacities at different speeds (Morin et al., 2021)
 
 ![](Checkpoint_2_Images/paper_AS_profile.png){fig-align="center" width=90%}
 
-## Effort is defined as the percentage of points above the relaxed line
+## Effort = percentage of a player's points (frames) above the relaxed regression line 
 
 ![](Checkpoint_2_Images/Rex_Saquon_AS.png){width="100%" height="400"}
 
-* Biased toward backups because of lower sample size.. or are they just working harder after all? Are starters fatigued or pacing themselves? 
+* Biased toward backups because of lower sample size...or are they just working harder? Are starters fatigued or pacing themselves? 
 
 * Unrealistic theoretical max speeds
 
+## Quantile regression provides a better way of evaluating players' acceleration capacities 
+
+## New ways of looking at effort 
+
+* Effort v1 = $\left(n_{\text{above}}+\sum\limits_{i=1}^{n_{\text{below}}} {\frac{1}{1+d_i}}\right)\bigg/n_{\text{total}}$
+
+* Effort v2 = percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$
+
+## Concerns and limitations
+
+* Problem with `qgam`: some players have more than 1% of points above 99th percentile
+  - Account for this without penalizing players who simply have large raw number of points above the line
+
+* Potential fix: Effort v3 = $\left(\sum\limits_{i=1}^{n_{\text{below}}} {\frac{1}{1+d_i}} + \frac{.01}{\text{% of points above } P_{99}}\right)\bigg/n_{\text{total}}$
+
+* Unsure about threshold for relaxed percentile line in Effort v2
+  
 ## Plan of action
 
 * Define research question and scope ✅
 
 * Data cleaning and preprocessing, EDA ✅
 
-* Select effort metric(s)
+* Develop basic AS profiles for players ✅
+
+* Obtain effort metric(s) with quantile regression ⏳
 
 * Evaluate effort metric(s) by correlating it to effort-related outcomes
-
-* Use chosen metric(s) to answer questions related to effort (residual effort, tackle outcome probabilities, minimum required effort per play, etc)
-
-
-# Appendix 
-
 
