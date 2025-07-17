@@ -1,6 +1,8 @@
 library(qgam)
 library(tidyverse)
 library(quantreg)
+library(gt)
+library(gtExtras)
 
 # Loading in Required Data ------------------------------------------------
 # Original data frames
@@ -378,7 +380,48 @@ dis_scores |>
 dis_scores |> 
   ggplot(aes(x = dis_score_above, y = prop_of_points_above)) +
   geom_point()
-  
+
+
+## TOP PLAYERS
+top_dis_scores <- dis_scores |> 
+  slice_max(dis_score_below, n = 10)
+
+bottom_dis_scores <- dis_scores |> 
+  slice_min(dis_score_below, n = 10) |> 
+  arrange(desc(dis_score_below))
+
+mix_dis_scores <- rbind(top_dis_scores, bottom_dis_scores) |> 
+  select(displayName, dis_score_below) |> 
+  mutate(dis_score_below = round(dis_score_below, 3))
+
+top_prop_scores <- dis_scores |> 
+  slice_max(prop_between, n = 10)
+
+bottom_prop_scores <- dis_scores |> 
+  slice_min(prop_between, n = 10) |> 
+  arrange(desc(prop_between))
+
+mix_prop_scores <- rbind(top_prop_scores, bottom_prop_scores) |> 
+  select(displayName, prop_between) |> 
+  mutate(prop_between = round(prop_between, 3) * 100)
+
+mix_dis_scores |>
+  gt() |>
+  tab_header(title = md("**Top and bottom players for effort metric**")) |>
+  cols_label(displayName = "Player Name", dis_score_below = "Effort Metric") |>
+  data_color(columns = c(dis_score_below),
+             fn = scales::col_numeric(palette = c("#0072B2","white", "#D55E00"), domain = NULL)) |>
+  gtExtras::gt_theme_espn() # |>
+# gtsave(file = "dis_scores_below.png")
+
+mix_prop_scores |>
+  gt() |>
+  tab_header(title = md("**Top and bottom players for effort prop**")) |>
+  cols_label(displayName = "Player Name", prop_between = "Effort Prop (%)") |>
+  data_color(columns = c(prop_between),
+             fn = scales::col_numeric(palette = c("#0072B2","white", "#D55E00"), domain = NULL)) |>
+  gtExtras::gt_theme_espn() # |>
+# gtsave(file = "prop_scores.png")
 
 # Player case (ellipse) ----------------------------------------------------------------
 
