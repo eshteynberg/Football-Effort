@@ -245,11 +245,12 @@ fig
 ```
 
 
-## interactive plot with 99th percentile 
+
+## Interactive plot with menu for the 99th percentile
 
 ```{r}
-#| label: percentile-regression
-#| fig-cap: "99th percentile and 99th percentile - 3"
+#| label: percentile-lines-regression
+#| fig-cap: "Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$"
 
 eff_function_qgam <- function(name, graph = FALSE) {
   # Filter player runs
@@ -321,7 +322,7 @@ gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "tp")
         y = actual_acc,
         text = paste0("Speed: ", round(actual_speed, 2),
                       "<br>Acceleration: ", round(actual_acc, 2))
-      ), alpha = 0.5, color = "grey40") +
+      ), alpha = 0.55, color = "grey40") +
       geom_line(data = pred_df, aes(x = s, y = pred_99, color = "99th percentile"), size = 1.2) +
       geom_line(data = pred_df, aes(x = s, y = pred_99m3, color = "99th percentile - 3"), linetype = "dashed", size = 1.2) +
       scale_color_manual("Line", values = c("99th percentile" = "#0072B2", "99th percentile - 3" = "#D55E00")) +
@@ -350,9 +351,85 @@ gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "tp")
 
 
 # Test
-eff_function_qgam("Saquon Barkley", graph = TRUE)
+#eff_function_qgam("Saquon Barkley", graph = TRUE)
+p1 <- ggplotly(eff_function_qgam("Saquon Barkley", graph = TRUE))
+p2 <- ggplotly(eff_function_qgam("Rex Burkhead", graph = TRUE))
+
+
+
+# Step 2: Initialize plotly figure
+fig2 <- plot_ly()
+
+# Step 3: Add Saquon traces (visible)
+for (trace in p1$x$data) {
+  trace$visible <- TRUE
+  fig2 <- fig2 %>% add_trace(
+    x = trace$x,
+    y = trace$y,
+    type = trace$type,
+    mode = trace$mode,
+    line = trace$line,
+    name = trace$name,
+    text = trace$text,
+    hoverinfo = trace$hoverinfo,
+    visible = TRUE
+  )
+}
+
+# Step 4: Add Rex traces (initially hidden)
+for (trace in p2$x$data) {
+  trace$visible <- FALSE
+  fig2 <- fig2 %>% add_trace(
+    x = trace$x,
+    y = trace$y,
+    type = trace$type,
+    mode = trace$mode,
+    line = trace$line,
+    name = trace$name,
+    text = trace$text,
+    hoverinfo = trace$hoverinfo,
+    visible = FALSE
+  )
+}
+
+# Step 5: Construct correct visibility vectors
+k1 <- length(p1$x$data)
+k2 <- length(p2$x$data)
+
+vis_saquon <- c(rep(TRUE, k1), rep(FALSE, k2))
+vis_rex    <- c(rep(FALSE, k1), rep(TRUE, k2))
+
+# Step 6: Add dropdown menu with correct visibility toggles
+fig2 <- fig2 |>
+  layout(
+  title = "Acceleration vs Speed Curve by Player",
+  updatemenus = list(
+    list(
+      type = "dropdown",
+      y = 0.8,
+      x = 1.1,
+      buttons = list(
+        list(method = "restyle",
+             args = list("visible", vis_saquon),
+             label = "Saquon Barkley"),
+        list(method = "restyle",
+             args = list("visible", vis_rex),
+             label = "Rex Burkhead")
+      )
+    )
+  )
+)
+
+fig2
+
 
 ```
+
+
+
+
+
+
 
 
 # Trying a different interactive layout

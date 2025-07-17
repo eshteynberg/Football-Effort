@@ -54,5 +54,12 @@
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "interactive plot with 99th percentile",
     "text": "interactive plot with 99th percentile\n\n\nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99..................done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99................done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99.............done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99...........done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99...............done \n\n\n\n\n99th percentile and 99th percentile - 3"
+  },
+  {
+    "objectID": "index.html#interactive-plot-with-menu-for-the-99th-percentile",
+    "href": "index.html#interactive-plot-with-menu-for-the-99th-percentile",
+    "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
+    "section": "Interactive plot with menu for the 99th percentile",
+    "text": "Interactive plot with menu for the 99th percentile\n\n\nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99...............done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99.............done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99.........done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99..............done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99.............done \n\n\nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99...........done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99...........................done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99...............done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99.................done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99...........................done \n\n\n\n\nPercentage of total points that lie in between the percentile P_{99} and P_{99}-3"
   }
 ]
