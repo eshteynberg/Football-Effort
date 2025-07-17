@@ -243,6 +243,138 @@ fig
 
 ```
 
+
+## interactive plot with 99th percentile 
+
+```{r}
+#| label: percentile-regression
+#| fig-cap: "Non-linear quantile regression for acceleration vs speed"
+
+load("web_data/tracking_bc.Rdata")
+load("web_data/player_runs_modeling.Rdata")
+library(qgam)
+
+set.seed(1)
+
+eff_function_qgam <- function(name, graph = FALSE) {
+  # Filter player runs
+  player_runs <- tracking_bc |> 
+    filter(displayName == name)
+  
+  # Define folds
+  N_FOLDS <- 5
+  
+  # Assign folds by game
+  plays_folds <- player_runs |> 
+    distinct(gameId) |> 
+    mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
+  
+  # Merge with folds and select modeling variables
+  player_runs_modeling <- player_runs |> 
+    select(s_mph, a_mpsh, gameId) |> 
+    left_join(plays_folds, by = "gameId") |> 
+    select(-gameId)
+
+  # Cross-validation logic
+  player_runs_cv <- function(x) {
+    test_data <- player_runs_modeling |> filter(fold == x)
+    train_data <- player_runs_modeling |> filter(fold != x)
+
+    qgam_fit <- qgam(a_mpsh ~ s(s_mph, k = 15, bs = "ad"),
+                     data = train_data,
+                     qu = .99,
+                     multicore = TRUE,
+                     ncores = 7)
+
+    tibble(
+      displayName = name,
+      qgam_pred = predict(qgam_fit, newdata = test_data),
+      actual_acc = test_data$a_mpsh,
+      actual_speed = test_data$s_mph,
+      res = test_data$a_mpsh - predict(qgam_fit, newdata = test_data),
+      qgam_pred_minus_3 = predict(qgam_fit, newdata = test_data) - 3,
+      test_fold = x
+    )
+  }
+
+  # Run CV and collect predictions
+  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
+    bind_rows()
+
+  # Compute effort score (proportion below the 99th percentile line)
+  eff_score <- mean(player_runs_test_preds$res < 0)
+
+  # Graph logic
+  if (graph == TRUE) {
+    # Fit final GAM lines for plotting
+    gam_fit_99 <- mgcv::gam(qgam_pred ~ s(actual_speed, k = 15, bs = "tp"), data = player_runs_test_preds)
+gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "tp"), data = player_runs_test_preds)
+
+    s_seq <- seq(min(player_runs_test_preds$actual_speed, na.rm = TRUE),
+                 max(player_runs_test_preds$actual_speed, na.rm = TRUE),
+                 length.out = 200)
+    pred_df <- tibble(
+      s = s_seq,
+      pred_99 = predict(gam_fit_99, newdata = tibble(actual_speed = s_seq)),
+      pred_99m3 = predict(gam_fit_99m3, newdata = tibble(actual_speed = s_seq))
+    )
+
+    # ggplot
+    p <- ggplot() +
+      geom_point(data = player_runs_test_preds, aes(
+        x = actual_speed, 
+        y = actual_acc,
+        text = paste0("Speed: ", round(actual_speed, 2),
+                      "<br>Acceleration: ", round(actual_acc, 2))
+      ), alpha = 0.5, color = "grey40") +
+      geom_line(data = pred_df, aes(x = s, y = pred_99, color = "99th percentile"), size = 1.2) +
+      geom_line(data = pred_df, aes(x = s, y = pred_99m3, color = "99th percentile - 3"), linetype = "dashed", size = 1.2) +
+      scale_color_manual("Line", values = c("99th percentile" = "#0072B2", "99th percentile - 3" = "#D55E00")) +
+      labs(
+        title = paste0(name, "'s Effort Quantile Curve (99%)"),
+        x = "Speed (mph)",
+        y = "Acceleration (m/s²)",
+        caption = "Data from Weeks 1–9 of the 2022 NFL Season"
+      ) +
+      theme_minimal(base_size = 16) +
+      theme(
+        plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+        axis.title = element_text(face = "bold", size = 14),
+        axis.text = element_text(size = 12),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(size = 13),
+        plot.caption = element_text(face = "italic", size = 10)
+      )
+
+    return(ggplotly(p, tooltip = "text"))
+  }
+
+  # If not graphing, return score
+  return(tibble(displayName = name, effort_ratio_99 = 1 - eff_score))
+}
+
+
+# Test
+eff_function_qgam("Saquon Barkley", graph = TRUE)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Trying a different interactive layout
 ::: {.panel-tabset}
 
