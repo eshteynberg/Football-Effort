@@ -80,7 +80,7 @@ ellipse <- function(name, graph = FALSE) {
   )
   
   if (graph == TRUE) {
-    player_runs |> 
+    graph <- player_runs |> 
       ggplot(aes(x = s_mph, y = a_mpsh)) +
       geom_point(alpha=.3, color="grey2")+
       geom_path(data = ellipse_df, aes(x = x, y = y), color = "#0072B2", size = 1.2) +
@@ -96,6 +96,7 @@ ellipse <- function(name, graph = FALSE) {
             axis.title = element_text(face = "bold"),
             legend.text=element_text(size=15),
             plot.caption = element_text(face = "italic", size = 8))
+    return(graph)
   }
   
   out <- tibble(
@@ -110,3 +111,12 @@ ellipse <- function(name, graph = FALSE) {
   )
   return(out)
 }
+
+# Test
+ellipse("Saquon Barkley")
+ellipse("Rex Burkhead", graph = TRUE)
+
+
+# Calculating ellipse score -----------------------------------------------
+
+
