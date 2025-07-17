@@ -407,8 +407,8 @@ mix_prop_scores <- rbind(top_prop_scores, bottom_prop_scores) |>
 
 mix_dis_scores |>
   gt() |>
-  tab_header(title = md("**Top and bottom players for effort metric**")) |>
-  cols_label(displayName = "Player Name", dis_score_below = "Effort Metric") |>
+  tab_header(title = md("**Top and bottom players for distance score**")) |>
+  cols_label(displayName = "Player Name", dis_score_below = "Distance score of points below 99th percentile") |>
   data_color(columns = c(dis_score_below),
              fn = scales::col_numeric(palette = c("#0072B2","white", "#D55E00"), domain = NULL)) |>
   gtExtras::gt_theme_espn() # |>
@@ -416,8 +416,8 @@ mix_dis_scores |>
 
 mix_prop_scores |>
   gt() |>
-  tab_header(title = md("**Top and bottom players for effort prop**")) |>
-  cols_label(displayName = "Player Name", prop_between = "Effort Prop (%)") |>
+  tab_header(title = md("**Top and bottom players for proportion score**")) |>
+  cols_label(displayName = "Player Name", prop_between = "Proportion between lines (%)") |>
   data_color(columns = c(prop_between),
              fn = scales::col_numeric(palette = c("#0072B2","white", "#D55E00"), domain = NULL)) |>
   gtExtras::gt_theme_espn() # |>
