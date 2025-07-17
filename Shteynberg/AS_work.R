@@ -798,6 +798,17 @@ Rex_qgam <- image_scale(Rex_qgam, "x500")
 Rex_Saquon_qgam <- image_append(c(Saquon_qgam, Rex_qgam)) 
 image_write(Rex_Saquon_qgam, "Rex_Saquon_qgam.png")
 
+#prop and dis scores ranking table
+dis_rank <- image_read("Shteynberg/Checkpoint_2_Images/dis_scores_below.png")
+prop_rank <- image_read("Shteynberg/Checkpoint_2_Images/prop_scores.png")
+dis_rank <- image_scale(dis_rank, "x500") 
+prop_rank <- image_scale(prop_rank, "x500") 
+spacer <- image_blank(width = 50, height = 500, color = "white")
+
+dis_prop_rank <- image_append(c(dis_rank, spacer, prop_rank)) 
+image_write(dis_prop_rank, "dis_prop_rank.png")
+
+
 
 # Nonparam regression 2 splines  ------------------------------------------
 
@@ -898,3 +909,59 @@ eff_scores <- purrr::map(rbs, eff_function_rqss) |>
   mutate(displayName = rbs)
 
 eff_scores
+
+
+
+
+# QUADRANT plot (similar to clustering but not) ---------------
+dis_mean <- mean(dis_scores$dis_score_below, na.rm = TRUE)
+prop_between_mean <- mean(dis_scores$prop_between, na.rm = TRUE)
+
+dis_scores <- dis_scores |> 
+  mutate(
+    effort_quadrant = case_when(
+      dis_score_below >= dis_mean & prop_between >= prop_between_mean ~ "1",
+      dis_score_below < dis_mean & prop_between >= prop_between_mean ~ "2",
+      dis_score_below >= dis_mean & prop_between < prop_between_mean ~ "3",
+      TRUE ~ "4"
+    ),
+    effort_quadrant = factor(effort_quadrant, levels = c("1", "2", "3", "4"))
+  )
+
+label_players <- bind_rows(
+  dis_scores |> filter(effort_quadrant == "1") |> slice_max(dis_score_below, n = 3),
+  dis_scores |> filter(effort_quadrant == "1") |> slice_max(prop_between, n = 3),
+  dis_scores |> filter(effort_quadrant == "2") |> slice_max(prop_between, n = 2),
+  dis_scores |> filter(effort_quadrant == "3") |> slice_max(dis_score_below, n = 2),
+  dis_scores |> filter(effort_quadrant == "4") |> slice_min(dis_score_below + prop_between, n = 3)
+) |> 
+  distinct()
+
+quadplot <- dis_scores |> 
+  ggplot(aes(x = dis_score_below, y = prop_between, color = effort_quadrant)) +
+  geom_point(size = 3, alpha = 0.8) +
+  geom_vline(xintercept = dis_mean, linetype = "dashed", color = "gray50") +
+  geom_hline(yintercept = prop_between_mean, linetype = "dashed", color = "gray50") +
+  scale_color_viridis_d(option = "D", end = 0.85, name = "Quadrant") +
+  labs(
+    x = "Distance score",
+    y = "Proportion between lines"
+  ) +
+  ggrepel::geom_text_repel(
+    data = label_players,
+    aes(label = displayName),
+    size = 4.2,
+    fontface = "bold",
+    color = "black",
+    max.overlaps = 100,
+    box.padding = 0.3
+  ) +
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 15),
+    axis.title = element_text(face = "bold")
+  )
+
+quadplot
+
