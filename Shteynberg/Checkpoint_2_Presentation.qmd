@@ -18,15 +18,11 @@ format:
 
 ## Background and Motivation
 
-* Not all rushing yards are equal 
-
 * Traditional stats miss the "how" behind yards gained
 
 * Previous research has explored athletes reaching theoretical max capacity [^1]
 
 * Can we "measure" effort using tracking data?
-
-* Multiple ways of evaluating effort 
 
   - Intangible and subjective
   - Depends on player position, defense faced, game context, snap count/play volume, play call/assignment
@@ -54,7 +50,7 @@ format:
 
 * Biased toward backups because of lower sample size...or are they just working harder? Are starters fatigued or pacing themselves? 
 
-* Unrealistic theoretical max speeds
+* Unrealistic theoretical max speeds - not comparable to soccer
 
 ## Quantile regression provides a better way of evaluating players' acceleration capacities 
 
@@ -88,7 +84,7 @@ Percentage of total points that lie in between the percentile $P_{99}$ and $P_{9
 * Unsure about threshold for relaxed percentile line in Effort v2
 
 * Problem with `qgam`: some players have more than 1% of points above 99th percentile
-  - Account for this without penalizing players who simply have large raw number of points above the line
+  - Account for this issue without penalizing players who simply have large raw number of points above the line - should we include those points in the metric?
 
 ::: {.fragment}
 
@@ -108,3 +104,13 @@ Percentage of total points that lie in between the percentile $P_{99}$ and $P_{9
 
 * Evaluate effort metric(s) by correlating it to effort-related outcomes
 
+
+# Appendix
+
+##
+
+::: {layout-ncol=2}
+![](Checkpoint_2_Images/dis_scores_below.png){style="transform: scale(0.9); transform-origin: top left;"}
+
+![](Checkpoint_2_Images/prop_scores.png){style="transform: scale(0.87); transform-origin: top left;"}
+:::
