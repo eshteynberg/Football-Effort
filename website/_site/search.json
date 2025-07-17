@@ -1,0 +1,58 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
+    "section": "",
+    "text": "Image source: The Tower"
+  },
+  {
+    "objectID": "index.html#introduction",
+    "href": "index.html#introduction",
+    "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
+    "section": "Introduction",
+    "text": "Introduction\nDescribe the problem and why it is important.\nAmerican Football is one of the most-watched and popular sports in the U.S., known for its quick decision-making, complex tactics, and athletically demanding displays of strength, endurance and speed."
+  },
+  {
+    "objectID": "index.html#data",
+    "href": "index.html#data",
+    "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
+    "section": "Data",
+    "text": "Data\n\nDescribe the data you’re using in detail, where you accessed it, along with relevant exploratory data analysis (EDA). You should also include descriptions of any relevant data pre-processing steps (e.g., whether you consider specific observations, create any meaningful features, etc.—but don’t mention minor steps like column type conversion, filtering out unnecessary rows)\nThe data used for this project were from NFL Big Data Bowl 2022 Dataset (NFL Big Data Bowl 2022) on Kaggle.\nWe limited our dataset to NFL running backs with more than 20 rushes."
+  },
+  {
+    "objectID": "index.html#methods",
+    "href": "index.html#methods",
+    "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
+    "section": "Methods",
+    "text": "Methods\n\nDescribe the modeling techniques you chose, their assumptions, justifications for why they are appropriate for the problem, and how you’re comparing/evaluating the different methods.\nUsed Dr. Ron Yurko and Quang Nguyen’s code to calculate distance from the nearest defender (Nguyen 2023)\nBased our AS/ AKE curved on the article titled “Individual acceleration-speed profile in-situ: A proof of concept in professional football players”(Morin et al. 2021)\nStill using the non-linear quantile regression plot? (Ding 2024)"
+  },
+  {
+    "objectID": "index.html#results",
+    "href": "index.html#results",
+    "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
+    "section": "Results",
+    "text": "Results\nDescribe your results. This can include tables and plots showing your results, as well as text describing how your models worked and the appropriate interpretations of the relevant output. (Note: Don’t just write out the textbook interpretations of all model coefficients. Instead, interpret the output that is relevant for your question of interest that is framed in the introduction)"
+  },
+  {
+    "objectID": "index.html#discussion",
+    "href": "index.html#discussion",
+    "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
+    "section": "Discussion",
+    "text": "Discussion\nGive your conclusions and summarize what you have learned with regards to your question of interest. Are there any limitations with the approaches you used? What do you think are the next steps to follow-up your project?"
+  },
+  {
+    "objectID": "index.html#appendix",
+    "href": "index.html#appendix",
+    "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
+    "section": "Appendix",
+    "text": "Appendix\n\n\n\n\nNon-linear quantile regression for acceleration vs speed"
+  },
+  {
+    "objectID": "index.html#interactive-plot-with-99th-percentile",
+    "href": "index.html#interactive-plot-with-99th-percentile",
+    "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
+    "section": "interactive plot with 99th percentile",
+    "text": "interactive plot with 99th percentile\n\n\nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99..................done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99................done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99.............done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99...........done \nEstimating learning rate. Each dot corresponds to a loss evaluation. \nqu = 0.99...............done \n\n\n\n\n99th percentile and 99th percentile - 3"
+  }
+]
