@@ -436,19 +436,21 @@ fig2
 
 ```
 
-### Adding more players to the dropdown menu:
+### Top and bottom players for proportion score:
 
 ```{r}
 #| label: intercative-quant-regression
-#| fig-cap: "Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$ for each running back"
+#| fig-cap: "Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$ for top and bottom running backs"
 #| message: false
 #| warning: false
 
 # Player list
-rb_dd_list <- c("Chase Edmonds", "Rachaad White", "Alexander Mattison", 
-                "Najee Harris", "Matt Breida", "Melvin Gordon", "James Cook",
-                "D'Andre Swift", "Joshua Kelley", "Latavius Murray", "Breece Hall",
-                "Brian Robinson", "David Montgomery")
+rb_dd_list <- c("Chase Edmonds", "Rachaad White", "D'Andre Swift", 
+                "Samaje Perine", "Joshua Kelley", "Matt Breida", "Alexander Mattison",
+                "Josh Jacobs", "James Cook", "Melvin Gordon", "Brian Robinson",
+                "Kareem Hunt", "Gus Edwards", "Breece Hall", "David Montgomery",
+                "Tyler Allgeier", "Isiah Pacheco", "Christian McCaffrey",
+                "Darrell Henderson", "Deon Jackson")
 
 # Step 1: Initialize plot and storage
 fig2 <- plot_ly()

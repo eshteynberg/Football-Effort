@@ -46,7 +46,7 @@
     "href": "index.html#appendix",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Appendix",
-    "text": "Appendix\n\n\n\n\nNon-linear quantile regression for acceleration vs speed\n\n\n\nInteractive plot with menu for the 99th percentile\n\n\n\n\nPercentage of total points that lie in between the percentile P_{99} and P_{99}-3\n\n\n\n\nAdding more players to the dropdown menu:\n\n\n\n\nPercentage of total points that lie in between the percentile P_{99} and P_{99}-3 for each running back"
+    "text": "Appendix\n\n\n\n\nNon-linear quantile regression for acceleration vs speed\n\n\n\nInteractive plot with menu for the 99th percentile\n\n\n\n\nPercentage of total points that lie in between the percentile P_{99} and P_{99}-3\n\n\n\n\nTop and bottom players for proportion score:\n\n\n\n\nPercentage of total points that lie in between the percentile P_{99} and P_{99}-3 for top and bottom running backs"
   },
   {
     "objectID": "index.html#trying-a-different-interactive-layout",
