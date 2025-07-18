@@ -139,3 +139,16 @@ effort_play_ac |>
   geom_smooth(method = "lm")
 cor(effort_play_ac$time_ac, effort_play_ac$ellipse_score)
 
+# COD
+effort_play_ac |> 
+  ggplot(aes(x = ellipse_score, y = avg_COD)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+cor(effort_play_ac$time_ac, effort_play_ac$avg_COD)
+
+# Linear effort metric
+effort_play_ac |> 
+  ggplot(aes(x = ellipse_score, y = num_of_effort_move)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+cor(effort_play_ac$time_ac, effort_play_ac$num_of_effort_move)
