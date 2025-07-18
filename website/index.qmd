@@ -252,6 +252,8 @@ fig
 #| label: percentile-lines-regression
 #| fig-cap: "Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$"
 
+# NOTE: takes a bit to run since the function is iterating through a lot of players! >:(
+
 eff_function_qgam <- function(name, graph = FALSE) {
   # Filter player runs
   player_runs <- tracking_bc |> 
@@ -275,12 +277,22 @@ eff_function_qgam <- function(name, graph = FALSE) {
   player_runs_cv <- function(x) {
     test_data <- player_runs_modeling |> filter(fold == x)
     train_data <- player_runs_modeling |> filter(fold != x)
-
-    qgam_fit <- qgam(a_mpsh ~ s(s_mph, k = 15, bs = "ad"),
-                     data = train_data,
-                     qu = .99,
-                     multicore = TRUE,
-                     ncores = 7)
+    
+# trying to suppress messages from qgam() model in the final rendered file
+    
+    suppressMessages({
+  suppressWarnings({
+    capture.output({
+      qgam_fit <- qgam(
+        a_mpsh ~ s(s_mph, k = 15, bs = "ad"),
+        data = train_data,
+        qu = .99,
+        multicore = TRUE,
+        ncores = 7
+      )
+    })
+  })
+})
 
     tibble(
       displayName = name,
