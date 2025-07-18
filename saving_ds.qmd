@@ -44,6 +44,12 @@ save(rb_stats_total_filtered,
 save(rbs_names,
      file = "website/web_data/rbs_names.Rdata")
 
+save(bottom_dis_scores,
+     file = "website/web_data/bottom_dis_scores.Rdata")
+
+save(top_dis_scores,
+     file = "website/web_data/top_dis_scores.Rdata")
+
 
 ```
 

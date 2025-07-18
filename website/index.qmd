@@ -436,21 +436,24 @@ fig2
 
 ```
 
-### Top and bottom players for proportion score:
 
+# Metrics
+
+
+# Effort metric v2
+::: {.panel-tabset}
+
+### Tab 1: Top Running backs
 ```{r}
-#| label: intercative-quant-regression
-#| fig-cap: "Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$ for top and bottom running backs"
+#| label: fig-quant-6
+#| fig-cap: "Top 10"
 #| message: false
 #| warning: false
 
 # Player list
 rb_dd_list <- c("Chase Edmonds", "Rachaad White", "D'Andre Swift", 
                 "Samaje Perine", "Joshua Kelley", "Matt Breida", "Alexander Mattison",
-                "Josh Jacobs", "James Cook", "Melvin Gordon", "Brian Robinson",
-                "Kareem Hunt", "Gus Edwards", "Breece Hall", "David Montgomery",
-                "Tyler Allgeier", "Isiah Pacheco", "Christian McCaffrey",
-                "Darrell Henderson", "Deon Jackson")
+                "Josh Jacobs", "James Cook", "Melvin Gordon")
 
 # Step 1: Initialize plot and storage
 fig2 <- plot_ly()
@@ -520,6 +523,106 @@ fig2
 
 
 ```
+
+
+### Tab 2: Bottom running backs
+```{r}
+#| label: fig-quant-7
+#| fig-cap: "Bottom 10"
+#| message: false
+#| warning: false
+
+
+# Player list
+rb_list <- c("Brian Robinson",
+                "Kareem Hunt", "Gus Edwards", "Breece Hall", "David Montgomery",
+                "Tyler Allgeier", "Isiah Pacheco", "Christian McCaffrey",
+                "Darrell Henderson", "Deon Jackson")
+
+# Step 1: Initialize plot and storage
+fig3 <- plot_ly()
+all_traces <- list()
+visibility_masks <- list()
+trace_lengths <- c()
+
+# Step 2: Loop through each player and collect their traces
+for (i in seq_along(rb_list)) {
+  player2 <- rb_list[i]
+  plot_obj2 <- ggplotly(eff_function_qgam(player2, graph = TRUE))
+  
+  player_traces <- list()
+  for (trace in plot_obj2$x$data) {
+    trace$visible <- (i == 1)  # Show only the first player's traces by default
+    fig3 <- fig3 |> add_trace(
+      x = trace$x,
+      y = trace$y,
+      type = trace$type,
+      mode = trace$mode,
+      line = trace$line,
+      name = trace$name,
+      text = trace$text,
+      hoverinfo = trace$hoverinfo,
+      visible = trace$visible
+    )
+    player_traces <- append(player_traces, list(trace))
+  }
+  
+  all_traces[[i]] <- player_traces
+  trace_lengths[i] <- length(player_traces)
+}
+
+# Step 3: Create visibility masks for dropdown
+total_traces <- sum(trace_lengths)
+
+for (i in seq_along(rb_list)) {
+  mask <- rep(FALSE, total_traces)
+  start_index <- sum(trace_lengths[1:(i - 1)]) + 1
+  end_index <- sum(trace_lengths[1:i])
+  mask[start_index:end_index] <- TRUE
+  visibility_masks[[i]] <- mask
+}
+
+# Step 4: Add dropdown menu
+dropdown_buttons <- lapply(seq_along(rb_list), function(i) {
+  list(method = "restyle",
+       args = list("visible", visibility_masks[[i]]),
+       label = rb_list[i])
+})
+
+fig3 <- fig3 %>%
+  layout(
+    title = "Acceleration vs Speed Individualized Profile by Running Back",
+    updatemenus = list(
+      list(
+        type = "dropdown",
+        y = 0.8,
+        x = 1.1,
+        buttons = dropdown_buttons
+      )
+    )
+  )
+
+# Show plot
+fig3
+
+```
+
+:::
+
+- Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$
+- This effort metric quantifies how often a player comes close to his “best” (99th percentile) accelerations
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
