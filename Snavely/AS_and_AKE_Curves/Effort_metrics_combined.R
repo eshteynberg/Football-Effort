@@ -19,6 +19,10 @@ validating_effort_metrics |>
   geom_point()
 
 validating_effort_metrics |> 
+  ggplot(aes(x = prop_between, y = avg_EPA)) +
+  geom_point()
+
+validating_effort_metrics |> 
   ggplot(aes(x = dis_score_below, y = avg_EPA)) +
   geom_point()
 # Not good :(
@@ -32,6 +36,10 @@ cor(validating_effort_metrics$ellipse_score, y = validating_effort_metrics$avg_d
 
 validating_effort_metrics |> 
   ggplot(aes(x = adj_dis_score_below, y = avg_dis_gained_ac)) +
+  geom_point()
+
+validating_effort_metrics |> 
+  ggplot(aes(x = prop_between, y = avg_dis_gained_ac)) +
   geom_point()
 
 validating_effort_metrics |> 
