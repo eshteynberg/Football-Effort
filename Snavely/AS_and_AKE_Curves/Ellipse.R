@@ -47,7 +47,7 @@ player_runs_dist <- player_runs |>
       s_mph, a_mpsh, ~ min_dist(.x, .y, ellipse_df$x, ellipse_df$y)
       )
   )
-
+ 
 
 # Creating an ellipse function --------------------------------------------
 

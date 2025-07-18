@@ -423,5 +423,108 @@ mix_prop_scores |>
   gtExtras::gt_theme_espn() # |>
 # gtsave(file = "prop_scores.png")
 
-# Player case (ellipse) ----------------------------------------------------------------
+
+# Adjusted qgam score -----------------------------------------------------
+
+# This is the same function as the one up top, only difference is adding a vline to graph
+eff_function_adjusted <- function(name, graph = FALSE) {
+  # Choosing player name
+  player_runs <- tracking_bc |> 
+    filter(displayName == name)
+  
+  # 5 folds
+  N_FOLDS <- 5
+  
+  # # Making sure plays are in the same fold
+  plays_folds <- player_runs |>
+    distinct(gameId) |> 
+    mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
+  
+  # Making the modeling data frame
+  player_runs_modeling <- player_runs |> 
+    select(s_mph, a_mpsh, gameId) |> 
+    left_join(plays_folds) |>
+    select(-gameId)
+  
+  player_runs_cv <- function(x){
+    test_data <- player_runs_modeling |> 
+      filter(fold == x)
+    train_data <- player_runs_modeling |> 
+      filter(fold != x)
+    
+    # Modeling
+    n_rows <- nrow(train_data)
+    k_val <- max(20, min(100, round(n_rows * 0.08))) # Optimizes k (k should roughly be 8% of the nrows)
+    qgam_fit <- qgam(a_mpsh ~ s(s_mph, k = 15, bs = "ad"),
+                     data = train_data,
+                     qu = .99,
+                     multicore = TRUE,
+                     ncores = 7)
+    
+    out <- tibble(
+      displayName = name,
+      qgam_pred = predict(qgam_fit, newdata = test_data),
+      actual_acc = test_data$a_mpsh,
+      actual_speed = test_data$s_mph,
+      res = abs(actual_acc - qgam_pred),
+      qgam_pred_minus_3 = qgam_pred - 3,
+      test_fold = x
+    )
+    return(out)
+  }
+  
+  # Doing cross fold validation
+  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
+    bind_rows()
+  
+  
+  if (graph == TRUE) {
+    player_graph <- player_runs_test_preds |> 
+      ggplot(aes(x = actual_speed, y = qgam_pred)) +
+      geom_point(aes(y = actual_acc), alpha=.3, color="grey2")+
+      stat_smooth(method="gam", formula=y~s(x),se=FALSE, lwd = 1.5, aes(color="99th percentile line"), size=1.2) + 
+      stat_smooth(method="gam", formula=y~s(x),se=FALSE, lty = 2, lwd = 1.5, aes(y=qgam_pred_minus_3, color="99th percentile line - 3"), size=1.2) +
+      geom_vline(aes(xintercept = quantile(actual_speed, probs = c(.85))), linetype="dashed", color = "grey50", size = 1.2) +
+      scale_color_manual("Line", values = c("#0072B2", "#D55E00")) +
+      labs(x = "Speed",
+           y = "Acceleration",
+           title = paste0(name),
+           caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
+      theme_minimal(base_size=16) +
+      theme(plot.title = element_text(face = "bold.italic",
+                                      size = 18, 
+                                      hjust = .5),
+            legend.title = element_text(face = "bold"),
+            axis.title = element_text(face = "bold"),
+            legend.text=element_text(size=15),
+            plot.caption = element_text(face = "italic", size = 8))
+    return(player_graph)
+  }
+  return(player_runs_test_preds)
+}
+
+# test for graph
+eff_function_adjusted("Saquon Barkley", graph = TRUE)
+eff_function_adjusted("Rex Burkhead", graph = TRUE)
+
+# Loading in data
+percentile_dists_k15 <- read_csv("created_data/percentile_dists.csv")
+
+# Adjusting for higher velocity
+# Finding the effort component of each frame
+adj_points_below_k15 <- percentile_dists_k15 |>
+  filter(actual_acc < qgam_pred) |> 
+  mutate(between_lines = ifelse(actual_acc > qgam_pred_minus_3,
+                                TRUE, FALSE),
+         adj_res = ifelse(actual_speed >= quantile(actual_speed, probs = c(.85)),
+                                      res/2, res),
+         adj_frame_dis_score = 1 / (1 + adj_res))
+
+# New adjusted dis scores for speed
+adj_dis_scores_players_k15 <- adj_points_below_k15 |> 
+  group_by(displayName) |> 
+  summarize(adj_dis_score_below = sum(adj_frame_dis_score) / n(),
+            prop_between = mean(between_lines)) |> 
+  ungroup()
+
 
