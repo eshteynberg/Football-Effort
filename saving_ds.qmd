@@ -11,6 +11,40 @@ save(tracking_bc,
 
 save(player_runs_modeling,
      file = "website/web_data/player_runs_modeling.Rdata")
+
+
+save(eff_function_qgam,
+     file = "website/web_data/eff_function_qgam.Rdata")
+
+save(player_play,
+     file = "website/web_data/player_play.Rdata")
+
+save(plays_rb_runs,
+     file = "website/web_data/plays_rb_runs.Rdata")
+
+save(tracking_bc_after_contact,
+     file = "website/web_data/tracking_bc_after_contact.Rdata")
+
+save(rb_stats_per_play,
+     file = "website/web_data/rb_stats_per_play.Rdata")
+
+
+save(after_contact,
+     file = "website/web_data/after_contact.Rdata")
+
+
+save(rb_stats_total,
+     file = "website/web_data/rb_stats_total.Rdata")
+
+
+save(rb_stats_total_filtered,
+     file = "website/web_data/rb_stats_total_filtered.Rdata")
+
+
+save(rbs_names,
+     file = "website/web_data/rbs_names.Rdata")
+
+
 ```
 
 

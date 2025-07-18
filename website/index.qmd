@@ -29,6 +29,7 @@ library(ggplot2)
 library(plotly)
 library(tidytext)
 library(quantreg)
+library(qgam)
 
 ```
 
@@ -243,7 +244,291 @@ fig
 
 ```
 
-# Trying a different interactive layout
+
+
+### Interactive plot with menu for the 99th percentile
+
+```{r}
+#| label: percentile-lines-regression
+#| fig-cap: "Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$"
+
+# NOTE: takes a bit to run since the function is iterating through a lot of players! >:(
+
+eff_function_qgam <- function(name, graph = FALSE) {
+  # Filter player runs
+  player_runs <- tracking_bc |> 
+    filter(displayName == name)
+  
+  # Define folds
+  N_FOLDS <- 5
+  
+  # Assign folds by game
+  plays_folds <- player_runs |> 
+    distinct(gameId) |> 
+    mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
+  
+  # Merge with folds and select modeling variables
+  player_runs_modeling <- player_runs |> 
+    select(s_mph, a_mpsh, gameId) |> 
+    left_join(plays_folds, by = "gameId") |> 
+    select(-gameId)
+
+  # Cross-validation logic
+  player_runs_cv <- function(x) {
+    test_data <- player_runs_modeling |> filter(fold == x)
+    train_data <- player_runs_modeling |> filter(fold != x)
+    
+# trying to suppress messages from qgam() model in the final rendered file
+    
+    suppressMessages({
+  suppressWarnings({
+    capture.output({
+      qgam_fit <- qgam(
+        a_mpsh ~ s(s_mph, k = 15, bs = "ad"),
+        data = train_data,
+        qu = .99,
+        multicore = TRUE,
+        ncores = 7
+      )
+    })
+  })
+})
+
+    tibble(
+      displayName = name,
+      qgam_pred = predict(qgam_fit, newdata = test_data),
+      actual_acc = test_data$a_mpsh,
+      actual_speed = test_data$s_mph,
+      res = test_data$a_mpsh - predict(qgam_fit, newdata = test_data),
+      qgam_pred_minus_3 = predict(qgam_fit, newdata = test_data) - 3,
+      test_fold = x
+    )
+  }
+
+  # Run CV and collect predictions
+  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
+    bind_rows()
+
+  # Compute effort score (proportion below the 99th percentile line)
+  eff_score <- mean(player_runs_test_preds$res < 0)
+
+  if (graph == TRUE) {
+    # Fit final GAM lines for plotting
+    gam_fit_99 <- mgcv::gam(qgam_pred ~ s(actual_speed, k = 15, bs = "tp"), data = player_runs_test_preds)
+gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "tp"), data = player_runs_test_preds)
+
+    s_seq <- seq(min(player_runs_test_preds$actual_speed, na.rm = TRUE),
+                 max(player_runs_test_preds$actual_speed, na.rm = TRUE),
+                 length.out = 200)
+    pred_df <- tibble(
+      s = s_seq,
+      pred_99 = predict(gam_fit_99, newdata = tibble(actual_speed = s_seq)),
+      pred_99m3 = predict(gam_fit_99m3, newdata = tibble(actual_speed = s_seq))
+    )
+
+    # ggplot
+    p <- ggplot() +
+      geom_point(data = player_runs_test_preds, aes(
+        x = actual_speed, 
+        y = actual_acc,
+        text = paste0("Speed: ", round(actual_speed, 2),
+                      "<br>Acceleration: ", round(actual_acc, 2))
+      ), alpha = 0.55, color = "grey40") +
+      geom_line(data = pred_df, aes(x = s, y = pred_99, color = "99th percentile"), size = 1.2) +
+      geom_line(data = pred_df, aes(x = s, y = pred_99m3, color = "99th percentile - 3"), linetype = "dashed", size = 1.2) +
+      scale_color_manual("Line", values = c("99th percentile" = "#0072B2", "99th percentile - 3" = "#D55E00")) +
+      labs(
+        title = paste0(name, "'s Effort Quantile Curve (99%)"),
+        x = "Speed (mph)",
+        y = "Acceleration (m/s²)",
+        caption = "Data from Weeks 1–9 of the 2022 NFL Season"
+      ) +
+      theme_minimal(base_size = 16) +
+      theme(
+        plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+        axis.title = element_text(face = "bold", size = 14),
+        axis.text = element_text(size = 12),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(size = 13),
+        plot.caption = element_text(face = "italic", size = 10)
+      )
+
+    return(ggplotly(p, tooltip = "text"))
+  }
+
+  # If not graphing, return score
+  return(tibble(displayName = name, effort_ratio_99 = 1 - eff_score))
+}
+
+
+# Test
+#eff_function_qgam("Saquon Barkley", graph = TRUE)
+p1 <- ggplotly(eff_function_qgam("Saquon Barkley", graph = TRUE))
+p2 <- ggplotly(eff_function_qgam("Rex Burkhead", graph = TRUE))
+
+
+
+# Step 2: Initialize plotly figure
+fig2 <- plot_ly()
+
+# Step 3: Add Saquon traces (visible)
+for (trace in p1$x$data) {
+  trace$visible <- TRUE
+  fig2 <- fig2 %>% add_trace(
+    x = trace$x,
+    y = trace$y,
+    type = trace$type,
+    mode = trace$mode,
+    line = trace$line,
+    name = trace$name,
+    text = trace$text,
+    hoverinfo = trace$hoverinfo,
+    visible = TRUE
+  )
+}
+
+# Step 4: Add Rex traces (initially hidden)
+for (trace in p2$x$data) {
+  trace$visible <- FALSE
+  fig2 <- fig2 %>% add_trace(
+    x = trace$x,
+    y = trace$y,
+    type = trace$type,
+    mode = trace$mode,
+    line = trace$line,
+    name = trace$name,
+    text = trace$text,
+    hoverinfo = trace$hoverinfo,
+    visible = FALSE
+  )
+}
+
+# Step 5: Construct correct visibility vectors
+k1 <- length(p1$x$data)
+k2 <- length(p2$x$data)
+
+vis_saquon <- c(rep(TRUE, k1), rep(FALSE, k2))
+vis_rex    <- c(rep(FALSE, k1), rep(TRUE, k2))
+
+# Step 6: Add drop down menu with correct visibility toggles
+fig2 <- fig2 |>
+  layout(
+  title = "Acceleration vs Speed Individualized Profile by Running Back",
+  updatemenus = list(
+    list(
+      type = "dropdown",
+      y = 0.8,
+      x = 1.1,
+      buttons = list(
+        list(method = "restyle",
+             args = list("visible", vis_saquon),
+             label = "Saquon Barkley"),
+        list(method = "restyle",
+             args = list("visible", vis_rex),
+             label = "Rex Burkhead")
+      )
+    )
+  )
+)
+
+fig2
+
+
+```
+
+### Adding more players to the dropdown menu:
+
+```{r}
+#| label: intercative-quant-regression
+#| fig-cap: "Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$ for each running back"
+#| message: false
+#| warning: false
+
+# Player list
+rb_dd_list <- c("Chase Edmonds", "Rachaad White", "Alexander Mattison", 
+                "Najee Harris", "Matt Breida", "Melvin Gordon", "James Cook",
+                "D'Andre Swift", "Joshua Kelley", "Latavius Murray", "Breece Hall",
+                "Brian Robinson", "David Montgomery")
+
+# Step 1: Initialize plot and storage
+fig2 <- plot_ly()
+all_traces <- list()
+visibility_masks <- list()
+trace_lengths <- c()
+
+# Step 2: Loop through each player and collect their traces
+for (i in seq_along(rb_dd_list)) {
+  player <- rb_dd_list[i]
+  plot_obj <- ggplotly(eff_function_qgam(player, graph = TRUE))
+  
+  player_traces <- list()
+  for (trace in plot_obj$x$data) {
+    trace$visible <- (i == 1)  # Show only the first player's traces by default
+    fig2 <- fig2 %>% add_trace(
+      x = trace$x,
+      y = trace$y,
+      type = trace$type,
+      mode = trace$mode,
+      line = trace$line,
+      name = trace$name,
+      text = trace$text,
+      hoverinfo = trace$hoverinfo,
+      visible = trace$visible
+    )
+    player_traces <- append(player_traces, list(trace))
+  }
+  
+  all_traces[[i]] <- player_traces
+  trace_lengths[i] <- length(player_traces)
+}
+
+# Step 3: Create visibility masks for dropdown
+total_traces <- sum(trace_lengths)
+
+for (i in seq_along(rb_dd_list)) {
+  mask <- rep(FALSE, total_traces)
+  start_index <- sum(trace_lengths[1:(i - 1)]) + 1
+  end_index <- sum(trace_lengths[1:i])
+  mask[start_index:end_index] <- TRUE
+  visibility_masks[[i]] <- mask
+}
+
+# Step 4: Add dropdown menu
+dropdown_buttons <- lapply(seq_along(rb_dd_list), function(i) {
+  list(method = "restyle",
+       args = list("visible", visibility_masks[[i]]),
+       label = rb_dd_list[i])
+})
+
+fig2 <- fig2 %>%
+  layout(
+    title = "Acceleration vs Speed Individualized Profile by Running Back",
+    updatemenus = list(
+      list(
+        type = "dropdown",
+        y = 0.8,
+        x = 1.1,
+        buttons = dropdown_buttons
+      )
+    )
+  )
+
+# Show plot
+fig2
+
+
+```
+
+
+
+
+
+
+
+
+
+
+## Trying a different interactive layout
 ::: {.panel-tabset}
 
 ### Tab 1: Saquon Barkley
