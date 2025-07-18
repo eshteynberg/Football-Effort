@@ -142,3 +142,9 @@ ellipse_stats |>
   geom_point()
 
 cor(ellipse_stats$ellipse_score, ellipse_stats$prop_out)  
+
+# Ellipse by play
+ellipse_play <- ellipse_scores |> 
+  group_by(displayName, gameId, playId) |> 
+  summarize(ellipse_score = sum(min_dist_ellipse[above==TRUE])/n()) |> 
+  ungroup()

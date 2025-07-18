@@ -334,9 +334,9 @@ acc_before_contact <- tracking_bc |>
 # Final Data Frame --------------------------------------------------------
 
 tracking_bc_filtered <- tracking_bc |> 
-  filter(displayName %in% rbs)
+  filter(displayName %in% rbs_names)
 
-tracking_bc_effort <- purrr::map(rbs, eff_function, player_table = TRUE) |> 
+tracking_bc_effort <- purrr::map(rbs_names, eff_function, player_table = TRUE) |> 
   bind_rows()
 
 tracking_bc_combined <- left_join(tracking_bc_filtered, tracking_bc_effort, 

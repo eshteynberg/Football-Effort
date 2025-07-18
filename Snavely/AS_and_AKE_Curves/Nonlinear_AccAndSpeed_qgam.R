@@ -524,7 +524,7 @@ adj_points_below_k15 <- percentile_dists_k15 |>
 adj_dis_scores_players_k15 <- adj_points_below_k15 |> 
   group_by(displayName) |> 
   summarize(adj_dis_score_below = sum(adj_frame_dis_score) / n(),
-            adj_prop_between = mean(between_lines)) |> 
+            prop_between = mean(between_lines)) |> 
   ungroup()
 
 
