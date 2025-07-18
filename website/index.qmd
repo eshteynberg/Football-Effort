@@ -30,6 +30,8 @@ library(plotly)
 library(tidytext)
 library(quantreg)
 library(qgam)
+library(knitr)
+library(kableExtra)
 
 ```
 
@@ -609,23 +611,73 @@ fig3
 
 :::
 
+
+## Tables
+
+::: {.panel-tabset}
+
+### Tab 1: Saquon Barkley
+```{r}
+#| label: fig-quant-8
+#| fig-cap: "Top 10 running backs by exact distance score"
+#| echo: false
+
+
+load("web_data/bottom_dis_scores.Rdata")
+load("web_data/top_dis_scores.Rdata")
+
+top_dis_scores |> 
+  select(1:2) |> 
+  kable(booktabs = TRUE,
+    digits = 2,
+    col.names = c("Running Back", "Distance Score")
+  ) |> 
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE,
+    position = "center"
+  ) |>
+  row_spec(0, bold = TRUE, color = "white", background = "#000080") |>
+  column_spec(2, color = "black", background = "#ffffff") |>
+  add_header_above(c("Top 10 Running backs with Highest distance score" = 2),
+                   background = "#CD2626", color = "white", bold = TRUE)
+
+
+```
+
+### Tab 2: Bottom Running Backs with lowest distance score 
+```{r}
+#| label: fig-quant-9
+#| fig-cap: "Bottom 10 running backs by exact distance score"
+#| echo: false
+
+
+load("web_data/bottom_dis_scores.Rdata")
+
+bottom_dis_scores |> 
+  select(1:2) |> 
+  kable(booktabs = TRUE,
+    digits = 2,
+    col.names = c("Running Back", "Distance Score")
+  ) |> 
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE,
+    position = "center"
+  ) |>
+  row_spec(0, bold = TRUE, color = "white", background = "#000080") |>
+  column_spec(2, color = "black", background = "#ffffff") |>
+  add_header_above(c("Bottom 10 Running backs with lowest distance score" = 2),
+                   background = "#CD2626", color = "white", bold = TRUE)
+
+
+```
+:::
+
+
+
 - Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$
 - This effort metric quantifies how often a player comes close to his “best” (99th percentile) accelerations
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
