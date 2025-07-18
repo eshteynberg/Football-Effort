@@ -115,7 +115,7 @@ Percentage of total points that lie in between the percentile $P_{99}$ and $P_{9
 ![](Checkpoint_2_Images/prop_scores.png){style="transform: scale(0.87); transform-origin: top left;"}
 :::
 
-##
+## Our two effort metrics have a linear relationship
 
 ![](Checkpoint_2_Images/prop_dist_scatter.png){width="90%"}
 

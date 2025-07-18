@@ -57,11 +57,11 @@ ellipse <- function(name, graph = FALSE) {
     filter(displayName == name)
   
   # Defining intercepts of the ellipse
-  a <- mean(player_runs$s_mph) + sd(player_runs$s_mph)
-  b <- mean(player_runs$a_mpsh) + sd(player_runs$a_mpsh)
+  a <- mean(player_runs$s_mph) 
+  b <- mean(player_runs$a_mpsh) 
   
   # Generating x-vals and y-vals to graph and find distance
-  x_vals <- seq(0, a, length.out = 300)
+  x_vals <- seq(0, a, length.out = 1000)
   y_vals <- b * sqrt(1 - (x_vals^2 / a^2))
   
   # Building the ellipse df
@@ -107,16 +107,38 @@ ellipse <- function(name, graph = FALSE) {
     frameId = player_runs$frameId,
     s_mph = player_runs$s_mph,
     a_mpsh = player_runs$a_mpsh,
-    min_dist_ellipse = player_runs_dist$min_dist_to_ellipse
+    min_dist_ellipse = player_runs_dist$min_dist_to_ellipse,
+    above = ifelse((player_runs$s_mph^2/(mean(player_runs$s_mph))^2) + (player_runs$a_mpsh^2/(mean(player_runs$a_mpsh))^2) >1, TRUE, FALSE)
+    
   )
   return(out)
 }
 
 # Test
 ellipse("Saquon Barkley")
-ellipse("Rex Burkhead", graph = TRUE)
+ellipse("Aaron Jones", graph = TRUE)
 
 
 # Calculating ellipse score -----------------------------------------------
 
+ellipse_scores <- purrr::map(rbs_names, ellipse) |> 
+  bind_rows() 
 
+ellipse_above <- ellipse_scores |> 
+  group_by(displayName) |> 
+  summarize(ellipse_score = sum(min_dist_ellipse[above==TRUE])/n()) |> 
+  ungroup()
+
+ellipse_prop <- ellipse_scores |> 
+  group_by(displayName) |> 
+  summarize(prop_out = mean(above),
+            prop_in = 1-prop_out)
+
+ellipse_stats <- ellipse_above |> 
+  left_join(ellipse_prop)
+
+ellipse_stats |> 
+  ggplot(aes(x=ellipse_score, y=prop_out))+
+  geom_point()
+
+cor(ellipse_stats$ellipse_score, ellipse_stats$prop_out)  
