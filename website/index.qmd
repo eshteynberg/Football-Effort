@@ -316,8 +316,8 @@ eff_function_qgam <- function(name, graph = FALSE) {
 
   if (graph == TRUE) {
     # Fit final GAM lines for plotting
-    gam_fit_99 <- mgcv::gam(qgam_pred ~ s(actual_speed, k = 15, bs = "tp"), data = player_runs_test_preds)
-gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "tp"), data = player_runs_test_preds)
+    gam_fit_99 <- mgcv::gam(qgam_pred ~ s(actual_speed, k = 15, bs = "ad"), data = player_runs_test_preds)
+gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "ad"), data = player_runs_test_preds)
 
     s_seq <- seq(min(player_runs_test_preds$actual_speed, na.rm = TRUE),
                  max(player_runs_test_preds$actual_speed, na.rm = TRUE),
@@ -334,11 +334,14 @@ gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "tp")
         x = actual_speed, 
         y = actual_acc,
         text = paste0("Speed: ", round(actual_speed, 2),
-                      "<br>Acceleration: ", round(actual_acc, 2))
-      ), alpha = 0.55, color = "grey40") +
+                      "<br>Acceleration: ", round(actual_acc, 2))), 
+      alpha = 0.55, 
+      color = "grey40",
+      # so the data point's color doesn't show on the legend
+      show.legend = FALSE) + 
       geom_line(data = pred_df, aes(x = s, y = pred_99, color = "99th percentile"), size = 1.2) +
       geom_line(data = pred_df, aes(x = s, y = pred_99m3, color = "99th percentile - 3"), linetype = "dashed", size = 1.2) +
-      scale_color_manual("Line", values = c("99th percentile" = "#0072B2", "99th percentile - 3" = "#D55E00")) +
+      scale_color_manual("Line", values = c("99th percentile" = "#0072B2", "99th percentile - 3" = "black")) +
       labs(
         title = paste0(name, "'s Effort Quantile Curve (99%)"),
         x = "Speed (mph)",
@@ -358,82 +361,81 @@ gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "tp")
     return(ggplotly(p, tooltip = "text"))
   }
 
-  # If not graphing, return score
   return(tibble(displayName = name, effort_ratio_99 = 1 - eff_score))
 }
 
 
 # Test
 #eff_function_qgam("Saquon Barkley", graph = TRUE)
-p1 <- ggplotly(eff_function_qgam("Saquon Barkley", graph = TRUE))
-p2 <- ggplotly(eff_function_qgam("Rex Burkhead", graph = TRUE))
-
-
-
-# Step 2: Initialize plotly figure
-fig2 <- plot_ly()
-
-# Step 3: Add Saquon traces (visible)
-for (trace in p1$x$data) {
-  trace$visible <- TRUE
-  fig2 <- fig2 %>% add_trace(
-    x = trace$x,
-    y = trace$y,
-    type = trace$type,
-    mode = trace$mode,
-    line = trace$line,
-    name = trace$name,
-    text = trace$text,
-    hoverinfo = trace$hoverinfo,
-    visible = TRUE
-  )
-}
-
-# Step 4: Add Rex traces (initially hidden)
-for (trace in p2$x$data) {
-  trace$visible <- FALSE
-  fig2 <- fig2 %>% add_trace(
-    x = trace$x,
-    y = trace$y,
-    type = trace$type,
-    mode = trace$mode,
-    line = trace$line,
-    name = trace$name,
-    text = trace$text,
-    hoverinfo = trace$hoverinfo,
-    visible = FALSE
-  )
-}
-
-# Step 5: Construct correct visibility vectors
-k1 <- length(p1$x$data)
-k2 <- length(p2$x$data)
-
-vis_saquon <- c(rep(TRUE, k1), rep(FALSE, k2))
-vis_rex    <- c(rep(FALSE, k1), rep(TRUE, k2))
-
-# Step 6: Add drop down menu with correct visibility toggles
-fig2 <- fig2 |>
-  layout(
-  title = "Acceleration vs Speed Individualized Profile by Running Back",
-  updatemenus = list(
-    list(
-      type = "dropdown",
-      y = 0.8,
-      x = 1.1,
-      buttons = list(
-        list(method = "restyle",
-             args = list("visible", vis_saquon),
-             label = "Saquon Barkley"),
-        list(method = "restyle",
-             args = list("visible", vis_rex),
-             label = "Rex Burkhead")
-      )
-    )
-  )
-)
-
-fig2
+# p1 <- ggplotly(eff_function_qgam("Saquon Barkley", graph = TRUE))
+# p2 <- ggplotly(eff_function_qgam("Rex Burkhead", graph = TRUE))
+# 
+# 
+# 
+# # Step 2: Initialize plotly figure
+# fig2 <- plot_ly()
+# 
+# # Step 3: Add Saquon traces (visible)
+# for (trace in p1$x$data) {
+#   trace$visible <- TRUE
+#   fig2 <- fig2 %>% add_trace(
+#     x = trace$x,
+#     y = trace$y,
+#     type = trace$type,
+#     mode = trace$mode,
+#     line = trace$line,
+#     name = trace$name,
+#     text = trace$text,
+#     hoverinfo = trace$hoverinfo,
+#     visible = TRUE
+#   )
+# }
+# 
+# # Step 4: Add Rex traces (initially hidden)
+# for (trace in p2$x$data) {
+#   trace$visible <- FALSE
+#   fig2 <- fig2 %>% add_trace(
+#     x = trace$x,
+#     y = trace$y,
+#     type = trace$type,
+#     mode = trace$mode,
+#     line = trace$line,
+#     name = trace$name,
+#     text = trace$text,
+#     hoverinfo = trace$hoverinfo,
+#     visible = FALSE
+#   )
+# }
+# 
+# # Step 5: Construct correct visibility vectors
+# k1 <- length(p1$x$data)
+# k2 <- length(p2$x$data)
+# 
+# vis_saquon <- c(rep(TRUE, k1), rep(FALSE, k2))
+# vis_rex    <- c(rep(FALSE, k1), rep(TRUE, k2))
+# 
+# # Step 6: Add drop down menu with correct visibility toggles
+# fig2 <- fig2 |>
+#   layout(
+#   title = "Acceleration vs Speed Individualized Profile by Running Back",
+#   updatemenus = list(
+#     list(
+#       type = "dropdown",
+#       y = 0.8,
+#       x = 1.1,
+#       buttons = list(
+#         list(method = "restyle",
+#              args = list("visible", vis_saquon),
+#              label = "Saquon Barkley"),
+#         list(method = "restyle",
+#              args = list("visible", vis_rex),
+#              label = "Rex Burkhead")
+#       )
+#     )
+#   )
+# )
+# 
+# fig2
 
 
 ```
@@ -457,21 +459,23 @@ rb_dd_list <- c("Chase Edmonds", "Rachaad White", "D'Andre Swift",
                 "Samaje Perine", "Joshua Kelley", "Matt Breida", "Alexander Mattison",
                 "Josh Jacobs", "James Cook", "Melvin Gordon")
 
-# Step 1: Initialize plot and storage
+# Initialize plot
 fig2 <- plot_ly()
 all_traces <- list()
 visibility_masks <- list()
 trace_lengths <- c()
 
-# Step 2: Loop through each player and collect their traces
+#Loop through each running back to collect their traces
 for (i in seq_along(rb_dd_list)) {
   player <- rb_dd_list[i]
   plot_obj <- ggplotly(eff_function_qgam(player, graph = TRUE))
   
   player_traces <- list()
   for (trace in plot_obj$x$data) {
-    trace$visible <- (i == 1)  # Show only the first player's traces by default
-    fig2 <- fig2 %>% add_trace(
+    trace$visible <- (i == 1) 
+    
+    # this is to display the first running back's AS quantile regression 
+    fig2 <- fig2 |> add_trace(
       x = trace$x,
       y = trace$y,
       type = trace$type,
@@ -489,7 +493,7 @@ for (i in seq_along(rb_dd_list)) {
   trace_lengths[i] <- length(player_traces)
 }
 
-# Step 3: Create visibility masks for dropdown
+#  Visibility masks for dropdown
 total_traces <- sum(trace_lengths)
 
 for (i in seq_along(rb_dd_list)) {
@@ -500,14 +504,14 @@ for (i in seq_along(rb_dd_list)) {
   visibility_masks[[i]] <- mask
 }
 
-# Step 4: Add dropdown menu
+# Adding dropdown menu
 dropdown_buttons <- lapply(seq_along(rb_dd_list), function(i) {
   list(method = "restyle",
        args = list("visible", visibility_masks[[i]]),
        label = rb_dd_list[i])
 })
 
-fig2 <- fig2 %>%
+fig2 <- fig2 |>
   layout(
     title = "Acceleration vs Speed Individualized Profile by Running Back",
     updatemenus = list(
@@ -519,8 +523,6 @@ fig2 <- fig2 %>%
       )
     )
   )
-
-# Show plot
 fig2
 
 
@@ -529,83 +531,79 @@ fig2
 
 ### Tab 2: Bottom running backs
 ```{r}
-#| label: fig-quant-7
-#| fig-cap: "Bottom 10"
-#| message: false
-#| warning: false
+# #| label: fig-quant-7 -->
+# #| fig-cap: "Bottom 10" -->
+# #| message: false -->
+# #| warning: false -->
 
 
-# Player list
-rb_list <- c("Brian Robinson",
-                "Kareem Hunt", "Gus Edwards", "Breece Hall", "David Montgomery",
-                "Tyler Allgeier", "Isiah Pacheco", "Christian McCaffrey",
-                "Darrell Henderson", "Deon Jackson")
-
-# Step 1: Initialize plot and storage
-fig3 <- plot_ly()
-all_traces <- list()
-visibility_masks <- list()
-trace_lengths <- c()
-
-# Step 2: Loop through each player and collect their traces
-for (i in seq_along(rb_list)) {
-  player2 <- rb_list[i]
-  plot_obj2 <- ggplotly(eff_function_qgam(player2, graph = TRUE))
-  
-  player_traces <- list()
-  for (trace in plot_obj2$x$data) {
-    trace$visible <- (i == 1)  # Show only the first player's traces by default
-    fig3 <- fig3 |> add_trace(
-      x = trace$x,
-      y = trace$y,
-      type = trace$type,
-      mode = trace$mode,
-      line = trace$line,
-      name = trace$name,
-      text = trace$text,
-      hoverinfo = trace$hoverinfo,
-      visible = trace$visible
-    )
-    player_traces <- append(player_traces, list(trace))
-  }
-  
-  all_traces[[i]] <- player_traces
-  trace_lengths[i] <- length(player_traces)
-}
-
-# Step 3: Create visibility masks for dropdown
-total_traces <- sum(trace_lengths)
-
-for (i in seq_along(rb_list)) {
-  mask <- rep(FALSE, total_traces)
-  start_index <- sum(trace_lengths[1:(i - 1)]) + 1
-  end_index <- sum(trace_lengths[1:i])
-  mask[start_index:end_index] <- TRUE
-  visibility_masks[[i]] <- mask
-}
-
-# Step 4: Add dropdown menu
-dropdown_buttons <- lapply(seq_along(rb_list), function(i) {
-  list(method = "restyle",
-       args = list("visible", visibility_masks[[i]]),
-       label = rb_list[i])
-})
-
-fig3 <- fig3 %>%
-  layout(
-    title = "Acceleration vs Speed Individualized Profile by Running Back",
-    updatemenus = list(
-      list(
-        type = "dropdown",
-        y = 0.8,
-        x = 1.1,
-        buttons = dropdown_buttons
-      )
-    )
-  )
-
-# Show plot
-fig3
+# running backs at the bottom 
+# rb_list <- c("Brian Robinson",
+#                 "Kareem Hunt", "Gus Edwards", "Breece Hall", "David Montgomery",
+#                 "Tyler Allgeier", "Isiah Pacheco", "Christian McCaffrey",
+#                 "Darrell Henderson", "Deon Jackson")
+# 
+# fig3 <- plot_ly()
+# all_traces <- list()
+# visibility_masks <- list()
+# trace_lengths <- c()
+# 
+# # Loop through each player to collect their traces
+# for (i in seq_along(rb_list)) {
+#   player2 <- rb_list[i]
+#   plot_obj2 <- ggplotly(eff_function_qgam(player2, graph = TRUE))
+#   
+#   player_traces <- list()
+#   for (trace in plot_obj2$x$data) {
+#     trace$visible <- (i == 1) 
+#     fig3 <- fig3 |> add_trace(
+#       x = trace$x,
+#       y = trace$y,
+#       type = trace$type,
+#       mode = trace$mode,
+#       line = trace$line,
+#       name = trace$name,
+#       text = trace$text,
+#       hoverinfo = trace$hoverinfo,
+#       visible = trace$visible
+#     )
+#     player_traces <- append(player_traces, list(trace))
+#   }
+#   
+#   all_traces[[i]] <- player_traces
+#   trace_lengths[i] <- length(player_traces)
+# }
+# 
+# total_traces <- sum(trace_lengths)
+# 
+# for (i in seq_along(rb_list)) {
+#   mask <- rep(FALSE, total_traces)
+#   start_index <- sum(trace_lengths[1:(i - 1)]) + 1
+#   end_index <- sum(trace_lengths[1:i])
+#   mask[start_index:end_index] <- TRUE
+#   visibility_masks[[i]] <- mask
+# }
+# 
+# 
+# dropdown_buttons <- lapply(seq_along(rb_list), function(i) {
+#   list(method = "restyle",
+#        args = list("visible", visibility_masks[[i]]),
+#        label = rb_list[i])
+# })
+# 
+# fig3 <- fig3 %>%
+#   layout(
+#     title = "Acceleration vs Speed Individualized Profile by Running Back",
+#     updatemenus = list(
+#       list(
+#         type = "dropdown",
+#         y = 0.8,
+#         x = 1.1,
+#         buttons = dropdown_buttons
+#       )
+#     )
+#   )
+# fig3
 
 ```
 
@@ -958,174 +956,174 @@ eff_function_rqss <- function(name, graph = FALSE) {
 
 ### Tab 4: Chase Edmonds
 ```{r}
-#| label: fig-quant-4
-#| fig-cap: "trying out non-linear-quant-regression"
+##| label: fig-quant-4
+##| fig-cap: "trying out non-linear-quant-regression"
 
 
-set.seed(1)
-
-eff_function_rqss <- function(name, graph = FALSE) {
-  player_runs <- tracking_bc |> 
-    filter(displayName == name)
-
-  N_FOLDS <- 5
-  player_runs_modeling <- player_runs |> 
-    select(s, a) |> 
-    mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
-  
-  player_runs_cv <- function(x) {
-    test_data <- player_runs_modeling |> 
-      filter(fold == x)
-    train_data <- player_runs_modeling |> 
-      filter(fold != x)
-    
-    s_range <- range(train_data$s)
-    test_data <- test_data |> 
-      filter(s >= max(s_range[1], 1),
-             s <= min(s_range[2], 9))
-    
-    rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = train_data)
-    
-    out <- tibble(
-      rq_pred = predict(rq_fit, newdata = test_data),
-      test_actual = test_data$a,
-      res_rq = test_actual - rq_pred,
-      test_fold = x
-    )
-    return(out)
-  }
-
-  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
-    list_rbind()
-  
-  eff_score <- mean(player_runs_test_preds$res_rq < 0)
-
-  if (graph == TRUE) {
-    # Fit final model and compute smooth prediction line
-    rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = player_runs)
-    s_seq <- seq(min(player_runs$s, na.rm = TRUE), max(player_runs$s, na.rm = TRUE), length.out = 100)
-    pred_df <- tibble(s = s_seq)
-    pred_df$a <- predict(rq_fit, newdata = pred_df)
-
-    # Interactive ggplot
-    p <- ggplot() +
-      geom_point(data = player_runs, aes(
-      x = s, 
-      y = a,
-      text = paste0("Speed: ", round(s, 2),
-                    "<br>Acceleration: ", round(a, 2))), 
-      alpha = 0.5, 
-      color = "grey40") +
-      geom_line(data = pred_df, aes(x = s, y = a), 
-                color = "blue", size = 1.2) +
-      scale_x_continuous(name = "Speed") +
-      scale_y_continuous(name = "Acceleration") +
-      labs(
-        title = paste0(name, "'s Effort Quantile Curve (90%)"),
-        caption = "Data from Weeks 1–9 of the 2022 NFL Season"
-      ) +
-      theme_minimal() +
-      theme(
-        plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
-        axis.title = element_text(face = "bold", size = 14),
-        axis.text = element_text(size = 12),
-        plot.caption = element_text(face = "italic", size = 9)
-      )
-
-    return(ggplotly(p, tooltip = "text"))
-  }
-
-  return(tibble(displayName = name, effort_ratio_90 = 1 - eff_score))
-}
-
-
- (eff_function_rqss("Chase Edmonds", graph = TRUE))
-```
-
-### Tab 5: Boston Scott
-```{r}
-#| label: fig-quant-5
-#| fig-cap: "trying out non-linear-quant-regression"
-
-
-set.seed(1)
-
-eff_function_rqss <- function(name, graph = FALSE) {
-  player_runs <- tracking_bc |> 
-    filter(displayName == name)
-
-  N_FOLDS <- 5
-  player_runs_modeling <- player_runs |> 
-    select(s, a) |> 
-    mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
-  
-  player_runs_cv <- function(x) {
-    test_data <- player_runs_modeling |> 
-      filter(fold == x)
-    train_data <- player_runs_modeling |> 
-      filter(fold != x)
-    
-    s_range <- range(train_data$s)
-    test_data <- test_data |> 
-      filter(s >= max(s_range[1], 1),
-             s <= min(s_range[2], 9))
-    
-    rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = train_data)
-    
-    out <- tibble(
-      rq_pred = predict(rq_fit, newdata = test_data),
-      test_actual = test_data$a,
-      res_rq = test_actual - rq_pred,
-      test_fold = x
-    )
-    return(out)
-  }
-
-  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
-    list_rbind()
-  
-  eff_score <- mean(player_runs_test_preds$res_rq < 0)
-
-  if (graph == TRUE) {
-    # Fit final model and compute smooth prediction line
-    rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = player_runs)
-    s_seq <- seq(min(player_runs$s, na.rm = TRUE), max(player_runs$s, na.rm = TRUE), length.out = 100)
-    pred_df <- tibble(s = s_seq)
-    pred_df$a <- predict(rq_fit, newdata = pred_df)
-
-    # Interactive ggplot
-    p <- ggplot() +
-      geom_point(data = player_runs, aes(
-      x = s, 
-      y = a,
-      text = paste0("Speed: ", round(s, 2),
-                    "<br>Acceleration: ", round(a, 2))), 
-      alpha = 0.5, 
-      color = "grey40") +
-      geom_line(data = pred_df, aes(x = s, y = a), 
-                color = "blue", size = 1.2) +
-      scale_x_continuous(name = "Speed") +
-      scale_y_continuous(name = "Acceleration") +
-      labs(
-        title = paste0(name, "'s Effort Quantile Curve (90%)"),
-        caption = "Data from Weeks 1–9 of the 2022 NFL Season"
-      ) +
-      theme_minimal() +
-      theme(
-        plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
-        axis.title = element_text(face = "bold", size = 14),
-        axis.text = element_text(size = 12),
-        plot.caption = element_text(face = "italic", size = 9)
-      )
-
-    return(ggplotly(p, tooltip = "text"))
-  }
-
-  return(tibble(displayName = name, effort_ratio_90 = 1 - eff_score))
-}
-
-
- (eff_function_rqss("Boston Scott", graph = TRUE))
+# set.seed(1)
+# 
+# eff_function_rqss <- function(name, graph = FALSE) {
+#   player_runs <- tracking_bc |> 
+#     filter(displayName == name)
+# 
+#   N_FOLDS <- 5
+#   player_runs_modeling <- player_runs |> 
+#     select(s, a) |> 
+#     mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
+#   
+#   player_runs_cv <- function(x) {
+#     test_data <- player_runs_modeling |> 
+#       filter(fold == x)
+#     train_data <- player_runs_modeling |> 
+#       filter(fold != x)
+#     
+#     s_range <- range(train_data$s)
+#     test_data <- test_data |> 
+#       filter(s >= max(s_range[1], 1),
+#              s <= min(s_range[2], 9))
+#     
+#     rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = train_data)
+#     
+#     out <- tibble(
+#       rq_pred = predict(rq_fit, newdata = test_data),
+#       test_actual = test_data$a,
+#       res_rq = test_actual - rq_pred,
+#       test_fold = x
+#     )
+#     return(out)
+#   }
+# 
+#   player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
+#     list_rbind()
+#   
+#   eff_score <- mean(player_runs_test_preds$res_rq < 0)
+# 
+#   if (graph == TRUE) {
+#     # Fit final model and compute smooth prediction line
+#     rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = player_runs)
+#     s_seq <- seq(min(player_runs$s, na.rm = TRUE), max(player_runs$s, na.rm = TRUE), length.out = 100)
+#     pred_df <- tibble(s = s_seq)
+#     pred_df$a <- predict(rq_fit, newdata = pred_df)
+# 
+#     # Interactive ggplot
+#     p <- ggplot() +
+#       geom_point(data = player_runs, aes(
+#       x = s, 
+#       y = a,
+#       text = paste0("Speed: ", round(s, 2),
+#                     "<br>Acceleration: ", round(a, 2))), 
+#       alpha = 0.5, 
+#       color = "grey40") +
+#       geom_line(data = pred_df, aes(x = s, y = a), 
+#                 color = "blue", size = 1.2) +
+#       scale_x_continuous(name = "Speed") +
+#       scale_y_continuous(name = "Acceleration") +
+#       labs(
+#         title = paste0(name, "'s Effort Quantile Curve (90%)"),
+#         caption = "Data from Weeks 1–9 of the 2022 NFL Season"
+#       ) +
+#       theme_minimal() +
+#       theme(
+#         plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+#         axis.title = element_text(face = "bold", size = 14),
+#         axis.text = element_text(size = 12),
+#         plot.caption = element_text(face = "italic", size = 9)
+#       )
+# 
+#     return(ggplotly(p, tooltip = "text"))
+#   }
+# 
+#   return(tibble(displayName = name, effort_ratio_90 = 1 - eff_score))
+# }
+# 
+# 
+#  (eff_function_rqss("Chase Edmonds", graph = TRUE))
+# ```
+# 
+# ### Tab 5: Boston Scott
+# ```{r}
+# #| label: fig-quant-5
+# #| fig-cap: "trying out non-linear-quant-regression"
+# 
+# 
+# set.seed(1)
+# 
+# eff_function_rqss <- function(name, graph = FALSE) {
+#   player_runs <- tracking_bc |> 
+#     filter(displayName == name)
+# 
+#   N_FOLDS <- 5
+#   player_runs_modeling <- player_runs |> 
+#     select(s, a) |> 
+#     mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
+#   
+#   player_runs_cv <- function(x) {
+#     test_data <- player_runs_modeling |> 
+#       filter(fold == x)
+#     train_data <- player_runs_modeling |> 
+#       filter(fold != x)
+#     
+#     s_range <- range(train_data$s)
+#     test_data <- test_data |> 
+#       filter(s >= max(s_range[1], 1),
+#              s <= min(s_range[2], 9))
+#     
+#     rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = train_data)
+#     
+#     out <- tibble(
+#       rq_pred = predict(rq_fit, newdata = test_data),
+#       test_actual = test_data$a,
+#       res_rq = test_actual - rq_pred,
+#       test_fold = x
+#     )
+#     return(out)
+#   }
+# 
+#   player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
+#     list_rbind()
+#   
+#   eff_score <- mean(player_runs_test_preds$res_rq < 0)
+# 
+#   if (graph == TRUE) {
+#     # Fit final model and compute smooth prediction line
+#     rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = player_runs)
+#     s_seq <- seq(min(player_runs$s, na.rm = TRUE), max(player_runs$s, na.rm = TRUE), length.out = 100)
+#     pred_df <- tibble(s = s_seq)
+#     pred_df$a <- predict(rq_fit, newdata = pred_df)
+# 
+#     # Interactive ggplot
+#     p <- ggplot() +
+#       geom_point(data = player_runs, aes(
+#       x = s, 
+#       y = a,
+#       text = paste0("Speed: ", round(s, 2),
+#                     "<br>Acceleration: ", round(a, 2))), 
+#       alpha = 0.5, 
+#       color = "grey40") +
+#       geom_line(data = pred_df, aes(x = s, y = a), 
+#                 color = "blue", size = 1.2) +
+#       scale_x_continuous(name = "Speed") +
+#       scale_y_continuous(name = "Acceleration") +
+#       labs(
+#         title = paste0(name, "'s Effort Quantile Curve (90%)"),
+#         caption = "Data from Weeks 1–9 of the 2022 NFL Season"
+#       ) +
+#       theme_minimal() +
+#       theme(
+#         plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+#         axis.title = element_text(face = "bold", size = 14),
+#         axis.text = element_text(size = 12),
+#         plot.caption = element_text(face = "italic", size = 9)
+#       )
+# 
+#     return(ggplotly(p, tooltip = "text"))
+#   }
+# 
+#   return(tibble(displayName = name, effort_ratio_90 = 1 - eff_score))
+# }
+# 
+# 
+#  (eff_function_rqss("Boston Scott", graph = TRUE))
 ```
 
 :::

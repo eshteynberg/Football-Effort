@@ -350,6 +350,8 @@ tracking_bc_combined <- left_join(tracking_bc_combined, fatigue,
 tracking_bc_play_stats <- tracking_bc_combined |> 
   group_by(gameId, playId, bc_id, displayName) |> 
   summarize(mean_ke = mean(ke),
+            mean_acc = mean(a_mpsh),
+            mean_speed = mean(s_mph),
             mean_jerk = mean(jerk, na.rm = TRUE),
             num_of_effort_move = sum(eff == TRUE),
             eff_move_prop = sum(eff == TRUE) / n(),

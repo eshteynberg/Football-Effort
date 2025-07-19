@@ -46,20 +46,20 @@
     "href": "index.html#appendix",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Appendix",
-    "text": "Appendix\n\n\n\n\nNon-linear quantile regression for acceleration vs speed\n\n\n\nInteractive plot with menu for the 99th percentile\n\n\n\n\nPercentage of total points that lie in between the percentile P_{99} and P_{99}-3"
+    "text": "Appendix\n\n\n\n\nNon-linear quantile regression for acceleration vs speed\n\n\n\nInteractive plot with menu for the 99th percentile"
   },
   {
     "objectID": "index.html#tables",
     "href": "index.html#tables",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Tables",
-    "text": "Tables\n\nTab 1: Saquon BarkleyTab 2: Bottom Running Backs with lowest distance score\n\n\n\n\n\n\n\n\n\n\n\nTop 10 Running backs with Highest distance score\n\n\n\n\n\nRunning Back\n\n\nDistance Score\n\n\n\n\n\n\nChase Edmonds\n\n\n0.18\n\n\n\n\nRachaad White\n\n\n0.18\n\n\n\n\nAlexander Mattison\n\n\n0.17\n\n\n\n\nNajee Harris\n\n\n0.17\n\n\n\n\nMatt Breida\n\n\n0.17\n\n\n\n\nMelvin Gordon\n\n\n0.17\n\n\n\n\nJames Cook\n\n\n0.17\n\n\n\n\nD’Andre Swift\n\n\n0.17\n\n\n\n\nJoshua Kelley\n\n\n0.17\n\n\n\n\nLatavius Murray\n\n\n0.17\n\n\n\n\n\n\nFigure 3: Top 10 running backs by exact distance score\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nBottom 10 Running backs with lowest distance score\n\n\n\n\n\nRunning Back\n\n\nDistance Score\n\n\n\n\n\n\nBreece Hall\n\n\n0.14\n\n\n\n\nBrian Robinson\n\n\n0.14\n\n\n\n\nDavid Montgomery\n\n\n0.14\n\n\n\n\nJustice Hill\n\n\n0.14\n\n\n\n\nTyler Allgeier\n\n\n0.14\n\n\n\n\nDarrell Henderson\n\n\n0.14\n\n\n\n\nChristian McCaffrey\n\n\n0.14\n\n\n\n\nGus Edwards\n\n\n0.13\n\n\n\n\nIsiah Pacheco\n\n\n0.13\n\n\n\n\nDeon Jackson\n\n\n0.13\n\n\n\n\n\n\nFigure 4: Bottom 10 running backs by exact distance score\n\n\n\n\n\n\n\n\nPercentage of total points that lie in between the percentile P_{99} and P_{99}-3\nThis effort metric quantifies how often a player comes close to his “best” (99th percentile) accelerations"
+    "text": "Tables\n\nTab 1: Saquon BarkleyTab 2: Bottom Running Backs with lowest distance score\n\n\n\n\n\n\n\n\n\n\n\nTop 10 Running backs with Highest distance score\n\n\n\n\n\nRunning Back\n\n\nDistance Score\n\n\n\n\n\n\nChase Edmonds\n\n\n0.18\n\n\n\n\nRachaad White\n\n\n0.18\n\n\n\n\nAlexander Mattison\n\n\n0.17\n\n\n\n\nNajee Harris\n\n\n0.17\n\n\n\n\nMatt Breida\n\n\n0.17\n\n\n\n\nMelvin Gordon\n\n\n0.17\n\n\n\n\nJames Cook\n\n\n0.17\n\n\n\n\nD’Andre Swift\n\n\n0.17\n\n\n\n\nJoshua Kelley\n\n\n0.17\n\n\n\n\nLatavius Murray\n\n\n0.17\n\n\n\n\n\n\nFigure 2: Top 10 running backs by exact distance score\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nBottom 10 Running backs with lowest distance score\n\n\n\n\n\nRunning Back\n\n\nDistance Score\n\n\n\n\n\n\nBreece Hall\n\n\n0.14\n\n\n\n\nBrian Robinson\n\n\n0.14\n\n\n\n\nDavid Montgomery\n\n\n0.14\n\n\n\n\nJustice Hill\n\n\n0.14\n\n\n\n\nTyler Allgeier\n\n\n0.14\n\n\n\n\nDarrell Henderson\n\n\n0.14\n\n\n\n\nChristian McCaffrey\n\n\n0.14\n\n\n\n\nGus Edwards\n\n\n0.13\n\n\n\n\nIsiah Pacheco\n\n\n0.13\n\n\n\n\nDeon Jackson\n\n\n0.13\n\n\n\n\n\n\nFigure 3: Bottom 10 running backs by exact distance score\n\n\n\n\n\n\n\n\nPercentage of total points that lie in between the percentile P_{99} and P_{99}-3\nThis effort metric quantifies how often a player comes close to his “best” (99th percentile) accelerations"
   },
   {
     "objectID": "index.html#trying-a-different-interactive-layout",
     "href": "index.html#trying-a-different-interactive-layout",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Trying a different interactive layout",
-    "text": "Trying a different interactive layout\n\nTab 1: Saquon BarkleyTab 2: Rex BurkheadTab 3: Melvin GordonTab 4: Chase EdmondsTab 5: Boston Scott\n\n\n\n\n\n\n\n\n\n\nFigure 5: trying non-linear-quant-regression\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 6: trying out non-linear-quant-regression\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 7: trying out non-linear-quant-regression\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 8: trying out non-linear-quant-regression\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 9: trying out non-linear-quant-regression"
+    "text": "Trying a different interactive layout\n\nTab 1: Saquon BarkleyTab 2: Rex BurkheadTab 3: Melvin GordonTab 4: Chase Edmonds\n\n\n\n\n\n\n\n\n\n\nFigure 4: trying non-linear-quant-regression\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 5: trying out non-linear-quant-regression\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 6: trying out non-linear-quant-regression"
   }
 ]
