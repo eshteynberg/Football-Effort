@@ -80,7 +80,9 @@ tracking_bc <- tracking_rb_runs |>
          COD = ifelse(gameId==lag(gameId) & playId == lag(playId), abs(dir - lag(dir)), NA),
          jerk = ifelse(gameId==lag(gameId) & playId ==lag(playId), (a-lag(a))/.1, NA),
          s_mph = s * (3600 / 1760),
-         a_mpsh = a * (3600 / 1760))
+         a_mpsh = a * (3600 / 1760),
+         dir_a = a*cos(dir_rad),
+         dir_a_mpsh = dir_a*(3600/1760))
 
 tracking_bc_after_contact <- tracking_bc |> 
   group_by(gameId, playId) |> 
