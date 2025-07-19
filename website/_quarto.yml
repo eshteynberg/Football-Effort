@@ -5,15 +5,25 @@ project:
 # https://quarto.org/docs/websites/website-navigation.html
 website:
   title: "Quantifying effort"
-  navbar:
-    left:
-      - href: index.qmd # Must be included as index.qmd
-        text: "Home"
-        icon: house # Get icon names: https://icons.getbootstrap.com/?q=home
+  sidebar:
+    style: "docked"
+    logo: "docs/images/NFL_logo.png"
+    search: true
         
 format:
   html:
+    smooth-scroll: true
+    toc: true
+    toc-expand: true
+    toc-location: left
+    toc-title: "Contents"
     date: last-modified
     published-title: "Last updated"
     date-format: "MMMM D, YYYY"
     bibliography: "bib/library.bib" # Edit the contents of this file
+    highlight-style: arrow
+    theme: 
+      light: navy blue
+      dark: journal
+    fontsize: 13pt
+    css: styles.css

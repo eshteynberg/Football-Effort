@@ -11,21 +11,21 @@
     "href": "index.html#introduction",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Introduction",
-    "text": "Introduction\nDescribe the problem and why it is important.\nAmerican Football is one of the most-watched and popular sports in the U.S., known for its quick decision-making, complex tactics, and athletically demanding displays of strength, endurance and speed."
+    "text": "Introduction\nAmerican Football is one of the most-watched and popular sports in the U.S., known for its quick decision-making, complex tactics, and athletically demanding displays of strength, endurance and speed. However, many traditional statistics miss the “how” behind value plays such as yards gained after contact, expected points added, etc. As such, we must ask ourselves: what does it take to gain a yard? Is a player exceeding their capabilities, therefore, making an effort? If so, how often or how close a player comes to his “best”?\nOur motivation for this project centered on these very questions. Our goal is to develop a metric to measure effort. We acknowledge that effort is a complex, intangible, and most often subjective concept, influenced by player position, opposing defense, snap count or play volume to play call/assignment. Effort is also heavily contextual and multi-faceted, often shaped by the emotional and mental state as well as the thinking process of a player. Given the available data, we are going to focus on one facet: the raw physical capabilities of a player — specifically, acceleration and speed.\nBy quantifying effort, we hope to provide not only to teams and sport data analysts, but also fans with deeper insight into what and how football players are truly contributing on the field — even when it’s not reflected in conventional stats or even the outcome of a game. We also aspire to address or even fill in some of the gaps in the current literature around quantifying effort in American football since most research focus on win probabilities and other outcomes at the game level rather than individualized capabilities."
   },
   {
     "objectID": "index.html#data",
     "href": "index.html#data",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Data",
-    "text": "Data\n\nDescribe the data you’re using in detail, where you accessed it, along with relevant exploratory data analysis (EDA). You should also include descriptions of any relevant data pre-processing steps (e.g., whether you consider specific observations, create any meaningful features, etc.—but don’t mention minor steps like column type conversion, filtering out unnecessary rows)\nThe data used for this project were from NFL Big Data Bowl 2022 Dataset (NFL Big Data Bowl 2022) on Kaggle.\nWe limited our dataset to NFL running backs with more than 20 rushes."
+    "text": "Data\nThe data used for this project were the Game, play, player, tracking datasets from from NFL Big Data Bowl 2022 Dataset, Weeks 1-9 (NFL Big Data Bowl 2022) on Kaggle.\n\nWe limited our dataset to NFL running backs with more than 20 rushes per play during the 2022 season.\nWe limited the rows to running plays where a running back (RB) is the ball carrier.\nWe Trimmed each play to frames between handoff and at end of a play.\n\n\nExplanatory Data Analysis"
   },
   {
     "objectID": "index.html#methods",
     "href": "index.html#methods",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Methods",
-    "text": "Methods\n\nDescribe the modeling techniques you chose, their assumptions, justifications for why they are appropriate for the problem, and how you’re comparing/evaluating the different methods.\nUsed Dr. Ron Yurko and Quang Nguyen’s code to calculate distance from the nearest defender (Nguyen 2023)\nBased our AS/ AKE curved on the article titled “Individual acceleration-speed profile in-situ: A proof of concept in professional football players”(Morin et al. 2021)\nStill using the non-linear quantile regression plot? (Ding 2024)"
+    "text": "Methods\n\n[Describe the modeling techniques you chose, their assumptions, justifications for why they are appropriate for the problem, and how you’re comparing/evaluating the different methods]\nUsed Dr. Ron Yurko and Quang Nguyen’s code to calculate distance from the nearest defender (Nguyen 2023)\nBased our AS/ AKE curved on the article titled “Individual acceleration-speed profile in-situ: A proof of concept in professional football players”(Morin et al. 2021)\nStill using the non-linear quantile regression plot? (Ding 2024)"
   },
   {
     "objectID": "index.html#results",
@@ -46,7 +46,7 @@
     "href": "index.html#appendix",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Appendix",
-    "text": "Appendix\n\n\n\n\nNon-linear quantile regression for acceleration vs speed\n\n\n\nInteractive plot with menu for the 99th percentile"
+    "text": "Appendix\n\nInteractive plot with menu for the 99th percentile"
   },
   {
     "objectID": "index.html#tables",
@@ -60,6 +60,6 @@
     "href": "index.html#trying-a-different-interactive-layout",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Trying a different interactive layout",
-    "text": "Trying a different interactive layout\n\nTab 1: Saquon BarkleyTab 2: Rex BurkheadTab 3: Melvin GordonTab 4: Chase Edmonds\n\n\n\n\n\n\n\n\n\n\nFigure 4: trying non-linear-quant-regression\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 5: trying out non-linear-quant-regression\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 6: trying out non-linear-quant-regression"
+    "text": "Trying a different interactive layout\n\nTab 1: Saquon BarkleyTab 2: Rex BurkheadTab 3: Melvin Gordon\n\n\n\n\n\n\n\n\n\n\nFigure 4: trying non-linear-quant-regression"
   }
 ]
