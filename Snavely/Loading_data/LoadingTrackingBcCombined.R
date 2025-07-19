@@ -273,7 +273,7 @@ rbs <- rb_stats_total_filtered |>
   filter(games >= 5) |> 
   select(displayName)
 
-rbs_names <- unique(rbs$displayName)
+rbs_names <- unique(rb_stats_total_filtered$displayName)
 
 eff_movements <- purrr::map(rbs, eff_function) |> 
   bind_rows() |> 
