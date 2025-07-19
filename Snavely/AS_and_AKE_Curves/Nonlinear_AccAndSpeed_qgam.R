@@ -166,10 +166,7 @@ rbs_names <- unique(rb_stats_total_filtered$displayName)
 set.seed(1)
 # Choosing player name
 player_runs <- tracking_bc |> 
-  filter(displayName == "Derrick Henry")
-qgam_fit <- qgam(a_mpsh ~ s(s_mph),
-                 data = player_runs,
-                 qu = .99)
+  filter(displayName == "Saquon Barkley")
 
 # 5 folds
 N_FOLDS <- 5
@@ -192,14 +189,18 @@ player_runs_cv <- function(x){
     filter(fold != x)
   
   # Modeling
-  qgam_fit <- qgam(a_mpsh ~ s(s_mph, k = 35, bs = "ad"),
+  qgam_fit <- qgam(a_mpsh ~ s(s_mph, k = 10, bs = "ad"),
+                   data = train_data,
+                   qu = .99)
+  qgam_fit_s <- qgam(s_mph ~ s(a_mpsh, k = 10, bs = "ad"),
                    data = train_data,
                    qu = .99)
 
   out <- tibble(
     displayName = "Saquon Barkley",
-    qgam_pred = predict(qgam_fit, newdata = test_data),
+    qgam_pred = predict(qgam_fit_s, newdata = test_data),
     actual_acc = test_data$a_mpsh,
+    actual_speed = test_data$s_mph,
     res = abs(actual_acc - qgam_pred),
     test_fold = x
   )
@@ -528,3 +529,91 @@ adj_dis_scores_players_k15 <- adj_points_below_k15 |>
   ungroup()
 
 
+
+# Incorporating 99th percentile speed -------------------------------------
+
+eff_function_qgam_mix <- function(name, graph = FALSE) {
+  # Choosing player name
+  player_runs <- tracking_bc |> 
+    filter(displayName == name)
+  
+  # 5 folds
+  N_FOLDS <- 5
+  
+  # # Making sure plays are in the same fold
+  plays_folds <- player_runs |>
+    distinct(gameId) |> 
+    mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
+  
+  # Making the modeling data frame
+  player_runs_modeling <- player_runs |> 
+    select(s_mph, a_mpsh, gameId) |> 
+    left_join(plays_folds) |>
+    select(-gameId)
+  
+  player_runs_cv <- function(x){
+    test_data <- player_runs_modeling |> 
+      filter(fold == x)
+    train_data <- player_runs_modeling |> 
+      filter(fold != x)
+    
+    # Modeling
+    n_rows <- nrow(train_data)
+    qgam_fit_a <- qgam(a_mpsh ~ s(s_mph, k = 10, bs = "ad"),
+                     data = train_data,
+                     qu = .95,
+                     multicore = TRUE,
+                     ncores = 7)
+    qgam_fit_s <- qgam(s_mph ~ s(a_mpsh, k = 10, bs = "ad"),
+                     data = train_data,
+                     qu = .99,
+                     multicore = TRUE,
+                     ncores = 7)
+    
+    out <- tibble(
+      displayName = name,
+      qgam_pred_a = predict(qgam_fit_a, newdata = test_data),
+      qgam_pred_s = predict(qgam_fit_s, newdata = test_data),
+      actual_acc = test_data$a_mpsh,
+      actual_speed = test_data$s_mph,
+      res_a = abs(actual_acc - qgam_pred_a),
+      res_s = abs(actual_speed - qgam_pred_s),
+      qgam_pred_minus_3 = qgam_pred_a - 3,
+      test_fold = x
+    )
+    return(out)
+  }
+  
+  # Doing cross fold validation
+  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
+    bind_rows()
+  
+  
+  if (graph == TRUE) {
+    player_graph <- player_runs_test_preds |> 
+      ggplot(aes(x = actual_speed, y = qgam_pred_a)) +
+      geom_point(aes(y = actual_acc), alpha=.3, color="grey2")+
+      stat_smooth(method="gam", formula=y~s(x),se=FALSE, lwd = 1.5, aes(color="99th acc percentile line"), size=1.2) + 
+      stat_smooth(method="gam", formula=y~s(x),se=FALSE, lty = 2, lwd = 1.5, aes(y=qgam_pred_minus_3, 
+                                                                                 color="99th percentile line - 3"), size=1.2) +
+      stat_smooth(method="gam", formula=y~s(x),se=FALSE, lwd = 1.5, aes(x = qgam_pred_s, y = actual_acc,
+                                                                        color="99th speed percentile line"), size=1.2) +
+      scale_color_manual("Line", values = c("#0072B2", "#D55E00", "purple")) +
+      labs(x = "Speed",
+           y = "Acceleration",
+           title = paste0(name),
+           caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
+      theme_minimal(base_size=16) +
+      theme(plot.title = element_text(face = "bold.italic",
+                                      size = 18, 
+                                      hjust = .5),
+            legend.title = element_text(face = "bold"),
+            axis.title = element_text(face = "bold"),
+            legend.text=element_text(size=15),
+            plot.caption = element_text(face = "italic", size = 8))
+    return(player_graph)
+  }
+  return(player_runs_test_preds)
+}
+
+eff_function_qgam_mix("Saquon Barkley", graph = TRUE)
