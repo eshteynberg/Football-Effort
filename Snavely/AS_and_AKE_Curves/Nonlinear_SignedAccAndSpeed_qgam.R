@@ -1,3 +1,5 @@
+library(tidyverse)
+library(qgam)
 
 # Player Test -------------------------------------------------------------
 set.seed(1)
@@ -67,9 +69,8 @@ eff_function_qgam_mix <- function(name, graph = FALSE) {
   
   # Making the modeling data frame
   player_runs_modeling <- player_runs |> 
-    select(s_mph, dir_a_mpsh, gameId) |> 
-    left_join(plays_folds) |>
-    select(-gameId)
+    select(s_mph, dir_a_mpsh, gameId, bc_id, playId, frameId) |> 
+    left_join(plays_folds)
   
   player_runs_cv <- function(x){
     test_data <- player_runs_modeling |> 
@@ -77,8 +78,8 @@ eff_function_qgam_mix <- function(name, graph = FALSE) {
     train_data <- player_runs_modeling |> 
       filter(fold != x)
     
+    
     # Modeling
-    n_rows <- nrow(train_data)
     qgam_fit_a_top <- qgam(dir_a_mpsh ~ s(s_mph, k = 10, bs = "ad"),
                        data = train_data,
                        qu = .98,
@@ -92,10 +93,10 @@ eff_function_qgam_mix <- function(name, graph = FALSE) {
     
     out <- tibble(
       displayName = name,
-      bc_id = player_runs$bc_id,
-      gameId = player_runs$gameId,
-      playId = player_runs$playId,
-      frameId = player_runs$frameId,
+      bc_id = test_data$bc_id,
+      gameId = test_data$gameId,
+      playId = test_data$playId,
+      frameId = test_data$frameId,
       qgam_pred_a_top = predict(qgam_fit_a_top, newdata = test_data),
       qgam_pred_a_bottom = predict(qgam_fit_a_bottom, newdata = test_data),
       actual_acc = test_data$dir_a_mpsh,
@@ -144,11 +145,11 @@ eff_function_qgam_mix <- function(name, graph = FALSE) {
 # Player test
 eff_function_qgam_mix("Craig Reynolds", graph = TRUE)
 eff_function_qgam_mix("Derrick Henry", graph = TRUE)
-eff_function_qgam_mix("Rex Burkhead")
+eff_function_qgam_mix("Saquon Barkley")
 
-# qgam_mixed <- purrr::map(rbs_names, eff_function_qgam_mix) |>
-#   bind_rows()
-# write.csv(qgam_mixed, "SignedAccPercentiles.csv")
+qgam_mixed <- purrr::map(rbs_names, eff_function_qgam_mix) |>
+  bind_rows()
+write.csv(qgam_mixed, "SignedAccPercentiles.csv")
 
 # Loading in the data
 signedPercentiles <- read.csv("created_data/SignedAccPercentiles.csv") |> 
@@ -157,7 +158,8 @@ signedPercentiles <- read.csv("created_data/SignedAccPercentiles.csv") |>
   rowwise() |> 
   mutate(minimum_diff = ifelse(actual_acc >= 0, min(diff_a_top, diff_speed), min(diff_a_bottom, diff_speed)), # Finding minimum distance
          adj_minimum_diff = ifelse(minimum_diff <= 0, 0, minimum_diff), # Giving value of 0 for points past lines
-         adj_negative_acc_diff = ifelse(actual_acc < 0, adj_minimum_diff * 1.25, adj_minimum_diff)) # Penalty for deccelerating
+         adj_negative_acc_diff = ifelse(actual_acc < 0, adj_minimum_diff * 1.25, adj_minimum_diff)) |> # Penalty for deccelerating
+  mutate(s_mph = actual_speed, dir_a_mpsh = round(actual_acc, 5))
 
 # Final effort score for players
 dis_scores_players <- signedPercentiles |> 

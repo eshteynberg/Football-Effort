@@ -157,6 +157,7 @@ rb_stats_total <- rb_stats_per_play |>
 rb_stats_total_filtered <- rb_stats_total |> 
   filter(num_of_rushes >= 20) 
 
+rbs_names <- rb_stats_total_filtered$displayName
 
 # Effort Function ---------------------------------------------------------
 # Effort function
