@@ -71,64 +71,114 @@ eff_function_qgam_mix <- function(name, graph = FALSE) {
   player_runs_modeling <- player_runs |> 
     select(s_mph, dir_a_mpsh, gameId, bc_id, playId, frameId) |> 
     left_join(plays_folds)
+
   
-  player_runs_cv <- function(x){
-    test_data <- player_runs_modeling |> 
-      filter(fold == x)
-    train_data <- player_runs_modeling |> 
-      filter(fold != x)
+  player_runs_cv_pos <- function(x){
+    # Finding 99th percentile of speed
+    speed_99 <- quantile(player_runs_modeling$s_mph, probs = c(.99))
+    
+    test_data_pos <- player_runs_modeling |> 
+      filter(fold == x) |> 
+      filter(dir_a_mpsh >= 0)
+    train_data_pos <- player_runs_modeling |> 
+      filter(fold != x) |> 
+      filter(dir_a_mpsh >= 0)
     
     
     # Modeling
     qgam_fit_a_top <- qgam(dir_a_mpsh ~ s(s_mph, k = 10, bs = "ad"),
-                       data = train_data,
+                       data = train_data_pos,
                        qu = .98,
                        multicore = TRUE,
                        ncores = 7)
+    
+    pos <- tibble(
+      displayName = name,
+      bc_id = test_data_pos$bc_id,
+      gameId = test_data_pos$gameId,
+      playId = test_data_pos$playId,
+      frameId = test_data_pos$frameId,
+      qgam_pred = predict(qgam_fit_a_top, newdata = test_data_pos),
+      actual_acc = test_data_pos$dir_a_mpsh,
+      actual_speed = test_data_pos$s_mph,
+      diff_a = qgam_pred - actual_acc, # negative indicates above line
+      diff_speed = speed_99 - actual_speed, # negative indicates right of line
+      test_fold = x
+    )
+
+    return(pos)
+  }
+  
+  player_runs_cv_neg <- function(x){
+    # Finding 99th percentile of speed
+    speed_99 <- quantile(player_runs_modeling$s_mph, probs = c(.99))
+    
+    test_data_neg <- player_runs_modeling |> 
+      filter(fold == x) |> 
+      filter(dir_a_mpsh < 0)
+    train_data_neg <- player_runs_modeling |> 
+      filter(fold != x) |> 
+      filter(dir_a_mpsh < 0)
+    
+    
+    # Modeling
     qgam_fit_a_bottom <- qgam(dir_a_mpsh ~ s(s_mph, k = 10, bs = "ad"),
-                              data = train_data,
+                              data = train_data_neg,
                               qu = .02,
                               multicore = TRUE,
                               ncores = 7)
     
-    out <- tibble(
+    neg <- tibble(
       displayName = name,
-      bc_id = test_data$bc_id,
-      gameId = test_data$gameId,
-      playId = test_data$playId,
-      frameId = test_data$frameId,
-      qgam_pred_a_top = predict(qgam_fit_a_top, newdata = test_data),
-      qgam_pred_a_bottom = predict(qgam_fit_a_bottom, newdata = test_data),
-      actual_acc = test_data$dir_a_mpsh,
-      actual_speed = test_data$s_mph,
-      diff_a_top = qgam_pred_a_top - actual_acc, # negative indicates above line
-      diff_a_bottom = actual_acc - qgam_pred_a_bottom, # negative indicates below line
-      diff_speed = actual_speed - quantile(actual_speed, probs = c(.99)), # positive indicates right of line
+      bc_id = test_data_neg$bc_id,
+      gameId = test_data_neg$gameId,
+      playId = test_data_neg$playId,
+      frameId = test_data_neg$frameId,
+      qgam_pred = predict(qgam_fit_a_bottom, newdata = test_data_neg),
+      actual_acc = test_data_neg$dir_a_mpsh,
+      actual_speed = test_data_neg$s_mph,
+      diff_a = actual_acc - qgam_pred, # negative indicates below line
+      diff_speed = speed_99 - actual_speed, # negative indicates right of line
       test_fold = x
     )
-    return(out)
+
+    return(neg)
   }
   
+  
   # Doing cross fold validation
-  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
-    bind_rows()
+    player_runs_test_preds_pos <- map(1:N_FOLDS, player_runs_cv_pos) |> 
+      bind_rows()
+
+    player_runs_test_preds_neg <- map(1:N_FOLDS, player_runs_cv_neg) |> 
+      bind_rows()
+    
+    player_runs_test_preds <- rbind(player_runs_test_preds_pos, player_runs_test_preds_neg)
   
   if (graph == TRUE) {
     player_graph <- player_runs_test_preds |> 
       ggplot(aes(x = actual_speed, y = actual_acc)) +
       geom_point(alpha=.3, color="grey2")+
-      stat_smooth(method="gam", formula=y~s(x),se=FALSE, lwd = 1.5, aes(y = qgam_pred_a_top, 
-                                                                        color="98th acc percentile line"), size=1.2) + 
-      stat_smooth(method="gam", formula=y~s(x),se=FALSE, lwd = 1.5, aes(y = qgam_pred_a_bottom,
-                                                                        color="2nd acc percentile line"), size=1.2) +
-      geom_vline(aes(color = "99th speed percentile line", 
+      stat_smooth(data = player_runs_test_preds_pos,
+                  method="gam", 
+                  formula=y~s(x),
+                  se=FALSE, 
+                  lwd = 1.5, 
+                  aes(y = qgam_pred, color="0.98 quantile regression line"), size=1.2) + 
+      stat_smooth(data = player_runs_test_preds_neg, 
+                  method="gam", 
+                  formula=y~s(x),
+                  se=FALSE, 
+                  lwd = 1.5, 
+                  aes(y = qgam_pred, color="0.02 quantile regression line"), size=1.2) +
+      geom_vline(aes(color = "Speed 0.99 quantile line", 
                      xintercept = quantile(actual_speed, probs = c(.99))), 
                  lty = 2, lwd = 1.5) +
+      geom_hline(aes(yintercept = 0), color = "black", lwd = 1.2, lty = 2) +
       scale_color_manual("Line", values = c("#D55E00", "#0072B2", "goldenrod")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name),
-           caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
+           title = paste0(name)) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -145,11 +195,11 @@ eff_function_qgam_mix <- function(name, graph = FALSE) {
 # Player test
 eff_function_qgam_mix("Craig Reynolds", graph = TRUE)
 eff_function_qgam_mix("Derrick Henry", graph = TRUE)
-eff_function_qgam_mix("Saquon Barkley")
+eff_function_qgam_mix("Saquon Barkley", graph = TRUE)
 
-# qgam_mixed <- purrr::map(rbs_names, eff_function_qgam_mix) |>
-#   bind_rows()
-# write.csv(qgam_mixed, "SignedAccPercentiles.csv")
+qgam_mixed <- purrr::map(rbs_names, eff_function_qgam_mix) |>
+  bind_rows()
+write.csv(qgam_mixed, "SignedAccPercentiles.csv")
 
 # Loading in the data
 signedPercentiles <- read.csv("created_data/SignedAccPercentiles.csv") |> 
@@ -160,6 +210,7 @@ signedPercentiles <- read.csv("created_data/SignedAccPercentiles.csv") |>
          adj_minimum_diff = ifelse(minimum_diff <= 0, 0, minimum_diff), # Giving value of 0 for points past lines
          adj_negative_acc_diff = ifelse(actual_acc < 0, adj_minimum_diff * 1.25, adj_minimum_diff)) |> # Penalty for deccelerating
   mutate(s_mph = actual_speed, dir_a_mpsh = round(actual_acc, 5))
+
 
 # Final effort score for players
 dis_scores_players <- signedPercentiles |> 

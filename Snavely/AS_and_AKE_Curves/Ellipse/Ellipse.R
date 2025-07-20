@@ -194,8 +194,7 @@ player_runs |>
   geom_path(data = ellipse_df, aes(x = x, y = neg_y), color = "#0072B2", linewidth = 1.2) +
   labs(x = "Speed (mph)",
        y = "Acceleration (mph/s)",
-       title = "Saquon Barkley",
-       caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
+       title = "Saquon Barkley") +
   theme_minimal(base_size=16) +
   theme(plot.title = element_text(face = "bold.italic",
                                   size = 18, 
@@ -257,11 +256,11 @@ ellipse <- function(name, graph = FALSE) {
     ggplot(aes(x = s_mph, y = dir_a_mpsh)) +
     geom_point(aes(x = s_mph, y = dir_a_mpsh), alpha=.3, color="grey2")+
     geom_path(data = ellipse_df, aes(x = x, y = pos_y), color = "#0072B2", linewidth = 1.2) +
-    geom_path(data = ellipse_df, aes(x = x, y = neg_y), color = "#0072B2", linewidth = 1.2) +
+    geom_path(data = ellipse_df, aes(x = x, y = neg_y), color = "#0072B2", linewidth = 1.2) + 
+    geom_hline(aes(yintercept = 0), color = "black", lwd = 1.2, lty = 2) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name),
-           caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
+           title = paste0(name, ": 0.269 ellipse score")) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -312,7 +311,7 @@ ellipse <- function(name, graph = FALSE) {
 
 # Test
 ellipse("Saquon Barkley", graph=TRUE)
-ellipse("Aaron Jones", graph = TRUE)
+ellipse("Rex Burkhead", graph = TRUE)
   
 
 

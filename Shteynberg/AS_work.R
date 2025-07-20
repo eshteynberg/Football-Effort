@@ -808,6 +808,15 @@ spacer <- image_blank(width = 50, height = 500, color = "white")
 dis_prop_rank <- image_append(c(dis_rank, spacer, prop_rank)) 
 image_write(dis_prop_rank, "dis_prop_rank.png")
 
+# Quantile regression
+Saquon_qr <- image_read("Shteynberg/Poster_images/Saquon_qgam.png")
+Rex_qr <- image_read("Shteynberg/Poster_images/Rex_qgam.png")
+Saquon_qr <- image_scale(Saquon_qr, "x500") 
+Rex_qr <- image_scale(Rex_qr, "x500") 
+
+Rex_Saquon_qr <- image_append(c(Saquon_qr, Rex_qr)) 
+image_write(Rex_Saquon_qr, "Rex_Saquon_qr.png")
+
 
 
 # Nonparam regression 2 splines  ------------------------------------------

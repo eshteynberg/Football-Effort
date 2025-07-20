@@ -1,4 +1,3 @@
-# Goal: predict EPA
 library(tidyverse)
 library(broom)
 library(glmnet)
@@ -7,144 +6,169 @@ library(caret)
 library(rpart)
 library(rpart.plot)
 library(ranger)
+library(vip)
 
 
-# Continuous EPA ----------------------------------------------------------
+
+# Play-level data ---------------------------------------------------------
+tracking_modeling <- tracking_def |>
+  left_join(select(tracking_bc_filtered, event, gameId, playId, frameId)) 
+
+tracking_def_plays <- tracking_modeling |>
+  left_join(tracking_num_defs) |> 
+  drop_na(num_of_def_5) |> 
+  left_join(select(tracking_blockers, gameId, playId, num_blockers_ahead)) |> 
+  left_join(select(plays, gameId, playId, expectedPointsAdded, offenseFormation, pff_runConceptPrimary)) |> 
+  left_join(select(rb_stats_per_play, gameId, playId, bc_id, rushingYards)) |> 
+  mutate(home = bc_club==homeTeamAbbr) |> 
+  filter(bc_id %in% rb_stats_total_filtered$bc_id) 
+
+# Modeling EPA (new) ----------------------------------------------------------
 set.seed(1)
 N_FOLDS <- 5
-rb_modeling <- tracking_bc_play_stats |> 
-  na.omit() |>
-  select(mean_ke, mean_jerk, eff_move_prop, 
-         total_dist_covered_of_game, avg_COD, acc_change, 
-         expectedPointsAdded) |> 
+
+# Making sure plays are in the same fold
+plays_folds <- tracking_def_plays |> 
+  distinct(gameId) |> 
   mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
 
-EPA_cv <- function(x) {
+rb_modeling <- tracking_def_plays |> 
+  na.omit() |>
+  select(score_diff, home, quarter, down, yardsToGo, yards_from_endzone,
+         bc_s_mph, bc_dir_a_mpsh, angle_with_bc, num_blockers_ahead,
+         weight, dist_to_bc, num_of_def_5, adj_bc_x, adj_bc_y,
+         def_s_mph, def_dir_a_mpsh, offenseFormation, pff_runConceptPrimary,
+         expectedPointsAdded, gameId) |> 
+  left_join(plays_folds) |> 
+  mutate(quarter = as.factor(quarter),
+         down = as.factor(down),
+         offenseFormation = as.factor(offenseFormation),
+         pff_runConceptPrimary = as.factor(pff_runConceptPrimary)) |> 
+  select(-gameId)
+
+
+
+
+# Function to estimate EPA and rushingYards
+epa_cv <- function(x) {
   test_data <- rb_modeling |> 
     filter(fold == x)
   train_data <- rb_modeling |> 
     filter(fold != x)
   
-  # For lasso and ridge
-  test_x <- as.matrix(select(test_data, -expectedPointsAdded))
-  train_x <- as.matrix(select(train_data, -expectedPointsAdded))
-  
-  # Models
-  reg_fit <- lm(expectedPointsAdded ~ mean_ke + mean_jerk + eff_move_prop +
-                total_dist_covered_of_game + avg_COD + acc_change, 
-                data = train_data)
-  ridge_fit <- cv.glmnet(train_x, train_data$expectedPointsAdded, alpha = 0)
-  lasso_fit <- cv.glmnet(train_x, train_data$expectedPointsAdded, alpha = 1)
-  gam_fit <- gam(expectedPointsAdded ~ s(mean_ke) + s(mean_jerk) + s(eff_move_prop) +
-                 s(total_dist_covered_of_game) + s(avg_COD) + s(acc_change),
-                 data = train_data,
-                 family = gaussian(),
-                 method = "REML")
-  
-  out <- tibble(
-    reg_pred = predict(reg_fit, newdata = test_data),
-    ridge_pred = as.numeric(predict(ridge_fit, newx = test_x)),
-    lasso_pred = as.numeric(predict(lasso_fit, newx = test_x)),
-    gam_pred = predict(gam_fit, newdata = test_data, type = "response"),
-    epa_actual = test_data$expectedPointsAdded,
-    test_fold = x
-  )
-  return(out)
-}
-
-EPA_test_preds <- map(1:N_FOLDS, EPA_cv) |> 
-  bind_rows()
-
-# Comparing RMSE and SE_RSE
-EPA_test_preds |> 
-  pivot_longer(reg_pred:gam_pred,
-               names_to = "method",
-               values_to = "test_pred") |> 
-  group_by(method, test_fold) |> 
-  summarize(rmse = sqrt(mean((epa_actual - test_pred) ^ 2))) |> 
-  group_by(method) |> 
-  summarize(cv_rmse = mean(rmse),
-            se_rse = sd(rmse) / sqrt(N_FOLDS))
-
-# GAM predictions
-EPA_test_preds |> 
-  ggplot(aes(x = gam_pred, y = epa_actual)) +
-  geom_point(alpha = .4) +
-  geom_abline(intercept = 0, slope = 1)
-
-# Simple linear predictions
-EPA_test_preds |> 
-  ggplot(aes(x = reg_pred, y = epa_actual)) +
-  geom_point(alpha = .4) +
-  geom_abline(intercept = 0, slope = 1)
-
-# Lasso predictions
-EPA_test_preds |> 
-  ggplot(aes(x = lasso_pred, y = epa_actual)) +
-  geom_point(alpha = .4) +
-  geom_abline(intercept = 0, slope = 1)
-
-# Ridge predictions
-EPA_test_preds |> 
-  ggplot(aes(x = ridge_pred, y = epa_actual)) +
-  geom_point(alpha = .4) +
-  geom_abline(intercept = 0, slope = 1)
-
-
-# Binary EPA --------------------------------------------------------------
-
-# Converting EPA into a binary variable (either positive or negative)
-N_FOLDS <- 5
-rb_modeling_binary <- tracking_bc_play_stats |> 
-  na.omit() |> 
-  mutate(pos_EPA = ifelse(expectedPointsAdded > 0, TRUE, FALSE)) |> 
-  select(mean_ke, mean_jerk, eff_move_prop, 
-         total_dist_covered_of_game, avg_COD, acc_change, 
-         pos_EPA) |> 
-  mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
-
-EPA_binary_cv <- function(x) {
-  test_data <- rb_modeling_binary |> 
-    filter(fold == x)
-  train_data <- rb_modeling_binary |> 
-    filter(fold != x)
-  
-  # Models
-  logit_fit <- glm(pos_EPA ~ mean_ke + mean_jerk + eff_move_prop +
-                   avg_COD + acc_change,
-                   family = binomial,
+  # Models for epa
+  epa_rf <- ranger(expectedPointsAdded ~ . - fold, 
+                   num.trees = 1000, importance = "permutation", 
                    data = train_data)
-  gam_fit <- gam(pos_EPA ~ s(mean_ke) + s(mean_jerk) + s(eff_move_prop) +
-                 s(avg_COD) + s(acc_change),
-                 data = train_data,
-                 family = binomial(),
-                 method = "REML")
-  pos_epa_rf <- ranger(pos_EPA ~ mean_ke + mean_jerk + eff_move_prop +
-                       total_dist_covered_of_game + avg_COD + acc_change, 
-                       num.trees = 500, importance = "impurity", data = test_data)
+  
   
   # Predictions
   out <- tibble(
-    logit_pred = predict(logit_fit, newdata = test_data, type = "response"),
-    gam_pred = predict(gam_fit, newdata = test_data, type = "response"),
-    rf_pred = pos_epa_rf$predictions,
-    test_actual = test_data$pos_EPA,
+    epa_rf_pred = (predict(epa_rf, data = test_data))$predictions,
+    epa_actual = test_data$expectedPointsAdded,
+    epa_rf_res = epa_actual - epa_rf_pred,
     test_fold = x
   )
   return(out)
 }
 
-pos_EPA_preds <- map(1:N_FOLDS, EPA_binary_cv) |> 
+# bind predictions for folds together
+epa_test_preds <- map(1:N_FOLDS, epa_cv) |> 
   bind_rows()
 
-# Determining accuracy
-pos_EPA_preds |> 
-  pivot_longer(logit_pred:rf_pred,
-               names_to = "method",
-               values_to = "test_pred") |> 
-  mutate(test_pred_class = round(test_pred)) |> 
-  group_by(method, test_fold) |> 
-  summarize(accuracy = mean(test_actual == test_pred_class)) |> 
-  group_by(method) |> 
-  summarize(cv_accuracy = mean(accuracy),
-            se_accuracy = sd(accuracy) / sqrt(N_FOLDS))
+# Comparing RMSE and SE_RSE for EPA
+RMSE <- epa_test_preds |> 
+  group_by(test_fold) |> 
+  summarize(rmse = sqrt(mean((epa_actual - epa_rf_pred) ^ 2))) |> 
+  ungroup() 
+
+# Final RMSE
+mean(RMSE$rmse)
+
+# Random forest graph
+epa_test_preds |> 
+  ggplot(aes(x=epa_rf_pred, y=epa_actual))+
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1)
+
+epa_test_preds |> 
+  ggplot(aes(x=epa_rf_pred, y=epa_rf_res))+
+  geom_point()
+
+
+
+# Trying XGBoost ----------------------------------------------------------
+
+# XG BOOST attempt
+epa <- x_train <- rb_modeling |> 
+  filter(fold != 1)
+
+x_train <- rb_modeling |> 
+  filter(fold != 1) |> 
+  select(-c(fold, expectedPointsAdded)) |>
+  mutate(quarter = as.factor(quarter),
+         down = as.factor(down),
+         offenseFormation = as.factor(offenseFormation),
+         pff_runConceptPrimary = as.factor(pff_runConceptPrimary))
+
+x_test <- rb_modeling |> 
+  filter(fold == 1) |> 
+  select(-c(fold, expectedPointsAdded)) |>
+  mutate(quarter = as.factor(quarter),
+         down = as.factor(down),
+         offenseFormation = as.factor(offenseFormation),
+         pff_runConceptPrimary = as.factor(pff_runConceptPrimary))
+
+# Hot one encoding
+x_train_matrix <- model.matrix(~ . - 1, data = x_train)
+x_test_matrix <- model.matrix(~ . - 1, data = x_test)
+
+xg_grid <- crossing(nrounds = seq(20, 150, 10), # number of rounds
+                    eta = c(0.01, 0.05, 0.1), gamma = 0, # eta is the learning rate
+                    max_depth = c(2, 3, 4), colsample_bytree = 1,
+                    min_child_weight = 1, subsample = 1)
+
+# tuning
+set.seed(1234)
+xg_tune <- train(x = x_train_matrix,
+                 y = epa$expectedPointsAdded, 
+                 tuneGrid = xg_grid,
+                 trControl = trainControl(method = "cv", number = 5),
+                 objective = "reg:squarederror",
+                 method = "xgbTree")
+
+# Final model fit
+# fit final model  data
+xg_fit <- xgboost(
+  data = x_train_matrix,
+  label = epa$expectedPointsAdded,
+  objective = "reg:squarederror",
+  nrounds = xg_tune$bestTune$nrounds,
+  params = as.list(select(xg_tune$bestTune, -nrounds)),
+  verbose = 0
+)
+
+library(vip)
+xg_fit |> 
+  vip()
+
+preds <- predict(xg_fit, newdata = x_test_matrix)
+
+epa_test <- x_train <- rb_modeling |> 
+  filter(fold == 1) |> 
+  mutate(epa_pred = preds) |> 
+  mutate(res = expectedPointsAdded - epa_pred)
+
+epa_test |> 
+  ggplot(aes(x = epa_pred, y = expectedPointsAdded)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1)
+
+epa_test |> 
+  ggplot(aes(x = epa_pred, y = res)) +
+  geom_point()
+
+epa_test |> 
+  summarize(rmse = sqrt(mean((expectedPointsAdded - epa_pred) ^ 2)))
+  
+  

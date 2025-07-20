@@ -145,3 +145,17 @@ tracking_num_defs <- tracking_rb_runs |>
   summarize(num_of_def_5 = sum(dist_to_bc <= 5)) |>
   ungroup()
 
+# Counting number of blockers in front
+tracking_blockers <- tracking_rb_runs |> 
+  left_join(select(players, nflId, position)) |>
+  filter(frame_handoff == frameId) |> 
+  filter(bc_id %in% tracking_bc_filtered$bc_id) |> 
+  filter(position %in% c("FB", "C", "G", "T", "RB")) |> 
+  group_by(gameId, playId) |> 
+  summarise(
+    bc_x = x[position == "RB"],
+    num_blockers_ahead = sum(position %in% c("FB", "C", "G", "T") & x > bc_x)
+  ) |> 
+  ungroup() |> 
+  distinct(gameId, playId, .keep_all =TRUE)
+  
