@@ -75,16 +75,21 @@ The data used for this project were the Game, play, player, tracking datasets fr
 
 - **[Describe the modeling techniques you chose, their assumptions, justifications for why they are appropriate for the problem, and how you're comparing/evaluating the different methods]**
 
-- Used Dr. Ron Yurko and Quang Nguyen's code to calculate distance from the nearest defender [@qntkhvnAngle]
+### Individual Acceleration-Speed Profile
 
-- Based our AS/ AKE curved on the article titled "Individual acceleration-speed profile in-situ: A proof of concept in professional football players"[@AS]
+- Our main methodological approach to addressing this question centered around previous research that has explored soccer players reaching their theoretical max capacity in terms of their raw acceleration and speed [@AS]. We adopted a similar framework by plotting an individual running back's frames with with acceleration on the y-axis and speed on the x-axis. 
 
-- Still using the non-linear quantile regression plot? [@quantReg]
+
+### Random Forest Model and/or Additive Quantile Regression Model
+
+
+
 
 
 ## Results
 
-Describe your results. This can include tables and plots showing your results, as well as text describing how your models worked and the appropriate interpretations of the relevant output. (Note: Don’t just write out the textbook interpretations of all model coefficients. Instead, interpret the output that is relevant for your question of interest that is framed in the introduction)
+**[Describe your results. This can include tables and plots showing your results, as well as text describing how your models worked and the appropriate interpretations of the relevant output. (Note: Don’t just write out the textbook interpretations of all model coefficients. Instead, interpret the output that is relevant for your question of interest that is framed in the introduction)]]**
+
 
 **[Metrics so far]**
 
@@ -320,10 +325,8 @@ gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "ad")
 ```
 
 
-# Metrics
+### Metrics
 
-
-## Effort metric v2
 ::: {.panel-tabset}
 
 ### Tab 1: Top Running backs
@@ -412,6 +415,12 @@ fig2
 
 Give your conclusions and summarize what you have learned with regards to your question of interest. Are there any limitations with the approaches you used? What do you think are the next steps to follow-up your project?
 
+- AS didn't translate into football (maybe works for other sports where you don't get tackled but just run at hand-off)
+- there are many dependencies in the nfl
+- this is a productive place to start attempting
+- further research should look into taking into account
+
+
 ## Appendix
 
 ### Tab 2: Bottom running backs
@@ -495,11 +504,11 @@ Give your conclusions and summarize what you have learned with regards to your q
 :::
 
 
-## Tables
+### Tables
 
 ::: {.panel-tabset}
 
-### Tab 1: Saquon Barkley
+### Tab 1: Top Running Backs with highest distance score
 ```{r}
 #| label: fig-quant-8
 #| fig-cap: "Top 10 running backs by exact distance score"
@@ -843,6 +852,10 @@ eff_function_rqss <- function(name, graph = FALSE) {
 
 
 
+# Acknowledgements
+
+- Used Dr. Ron Yurko and Quang Nguyen's code to calculate distance from the nearest defender [@qntkhvnAngle]
+- Still using the non-linear quantile regression plot? [@quantReg]
 
 
 
