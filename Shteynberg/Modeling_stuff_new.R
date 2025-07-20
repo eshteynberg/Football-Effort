@@ -38,7 +38,6 @@ rb_modeling <- tracking_def_plays |>
          preSnapHomeScore, weight, dist_to_bc, num_of_def_5, 
          def_s_mph, def_dir_a_mpsh, offenseFormation, pff_runConceptPrimary,
          expectedPointsAdded, rushingYards, gameId) |> 
-  mutate(fold = sample(rep(1:N_FOLDS, length.out = n()))) |> 
   left_join(plays_folds) |> 
   select(-gameId)
 
@@ -129,13 +128,16 @@ epa_rushingYards_test_preds |>
             se_rse = sd(rmse) / sqrt(N_FOLDS))
 
 
+
+# looking at plots
 epa_rushingYards_test_preds |> 
-  ggplot(aes(x=epa_rf_pred, y=epa_actual))+
+  ggplot(aes(x=epa_lasso_res, y=epa_lasso_pred))+
   geom_point()
 
+qqnorm(epa_rushingYards_test_preds$epa_lasso_res)
 
 epa_rushingYards_test_preds |> 
-  ggplot(aes(x=rushingYards_gam_pred, y=rushingYards_actual))+
+  ggplot(aes(x=rushingYards_lasso_res, y=rushingYards_lasso_pred))+
   geom_point()
 
 
