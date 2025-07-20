@@ -332,16 +332,16 @@ ellipse_stats <- ellipse_scores |>
             prop_in = 1-prop_out) |> 
   ungroup()
 
-
 ellipse_stats |> 
-  ggplot(aes(x=ellipse_score, y=prop_out))+
+  ggplot(aes(x=final_ellipse_score, y=prop_out))+
   geom_point()
 
-cor(ellipse_stats$ellipse_score, ellipse_stats$prop_out)  
+cor(ellipse_stats$final_ellipse_score, ellipse_stats$prop_out)  
 
-# Ellipse by play
-ellipse_play <- ellipse_scores |> 
-  group_by(displayName, gameId, playId) |> 
-  summarize(ellipse_score = sum(min_dist_ellipse[above==TRUE])/n()) |> 
+ellipse_stats_play <- ellipse_scores |> 
+  group_by(gameId, playId) |> 
+  summarize(final_ellipse_score = mean(ellipse_stat),
+            prop_out = mean(above),
+            prop_in = 1-prop_out) |> 
   ungroup()
 

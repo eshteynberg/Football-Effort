@@ -78,6 +78,7 @@ epa_cv <- function(x) {
     gam_pred = predict(gam_fit, newdata = test_data, type = "response"),
     rf_pred = (predict(epa_rf, data = test_data))$predictions,
     epa_actual = test_data$expectedPointsAdded,
+    rf_res = epa_actual - rf_pred,
     test_fold = x
   )
   return(out)
@@ -178,6 +179,7 @@ rushingYards_cv <- function(x) {
     gam_pred = predict(gam_fit, newdata = test_data, type = "response"),
     rf_pred = (predict(rushingYards_rf, data = test_data))$predictions,
     rushingYards_actual = test_data$rushingYards,
+    rf_res = rushingYards_actual - rf_pred,
     test_fold = x
   )
   return(out)
