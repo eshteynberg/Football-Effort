@@ -11,7 +11,7 @@
     "href": "index.html#introduction",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Introduction",
-    "text": "Introduction\nAmerican Football is one of the most-watched and popular sports in the U.S., known for its quick decision-making, complex tactics, and athletically demanding displays of strength, endurance and speed. However, many traditional statistics miss the “how” behind value plays such as yards gained after contact, expected points added, etc. As such, we must ask ourselves: what does it take to gain a yard? Is a player exceeding their capabilities, therefore, making an effort? If so, how often or how close a player comes to his “best”?\nOur motivation for this project centered on these very questions. Our goal is to develop a metric to measure effort. We acknowledge that effort is a complex, intangible, and most often subjective concept, influenced by player position, opposing defense, snap count or play volume to play call/assignment. Effort is also heavily contextual and multi-faceted, often shaped by the emotional and mental state as well as the thinking process of a player. Given the available data, we are going to focus on one facet: the raw physical capabilities of a player — specifically, acceleration and speed.\nBy quantifying effort, we hope to provide not only to teams and sport data analysts, but also fans with deeper insight into what and how football players are truly contributing on the field — even when it’s not reflected in conventional stats or even the outcome of a game. We also aspire to address or even fill in some of the gaps in the current literature around quantifying effort in American football since most research focus on win probabilities and other outcomes at the game level rather than individualized capabilities."
+    "text": "Introduction\nAmerican Football is one of the most-watched and popular sports in the U.S., known for its quick decision-making, complex tactics, and athletically demanding displays of strength, endurance and speed. However, many traditional statistics miss the “how” behind value plays such as yards gained after contact, expected points added, etc. As such, we must ask ourselves: what does it take to gain a yard? Is a player exceeding their capabilities, therefore, making an effort? If so, how often or how close does a player comes to his “best”?\nOur motivation for this project centered on these very questions. Our goal is to develop a metric to measure effort. We acknowledge that effort is a complex, intangible, and most often subjective concept, influenced by player position, opposing defense, snap count or play volume to play call/assignment. Effort is also heavily contextual and multi-faceted, often shaped by the emotional and mental state as well as the thinking process of a player. Given the available data, we are going to focus on one facet: the raw physical capabilities of a player — specifically, acceleration and speed.\nBy quantifying effort, we hope to provide not only to teams and sport data analysts, but also fans with deeper insight into what and how football players are truly contributing on the field — even when it’s not reflected in conventional stats or even the outcome of a game. We also aspire to address or even fill in some of the gaps in the current literature around quantifying effort in American football since most research focus on win probabilities and other outcomes at the game level rather than individualized capabilities."
   },
   {
     "objectID": "index.html#data",
@@ -32,7 +32,14 @@
     "href": "index.html#results",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Results",
-    "text": "Results\nDescribe your results. This can include tables and plots showing your results, as well as text describing how your models worked and the appropriate interpretations of the relevant output. (Note: Don’t just write out the textbook interpretations of all model coefficients. Instead, interpret the output that is relevant for your question of interest that is framed in the introduction)"
+    "text": "Results\nDescribe your results. This can include tables and plots showing your results, as well as text describing how your models worked and the appropriate interpretations of the relevant output. (Note: Don’t just write out the textbook interpretations of all model coefficients. Instead, interpret the output that is relevant for your question of interest that is framed in the introduction)\n[Metrics so far]\n\n\n\n\n\n\nEffort v1\n\n\n\n\n\\left(\\sum\\limits_{i=1}^{n_{\\text{below}}} {\\frac{1}{1+d_i}}\\right)\\bigg/n_{\\text{below}}\n ➜️ Quantifies how close a player comes to his “best” (99th percentile) accelerations\n➜ Saquon Barkley: 0.152\n➜ Rex Burkhead: 0.149\n\n\n\n\n\n\n\n\nEffort v2\n\n\n\nPercentage of total points that lie in between the percentile P_{99} and P_{99}-3\n➜ Quantifies how often a player comes close to his “best” (99th percentile) accelerations\n➜ Saquon Barkley: 0.074\n➜ Rex Burkhead: 0.069\n\n\n\nInteractive plot with menu for the 99th percentile"
+  },
+  {
+    "objectID": "index.html#effort-metric-v2",
+    "href": "index.html#effort-metric-v2",
+    "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
+    "section": "Effort metric v2",
+    "text": "Effort metric v2\n\nTab 1: Top Running backsTab 2: Bottom running backs\n\n\n\n\n\n\n\n\n\n\nFigure 1: Top 10\n\n\n\n\n\nDiscussion\nGive your conclusions and summarize what you have learned with regards to your question of interest. Are there any limitations with the approaches you used? What do you think are the next steps to follow-up your project?\n\n\nAppendix"
   },
   {
     "objectID": "index.html#discussion",
@@ -46,7 +53,7 @@
     "href": "index.html#appendix",
     "title": "Tracking the Intangible: Quantifying Effort in NFL Running Backs",
     "section": "Appendix",
-    "text": "Appendix\n\nInteractive plot with menu for the 99th percentile"
+    "text": "Appendix"
   },
   {
     "objectID": "index.html#tables",

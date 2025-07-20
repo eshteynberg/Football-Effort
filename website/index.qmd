@@ -53,7 +53,7 @@ include_graphics("docs/images/NFL2022.png")
 
 ## Introduction 
 
-American Football is one of the most-watched and popular sports in the U.S., known for its quick decision-making, complex tactics, and athletically demanding displays of strength, endurance and speed. However, many traditional statistics miss the “how” behind value plays such as yards gained after contact, expected points added, etc. As such, we must ask ourselves: what does it take to gain a yard? Is a player exceeding their capabilities, therefore, making an effort? If so, how often or how close a player comes to his “best"?
+American Football is one of the most-watched and popular sports in the U.S., known for its quick decision-making, complex tactics, and athletically demanding displays of strength, endurance and speed. However, many traditional statistics miss the “how” behind value plays such as yards gained after contact, expected points added, etc. As such, we must ask ourselves: what does it take to gain a yard? Is a player exceeding their capabilities, therefore, making an effort? If so, how often or how close does a player comes to his “best"?
 
 Our motivation for this project centered on these very questions. Our goal is to develop a metric to measure effort. We acknowledge that effort is a complex, intangible, and most often subjective concept, influenced by player position, opposing defense, snap count or play volume to play call/assignment. Effort is also heavily contextual and multi-faceted, often shaped by the emotional and mental state as well as the thinking process of a player. Given the available data, we are going to focus on one facet: the raw physical capabilities of a player — specifically, acceleration and speed.
 
@@ -86,11 +86,29 @@ The data used for this project were the Game, play, player, tracking datasets fr
 
 Describe your results. This can include tables and plots showing your results, as well as text describing how your models worked and the appropriate interpretations of the relevant output. (Note: Don’t just write out the textbook interpretations of all model coefficients. Instead, interpret the output that is relevant for your question of interest that is framed in the introduction)
 
-## Discussion
+**[Metrics so far]**
 
-Give your conclusions and summarize what you have learned with regards to your question of interest. Are there any limitations with the approaches you used? What do you think are the next steps to follow-up your project?
+::: {.callout-note title="Effort v1" style="font-size: 1.5em;"}
+$$
+\left(\sum\limits_{i=1}^{n_{\text{below}}} {\frac{1}{1+d_i}}\right)\bigg/n_{\text{below}}
+$$
+➜️ Quantifies *how close* a player comes to his "best" (99th percentile) accelerations
 
-## Appendix
+➜ Saquon Barkley: 0.152 
+
+➜ Rex Burkhead: 0.149
+:::
+
+::: {.callout-note title="Effort v2" style="font-size: 1.5em;"} 
+Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$
+
+➜ Quantifies *how often* a player comes close to his "best" (99th percentile) accelerations
+
+➜ Saquon Barkley: 0.074 
+
+➜ Rex Burkhead: 0.069
+:::
+
 
 ```{r}
 #| label: non-linear-quant-regression
@@ -305,7 +323,7 @@ gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "ad")
 # Metrics
 
 
-# Effort metric v2
+## Effort metric v2
 ::: {.panel-tabset}
 
 ### Tab 1: Top Running backs
@@ -389,6 +407,12 @@ fig2
 
 ```
 
+
+## Discussion
+
+Give your conclusions and summarize what you have learned with regards to your question of interest. Are there any limitations with the approaches you used? What do you think are the next steps to follow-up your project?
+
+## Appendix
 
 ### Tab 2: Bottom running backs
 ```{r}

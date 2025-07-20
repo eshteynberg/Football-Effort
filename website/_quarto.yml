@@ -25,5 +25,5 @@ format:
     theme: 
       light: navy blue
       dark: journal
-    fontsize: 13pt
+    fontsize: 15pt
     css: styles.css
