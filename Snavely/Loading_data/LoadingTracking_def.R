@@ -130,3 +130,18 @@ tracking_def <- tracking_def |>
          down = as.factor(down),
          quarter = as.factor(quarter))
 
+
+# Part of modeling --------------------------------------------------------
+# Counting number of defenders within 3 yard radius
+tracking_num_defs <- tracking_rb_runs |> 
+  filter(club != bc_club, displayName != "football") |> 
+  left_join(select(tracking_bc_quang, gameId, playId, frameId,
+                   bc_x, bc_y, adj_bc_x, adj_bc_y, bc_s, bc_a, bc_dir_a),
+            by = c("gameId", "playId", "frameId")) |> 
+  mutate(dist_to_bc = sqrt((x - bc_x) ^ 2 + (y - bc_y) ^ 2)) |> 
+  filter(frameId == frame_handoff) |>
+  filter(bc_id %in% tracking_bc_play_stats$bc_id) |> 
+  group_by(gameId, playId, frameId) |>
+  summarize(num_of_def_5 = sum(dist_to_bc <= 5)) |>
+  ungroup()
+
