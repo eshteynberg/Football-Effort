@@ -12,12 +12,12 @@ library(vip)
 
 # Play-level data ---------------------------------------------------------
 tracking_modeling <- tracking_def |>
-  left_join(select(tracking_bc_filtered, event, gameId, playId, frameId))
+  left_join(select(tracking_bc_filtered, event, gameId, playId, frameId)) 
 
-#play-level data 
-tracking_def_plays <- tracking_modeling |> 
-  filter(event == "handoff") |> 
-  left_join(select(plays, gameId, playId, expectedPointsAdded)) |> 
+tracking_def_plays <- tracking_modeling |>
+  left_join(tracking_num_defs) |> 
+  drop_na(num_of_def_5) |> 
+  left_join(select(plays, gameId, playId, expectedPointsAdded, offenseFormation, pff_runConceptPrimary)) |> 
   left_join(select(rb_stats_per_play, gameId, playId, bc_id, rushingYards)) |> 
   mutate(home = bc_club==homeTeamAbbr) |> 
   filter(bc_id %in% rb_stats_total_filtered$bc_id) 
@@ -35,7 +35,8 @@ rb_modeling <- tracking_def_plays |>
   na.omit() |>
   select(score_diff, home, quarter, down, yardsToGo, yards_from_endzone,
          bc_s_mph, bc_dir_a_mpsh, preSnapVisitorScore, angle_with_bc,
-         preSnapHomeScore, weight, dist_to_bc, 
+         preSnapHomeScore, weight, dist_to_bc, num_of_def_5, 
+         def_s_mph, def_dir_a_mpsh, offenseFormation, pff_runConceptPrimary,
          expectedPointsAdded, rushingYards, gameId) |> 
   mutate(fold = sample(rep(1:N_FOLDS, length.out = n()))) |> 
   left_join(plays_folds) |> 
@@ -93,6 +94,7 @@ epa_rushingYards_cv <- function(x) {
     epa_gam_pred = predict(epa_gam_fit, newdata = test_data, type = "response"),
     epa_rf_pred = (predict(epa_rf, data = test_data))$predictions,
     epa_actual = test_data$expectedPointsAdded,
+    epa_lasso_res = epa_actual - epa_lasso_pred,
     epa_rf_res = epa_actual - epa_rf_pred,
     rushingYards_reg_pred = predict(rushingYards_reg_fit, newdata = test_data),
     rushingYards_ridge_pred = as.numeric(predict(rushingYards_ridge_fit, newx = test_x)),
@@ -100,6 +102,7 @@ epa_rushingYards_cv <- function(x) {
     rushingYards_gam_pred = predict(rushingYards_gam_fit, newdata = test_data, type = "response"),
     rushingYards_rf_pred = (predict(rushingYards_rf, data = test_data))$predictions,
     rushingYards_actual = test_data$rushingYards,
+    rushingYards_gam_res = rushingYards_actual - rushingYards_gam_pred,
     rushingYards_rf_res = rushingYards_actual - rushingYards_rf_pred,
     test_fold = x
   )
@@ -126,13 +129,13 @@ epa_rushingYards_test_preds |>
             se_rse = sd(rmse) / sqrt(N_FOLDS))
 
 
-epa_test_preds |> 
+epa_rushingYards_test_preds |> 
   ggplot(aes(x=epa_rf_pred, y=epa_actual))+
   geom_point()
 
 
-rushingYards_test_preds |> 
-  ggplot(aes(x=rushingYards_rf_pred, y=rushingYards_actual))+
+epa_rushingYards_test_preds |> 
+  ggplot(aes(x=rushingYards_gam_pred, y=rushingYards_actual))+
   geom_point()
 
 
