@@ -266,19 +266,12 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   return(eff)
 }
 
-rbs <- rb_stats_total_filtered |> 
-  group_by(displayName) |> 
-  distinct(gameId) |> 
-  summarize(games=n()) |>
-  ungroup() |> 
-  filter(games >= 5) |> 
-  select(displayName)
 
 rbs_names <- unique(rb_stats_total_filtered$displayName)
 
-eff_movements <- purrr::map(rbs, eff_function) |> 
+eff_movements <- purrr::map(rbs_names, eff_function) |> 
   bind_rows() |> 
-  mutate(displayName = rbs)
+  mutate(displayName = rbs_names)
 # Fatigue -----------------------------------------------------------------
 fatigue <- tracking_bc |> 
   group_by(gameId, bc_id, displayName) |> 

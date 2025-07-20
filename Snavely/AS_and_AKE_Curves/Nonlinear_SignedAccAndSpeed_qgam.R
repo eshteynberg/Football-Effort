@@ -147,9 +147,9 @@ eff_function_qgam_mix("Craig Reynolds", graph = TRUE)
 eff_function_qgam_mix("Derrick Henry", graph = TRUE)
 eff_function_qgam_mix("Saquon Barkley")
 
-qgam_mixed <- purrr::map(rbs_names, eff_function_qgam_mix) |>
-  bind_rows()
-write.csv(qgam_mixed, "SignedAccPercentiles.csv")
+# qgam_mixed <- purrr::map(rbs_names, eff_function_qgam_mix) |>
+#   bind_rows()
+# write.csv(qgam_mixed, "SignedAccPercentiles.csv")
 
 # Loading in the data
 signedPercentiles <- read.csv("created_data/SignedAccPercentiles.csv") |> 
@@ -164,5 +164,10 @@ signedPercentiles <- read.csv("created_data/SignedAccPercentiles.csv") |>
 # Final effort score for players
 dis_scores_players <- signedPercentiles |> 
   group_by(displayName) |> 
+  summarize(dis_score_mix = mean(1 / (1 + adj_negative_acc_diff)))|> 
+  ungroup()
+
+dis_scores_plays <- signedPercentiles |> 
+  group_by(gameId, playId, displayName) |> 
   summarize(dis_score_mix = mean(1 / (1 + adj_negative_acc_diff)))|> 
   ungroup()

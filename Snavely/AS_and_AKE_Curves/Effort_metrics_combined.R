@@ -98,7 +98,9 @@ validating_effort_metrics |>
 # Combining the effort metrics obtained from Ellipse.R and Nonlinear_AccAndSpeed_qgam.R
 # Utilizing tracking_bc_play_stats from LoadingTrackingBcCombined.R
 effort_play <- tracking_bc_play_stats |> 
-  left_join(ellipse_play)
+  left_join(ellipse_play) |> 
+  left_join(dis_scores_plays) |> 
+  left_join(ellipse_stats_play)
 
 effort_play_ac <- effort_play |> 
   na.omit()
@@ -111,12 +113,36 @@ effort_play |>
   geom_smooth(method = "lm")
 cor(effort_play$expectedPointsAdded, effort_play$ellipse_score)
 
+effort_play |> 
+  ggplot(aes(x = dis_score_mix, y = expectedPointsAdded)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+cor(effort_play$expectedPointsAdded, effort_play$dis_score_mix)
+
+effort_play |> 
+  ggplot(aes(x = final_ellipse_score, y = expectedPointsAdded)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+cor(effort_play$expectedPointsAdded, effort_play$final_ellipse_score)
+
 # Rushing Yards
 effort_play |> 
   ggplot(aes(x = ellipse_score, y = rushingYards)) +
   geom_point() +
   geom_smooth(method = "loess")
 cor(effort_play$rushingYards, effort_play$ellipse_score)
+
+effort_play |> 
+  ggplot(aes(x = dis_score_mix, y = rushingYards)) +
+  geom_point() +
+  geom_smooth(method = "loess")
+cor(effort_play$rushingYards, effort_play$ellipse_score)
+
+effort_play |> 
+  ggplot(aes(x = final_ellipse_score, y = rushingYards)) +
+  geom_point() +
+  geom_smooth(method = "loess")
+cor(effort_play$rushingYards, effort_play$final_ellipse_score)
 
 # KE
 effort_play |> 
