@@ -66,7 +66,7 @@ epa_rushingYards_cv <- function(x) {
                  data = train_data,
                  family = gaussian(),
                  method = "REML")
-  epa_rf <- ranger(expectedPointsAdded ~ ., 
+  epa_rf <- ranger(expectedPointsAdded ~ . - fold - rushingYards, 
                      num.trees = 500, importance = "impurity", 
                      data = train_data)
   
@@ -78,10 +78,10 @@ epa_rushingYards_cv <- function(x) {
   rushingYards_gam_fit <- gam(rushingYards ~ s(score_diff) + s(bc_s_mph) + s(bc_dir_a_mpsh) +
                    as.factor(down) + as.factor(quarter) + as.factor(home)+ s(yardsToGo) + s(yards_from_endzone) +
                    weight + s(score_diff)+ s(preSnapVisitorScore) +s(preSnapHomeScore) +s(dist_to_bc) +s(angle_with_bc),
-                 data = train_data,
-                 family = gaussian(),
-                 method = "REML")
-  rushingYards_rf <- ranger(rushingYards ~ .,
+                   data = train_data,
+                   family = gaussian(),
+                   method = "REML")
+  rushingYards_rf <- ranger(rushingYards ~ . - fold - expectedPointsAdded,
                             num.trees = 500, importance = "impurity",
                             data = train_data)
   
@@ -121,17 +121,6 @@ epa_rushingYards_test_preds |>
                                  "epa_gam_pred", "epa_rf_pred"), 
                    sqrt(mean((epa_actual - test_pred) ^ 2)), 
                    sqrt(mean((rushingYards_actual - test_pred) ^ 2)))) |> 
-  group_by(method) |> 
-  summarize(cv_rmse = mean(rmse),
-            se_rse = sd(rmse) / sqrt(N_FOLDS))
-
-# Comparing RMSE and SE_RSE for rushing Yards
-rushingYards_test_preds |> 
-  pivot_longer(reg_pred:rf_pred,
-               names_to = "method",
-               values_to = "test_pred") |> 
-  group_by(method, test_fold) |> 
-  summarize(rmse = sqrt(mean((rushingYards_actual - test_pred) ^ 2))) |> 
   group_by(method) |> 
   summarize(cv_rmse = mean(rmse),
             se_rse = sd(rmse) / sqrt(N_FOLDS))
