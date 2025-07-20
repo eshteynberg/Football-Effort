@@ -51,6 +51,16 @@ save(top_dis_scores,
      file = "website/web_data/top_dis_scores.Rdata")
 
 
+save(player_runs_pos_a,
+     file = "website/web_data/player_runs_pos_a.Rdata")
+
+
+save(player_runs_neg_a,
+     file = "website/web_data/player_runs_neg_a.Rdata")
+
+save(player_runs,
+     file = "website/web_data/player_runs.Rdata")
+
 ```
 
 

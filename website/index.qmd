@@ -62,36 +62,26 @@ By quantifying effort, we hope to provide not only to teams and sport data analy
 
 ## Data
 
-The data used for this project were the Game, play, player, tracking datasets from from NFL Big Data Bowl 2022 Dataset, Weeks 1-9 [@nfl2022] on Kaggle.
+The data used for this project were the games, plays, players, tracking data sets from NFL Big Data Bowl 2022, weeks 1-9 on Kaggle [@nfl2022].
+
+#### Data pre-porcessing
 
  - We limited our dataset to NFL running backs with more than 20 rushes per play during the 2022 season.
  - We limited the rows to running plays where a running back (RB) is the ball carrier.
  - We Trimmed each play to frames between handoff and at end of a play.
  
-### Explanatory Data Analysis
- 
+
 
 ## Methods
-
-- **[Describe the modeling techniques you chose, their assumptions, justifications for why they are appropriate for the problem, and how you're comparing/evaluating the different methods]**
 
 ### Individual Acceleration-Speed Profile
 
 - Our main methodological approach to addressing this question centered around previous research that has explored soccer players reaching their theoretical max capacity in terms of their raw acceleration and speed [@AS]. We adopted a similar framework by plotting an individual running back's frames with with acceleration on the y-axis and speed on the x-axis. 
 
+### Metric #1: Linear Regression
 
-### Random Forest Model and/or Additive Quantile Regression Model
+- Effort = percentage of points above the transformed regression line 
 
-
-
-
-
-## Results
-
-**[Describe your results. This can include tables and plots showing your results, as well as text describing how your models worked and the appropriate interpretations of the relevant output. (Note: Don’t just write out the textbook interpretations of all model coefficients. Instead, interpret the output that is relevant for your question of interest that is framed in the introduction)]]**
-
-
-**[Metrics so far]**
 
 ::: {.callout-note title="Effort v1" style="font-size: 1.5em;"}
 $$
@@ -104,6 +94,127 @@ $$
 ➜ Rex Burkhead: 0.149
 :::
 
+
+```{r}
+#| label: linear-regression
+#| fig-cap: "Linear quantile regression for acceleration(mph/s) vs speed(mph)"
+
+load("web_data/tracking_bc.Rdata")
+load("web_data/player_runs_modeling.Rdata")
+
+eff_function <- function(name, graph = FALSE, player_table = FALSE) {
+  # Filter data for selected player
+  player_runs <- tracking_bc |> 
+    filter(displayName == name)
+  
+  # Speed bins
+  bins <- seq(3, round(max(player_runs$s_mph), 2) + .2, .2)
+
+  # Select top-2 acceleration points per bin
+  max_acc <- map_dfr(1:(length(bins) - 1), function(i) {
+    player_runs |> 
+      filter(s_mph > bins[i], s_mph <= bins[i + 1]) |> 
+      slice_max(a_mpsh, n = 2, with_ties = FALSE) |> 
+      select(speed = s_mph, acceleration = a_mpsh)
+  })
+  
+  # Fit linear model
+  player_lm <- lm(acceleration ~ speed, data = max_acc)
+  confs <- predict(player_lm, interval = "confidence")
+  max_acc <- bind_cols(max_acc, confs)
+  
+  # Filter outliers outside 95% CI
+  max_acc_clean <- max_acc |> 
+    filter(acceleration >= lwr, acceleration <= upr)
+  
+  # Refit linear model
+  player_lm_clean <- lm(acceleration ~ speed, data = max_acc_clean)
+  
+  # Predicted values and difference from fitted line
+  test_player_a <- tibble(speed = player_runs$s_mph, acceleration = player_runs$a_mpsh)
+  test_preds <- predict(player_lm_clean, newdata = test_player_a)
+  
+  player_final <- player_runs |> 
+    select(a_mpsh, s_mph) |> 
+    mutate(pred = test_preds,
+           diff = pred - a_mpsh,
+           eff = diff <= 0.25,
+           eff_50 = diff <= 0.5,
+           eff_75 = diff <= 0.75,
+           gameId = player_runs$gameId,
+           playId = player_runs$playId,
+           bc_id = player_runs$bc_id,
+           displayName = player_runs$displayName,
+           frameId = player_runs$frameId)
+  
+  # Summary effort score
+  eff <- tibble(
+    eff_metric = sum(player_final$eff, na.rm = TRUE),
+    eff_metric_perc = sum(player_final$eff, na.rm = TRUE) / nrow(player_final) * 100,
+    eff_metric_50 = sum(player_final$eff_50, na.rm = TRUE),
+    eff_metric_perc_50 = sum(player_final$eff_50, na.rm = TRUE) / nrow(player_final) * 100,
+    eff_metric_75 = sum(player_final$eff_75, na.rm = TRUE),
+    eff_metric_perc_75 = sum(player_final$eff_75, na.rm = TRUE) / nrow(player_final) * 100
+  )
+  
+  if (graph == TRUE) {
+    # Build regression lines
+    intercept <- player_lm_clean$coefficients[1]
+    slope <- player_lm_clean$coefficients[2]
+    s_seq <- seq(min(player_runs$s_mph), max(player_runs$s_mph), length.out = 200)
+    
+    reg_df <- tibble(
+      speed = s_seq,
+      reg = intercept + slope * s_seq,
+      reg_minus_025 = intercept - 0.25 + slope * s_seq
+    )
+    
+    # Plotly plot
+    p <- ggplot(player_final, aes(x = s_mph, y = a_mpsh)) +
+      geom_point(aes(text = paste0("Speed: ", round(s_mph, 2), "<br>Accel: ", round(a_mpsh, 2))), 
+                 color = "grey20", alpha = 0.55) +
+      geom_line(data = reg_df, aes(x = speed, y = reg, color = "Regression line"), size = 1.2) +
+      geom_line(data = reg_df, aes(x = speed, y = reg_minus_025, color = "Regression line - 0.25"), 
+                linetype = "dashed", size = 1.2) +
+      scale_color_manual("Line", values = c("Regression line" = "#0072B2", 
+                                            "Regression line - 0.25" = "#D55E00")) +
+      labs(
+        title = paste0(name, "'s Effort: ", round(eff$eff_metric_perc, 2), "%"),
+        x = "Speed (mph)",
+        y = "Acceleration (m/s²)",
+        caption = "Effort defined as within 0.25 m/s² of fitted top acceleration"
+      ) +
+      theme_minimal(base_size = 16) +
+      theme(
+        plot.title = element_text(face = "bold", hjust = 0.5, size = 18),
+        axis.title = element_text(face = "bold", size = 14),
+        axis.text = element_text(size = 12),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(size = 13),
+        plot.caption = element_text(face = "italic", size = 10)
+      )
+
+    return(ggplotly(p, tooltip = "text"))
+  }
+  
+  if (player_table == TRUE) {
+    return(player_final)
+  }
+
+  return(eff)
+}
+
+
+eff_function("Saquon Barkley", graph = TRUE)
+
+```
+
+
+
+
+### Metric #2: Additive Quantile Regression Model
+
+
 ::: {.callout-note title="Effort v2" style="font-size: 1.5em;"} 
 Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$
 
@@ -113,6 +224,7 @@ Percentage of total points that lie in between the percentile $P_{99}$ and $P_{9
 
 ➜ Rex Burkhead: 0.069
 :::
+
 
 
 ```{r}
@@ -201,9 +313,6 @@ eff_function_rqss <- function(name, graph = FALSE) {
 
 ```
 
-
-
-### Interactive plot with menu for the 99th percentile
 
 ```{r}
 #| label: percentile-lines-regression
@@ -324,14 +433,11 @@ gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "ad")
 
 ```
 
-
-### Metrics
-
 ::: {.panel-tabset}
 
 ### Tab 1: Top Running backs
 ```{r}
-#| label: fig-quant-6
+#| label: top-players
 #| fig-cap: "Top 10"
 #| message: false
 #| warning: false
@@ -409,6 +515,124 @@ fig2
 
 
 ```
+
+### Ellipse
+
+
+```{r}
+##| label: ellipse-for-rb
+##| fig-cap: "Ellipse"
+##| message: false
+##| warning: false
+
+# load("web_data/player_runs_pos_a.Rdata")
+# load("web_data/player_runs_neg_a.Rdata")
+# 
+# 
+# # creating an ellipse function --------------------------------------------
+# 
+# ellipse <- function(name, graph = FALSE) {
+#   # Choosing name
+#   player_runs <- tracking_bc |> 
+#     filter(displayName == name)
+#   
+#   player_runs_pos_a <- player_runs |> 
+#     filter(dir_a_mpsh>=0)
+#   
+#   player_runs_neg_a <- player_runs |> 
+#     filter(dir_a_mpsh<0)
+#   
+#   # Defining intercepts of the ellipse
+#   a <- quantile(player_runs_pos_a$s_mph, probs=.99)
+#   pos_b <- quantile(player_runs_pos_a$dir_a_mpsh, probs=.99)
+#   neg_b <- quantile(player_runs_neg_a$dir_a_mpsh, probs=.01)
+#   
+#   
+#   
+#   # Generating x-vals and y-vals to graph
+#   x_vals <- seq(0, a, length.out = 300)
+#   pos_y_vals <- pos_b * sqrt(1 - (x_vals^2 / a^2))
+#   neg_y_vals <- neg_b * sqrt(1 - (x_vals^2 / a^2))
+#   
+#   # Building the ellipse df
+#   ellipse_df <- data.frame(x = x_vals, pos_y = pos_y_vals, neg_y = neg_y_vals)
+#   
+#   # Plotting the ellipse on the AS curve
+#   if (graph == TRUE) {
+#     graph <- player_runs |> 
+#     ggplot(aes(x = s_mph, y = dir_a_mpsh)) +
+#     geom_point(aes(x = s_mph, y = dir_a_mpsh), alpha=.3, color="grey2")+
+#     geom_path(data = ellipse_df, aes(x = x, y = pos_y), color = "#0072B2", linewidth = 1.2) +
+#     geom_path(data = ellipse_df, aes(x = x, y = neg_y), color = "#0072B2", linewidth = 1.2) +
+#       labs(x = "Speed (mph)",
+#            y = "Acceleration (mph/s)",
+#            title = paste0(name),
+#            caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
+#       theme_minimal(base_size=16) +
+#       theme(plot.title = element_text(face = "bold.italic",
+#                                       size = 18, 
+#                                       hjust = .5),
+#             legend.title = element_text(face = "bold"),
+#             axis.title = element_text(face = "bold"),
+#             legend.text=element_text(size=15),
+#             plot.caption = element_text(face = "italic", size = 8))
+#     return(graph)
+#   }
+#   
+#   # Calculating the minimum distance away from the point and the line
+#   min_dist <- function(s_mph, dir_a_mpsh, ex, ey) {
+#     dist <- sqrt((s_mph - ex)^2 + (dir_a_mpsh - ey)^2)
+#     return(min(dist))
+#   }
+#   
+#   # Finding the minimum distance from AS point to ellipse line
+#   player_runs_dist_pos <- player_runs_pos_a |> 
+#     mutate(min_dist_to_ellipse= purrr::map2_dbl(s_mph, dir_a_mpsh, ~ min_dist(.x, .y, ellipse_df$x, ellipse_df$pos_y)))
+#   
+#   player_runs_dist_neg <- player_runs_neg_a |> 
+#     mutate(min_dist_to_ellipse= purrr::map2_dbl(s_mph, dir_a_mpsh, ~ min_dist(.x, .y, ellipse_df$x, ellipse_df$neg_y)))
+#   
+#   player_runs_dist <- rbind(player_runs_dist_pos, player_runs_dist_neg)
+#   
+#   
+#   out <- tibble(
+#     displayName = name,
+#     bc_id = player_runs$bc_id,
+#     gameId = player_runs$gameId,
+#     playId = player_runs$playId,
+#     frameId = player_runs$frameId,
+#     s_mph = player_runs$s_mph,
+#     dir_a_mpsh = player_runs$dir_a_mpsh,
+#     min_dist_ellipse = player_runs_dist$min_dist_to_ellipse,
+#     above = ifelse(dir_a_mpsh >= 0,
+#       ifelse(
+#         (player_runs$s_mph^2/(quantile(player_runs$s_mph, probs=.99))^2) + (player_runs$dir_a_mpsh^2/(quantile(player_runs$dir_a_mpsh, probs=.99))^2) >1, TRUE, FALSE
+#         ),
+#       ifelse(
+#         (player_runs$s_mph^2/(quantile(player_runs$s_mph, probs=.99))^2) + (player_runs$dir_a_mpsh^2/(quantile(player_runs$dir_a_mpsh, probs=.01))^2) >1, TRUE, FALSE
+#         )
+#       )
+#     )
+#   return(out)
+# }
+# 
+# # Test
+# ellipse("Saquon Barkley", graph=TRUE)
+
+```
+
+
+
+
+
+
+
+
+
+## Results
+
+**[Describe your results. This can include tables and plots showing your results, as well as text describing how your models worked and the appropriate interpretations of the relevant output. (Note: Don’t just write out the textbook interpretations of all model coefficients. Instead, interpret the output that is relevant for your question of interest that is framed in the introduction)]]**
+
 
 
 ## Discussion
@@ -510,58 +734,58 @@ Give your conclusions and summarize what you have learned with regards to your q
 
 ### Tab 1: Top Running Backs with highest distance score
 ```{r}
-#| label: fig-quant-8
-#| fig-cap: "Top 10 running backs by exact distance score"
-#| echo: false
-
-
-load("web_data/bottom_dis_scores.Rdata")
-load("web_data/top_dis_scores.Rdata")
-
-top_dis_scores |> 
-  select(1:2) |> 
-  kable(booktabs = TRUE,
-    digits = 2,
-    col.names = c("Running Back", "Distance Score")
-  ) |> 
-  kable_styling(
-    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
-    full_width = FALSE,
-    position = "center"
-  ) |>
-  row_spec(0, bold = TRUE, color = "white", background = "#000080") |>
-  column_spec(2, color = "black", background = "#ffffff") |>
-  add_header_above(c("Top 10 Running backs with Highest distance score" = 2),
-                   background = "#CD2626", color = "white", bold = TRUE)
-
+# #| label: fig-quant-8
+# #| fig-cap: "Top 10 running backs by exact distance score"
+# #| echo: false
+# 
+# 
+# load("web_data/bottom_dis_scores.Rdata")
+# load("web_data/top_dis_scores.Rdata")
+# 
+# top_dis_scores |> 
+#   select(1:2) |> 
+#   kable(booktabs = TRUE,
+#     digits = 2,
+#     col.names = c("Running Back", "Distance Score")
+#   ) |> 
+#   kable_styling(
+#     bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+#     full_width = FALSE,
+#     position = "center"
+#   ) |>
+#   row_spec(0, bold = TRUE, color = "white", background = "#000080") |>
+#   column_spec(2, color = "black", background = "#ffffff") |>
+#   add_header_above(c("Top 10 Running backs with Highest distance score" = 2),
+#                    background = "#CD2626", color = "white", bold = TRUE)
+# 
 
 ```
 
 ### Tab 2: Bottom Running Backs with lowest distance score 
 ```{r}
-#| label: fig-quant-9
-#| fig-cap: "Bottom 10 running backs by exact distance score"
-#| echo: false
-
-
-load("web_data/bottom_dis_scores.Rdata")
-
-bottom_dis_scores |> 
-  select(1:2) |> 
-  kable(booktabs = TRUE,
-    digits = 2,
-    col.names = c("Running Back", "Distance Score")
-  ) |> 
-  kable_styling(
-    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
-    full_width = FALSE,
-    position = "center"
-  ) |>
-  row_spec(0, bold = TRUE, color = "white", background = "#000080") |>
-  column_spec(2, color = "black", background = "#ffffff") |>
-  add_header_above(c("Bottom 10 Running backs with lowest distance score" = 2),
-                   background = "#CD2626", color = "white", bold = TRUE)
-
+# #| label: fig-quant-9
+# #| fig-cap: "Bottom 10 running backs by exact distance score"
+# #| echo: false
+# 
+# 
+# load("web_data/bottom_dis_scores.Rdata")
+# 
+# bottom_dis_scores |> 
+#   select(1:2) |> 
+#   kable(booktabs = TRUE,
+#     digits = 2,
+#     col.names = c("Running Back", "Distance Score")
+#   ) |> 
+#   kable_styling(
+#     bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+#     full_width = FALSE,
+#     position = "center"
+#   ) |>
+#   row_spec(0, bold = TRUE, color = "white", background = "#000080") |>
+#   column_spec(2, color = "black", background = "#ffffff") |>
+#   add_header_above(c("Bottom 10 Running backs with lowest distance score" = 2),
+#                    background = "#CD2626", color = "white", bold = TRUE)
+# 
 
 ```
 :::
@@ -582,91 +806,91 @@ bottom_dis_scores |>
 
 ### Tab 1: Saquon Barkley
 ```{r}
-#| label: fig-quant-1
-#| fig-cap: "trying non-linear-quant-regression"
+##| label: fig-quant-1
+##| fig-cap: "trying non-linear-quant-regression"
 
-load("web_data/tracking_bc.Rdata")
-load("web_data/player_runs_modeling.Rdata")
-
-
-set.seed(1)
-
-eff_function_rqss <- function(name, graph = FALSE) {
-  player_runs <- tracking_bc |> 
-    filter(displayName == name)
-
-  N_FOLDS <- 5
-  player_runs_modeling <- player_runs |> 
-    select(s, a) |> 
-    mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
-  
-  player_runs_cv <- function(x) {
-    test_data <- player_runs_modeling |> 
-      filter(fold == x)
-    train_data <- player_runs_modeling |> 
-      filter(fold != x)
-    
-    s_range <- range(train_data$s)
-    test_data <- test_data |> 
-      filter(s >= max(s_range[1], 1),
-             s <= min(s_range[2], 9))
-    
-    rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = train_data)
-    
-    out <- tibble(
-      rq_pred = predict(rq_fit, newdata = test_data),
-      test_actual = test_data$a,
-      res_rq = test_actual - rq_pred,
-      test_fold = x
-    )
-    return(out)
-  }
-
-  player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
-    list_rbind()
-  
-  eff_score <- mean(player_runs_test_preds$res_rq < 0)
-
-  if (graph == TRUE) {
-    # Fit final model and compute smooth prediction line
-    rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = player_runs)
-    s_seq <- seq(min(player_runs$s, na.rm = TRUE), max(player_runs$s, na.rm = TRUE), length.out = 100)
-    pred_df <- tibble(s = s_seq)
-    pred_df$a <- predict(rq_fit, newdata = pred_df)
-
-    # Interactive ggplot
-    p <- ggplot() +
-      geom_point(data = player_runs, aes(
-      x = s, 
-      y = a,
-      text = paste0("Speed: ", round(s, 2),
-                    "<br>Acceleration: ", round(a, 2))), 
-      alpha = 0.5, 
-      color = "grey40") +
-      geom_line(data = pred_df, aes(x = s, y = a), 
-                color = "blue", size = 1.2) +
-      scale_x_continuous(name = "Speed") +
-      scale_y_continuous(name = "Acceleration") +
-      labs(
-        title = paste0(name, "'s Effort Quantile Curve (90%)"),
-        caption = "Data from Weeks 1–9 of the 2022 NFL Season"
-      ) +
-      theme_minimal() +
-      theme(
-        plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
-        axis.title = element_text(face = "bold", size = 14),
-        axis.text = element_text(size = 12),
-        plot.caption = element_text(face = "italic", size = 9)
-      )
-
-    return(ggplotly(p, tooltip = "text"))
-  }
-
-  return(tibble(displayName = name, effort_ratio_90 = 1 - eff_score))
-}
-
-
- (eff_function_rqss("Saquon Barkley", graph = TRUE))
+# load("web_data/tracking_bc.Rdata")
+# load("web_data/player_runs_modeling.Rdata")
+# 
+# 
+# set.seed(1)
+# 
+# eff_function_rqss <- function(name, graph = FALSE) {
+#   player_runs <- tracking_bc |> 
+#     filter(displayName == name)
+# 
+#   N_FOLDS <- 5
+#   player_runs_modeling <- player_runs |> 
+#     select(s, a) |> 
+#     mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
+#   
+#   player_runs_cv <- function(x) {
+#     test_data <- player_runs_modeling |> 
+#       filter(fold == x)
+#     train_data <- player_runs_modeling |> 
+#       filter(fold != x)
+#     
+#     s_range <- range(train_data$s)
+#     test_data <- test_data |> 
+#       filter(s >= max(s_range[1], 1),
+#              s <= min(s_range[2], 9))
+#     
+#     rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = train_data)
+#     
+#     out <- tibble(
+#       rq_pred = predict(rq_fit, newdata = test_data),
+#       test_actual = test_data$a,
+#       res_rq = test_actual - rq_pred,
+#       test_fold = x
+#     )
+#     return(out)
+#   }
+# 
+#   player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
+#     list_rbind()
+#   
+#   eff_score <- mean(player_runs_test_preds$res_rq < 0)
+# 
+#   if (graph == TRUE) {
+#     # Fit final model and compute smooth prediction line
+#     rq_fit <- rqss(a ~ qss(s, lambda = 3), tau = 0.9, data = player_runs)
+#     s_seq <- seq(min(player_runs$s, na.rm = TRUE), max(player_runs$s, na.rm = TRUE), length.out = 100)
+#     pred_df <- tibble(s = s_seq)
+#     pred_df$a <- predict(rq_fit, newdata = pred_df)
+# 
+#     # Interactive ggplot
+#     p <- ggplot() +
+#       geom_point(data = player_runs, aes(
+#       x = s, 
+#       y = a,
+#       text = paste0("Speed: ", round(s, 2),
+#                     "<br>Acceleration: ", round(a, 2))), 
+#       alpha = 0.5, 
+#       color = "grey40") +
+#       geom_line(data = pred_df, aes(x = s, y = a), 
+#                 color = "blue", size = 1.2) +
+#       scale_x_continuous(name = "Speed") +
+#       scale_y_continuous(name = "Acceleration") +
+#       labs(
+#         title = paste0(name, "'s Effort Quantile Curve (90%)"),
+#         caption = "Data from Weeks 1–9 of the 2022 NFL Season"
+#       ) +
+#       theme_minimal() +
+#       theme(
+#         plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+#         axis.title = element_text(face = "bold", size = 14),
+#         axis.text = element_text(size = 12),
+#         plot.caption = element_text(face = "italic", size = 9)
+#       )
+# 
+#     return(ggplotly(p, tooltip = "text"))
+#   }
+# 
+#   return(tibble(displayName = name, effort_ratio_90 = 1 - eff_score))
+# }
+# 
+# 
+#  (eff_function_rqss("Saquon Barkley", graph = TRUE))
 
 ```
 
@@ -849,7 +1073,6 @@ eff_function_rqss <- function(name, graph = FALSE) {
 ```
 
 :::
-
 
 
 # Acknowledgements
