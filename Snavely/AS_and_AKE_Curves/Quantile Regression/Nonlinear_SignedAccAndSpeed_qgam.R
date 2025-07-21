@@ -194,31 +194,41 @@ eff_function_qgam_mix <- function(name, graph = FALSE) {
 
 # Player test
 eff_function_qgam_mix("Craig Reynolds", graph = TRUE)
-eff_function_qgam_mix("Derrick Henry", graph = TRUE)
+eff_function_qgam_mix("Joshua Kelley", graph = TRUE)
 eff_function_qgam_mix("Saquon Barkley", graph = TRUE)
 
-qgam_mixed <- purrr::map(rbs_names, eff_function_qgam_mix) |>
-  bind_rows()
-write.csv(qgam_mixed, "SignedAccPercentiles.csv")
+# qgam_mixed <- purrr::map(rbs_names, eff_function_qgam_mix) |>
+#   bind_rows()
+# write.csv(qgam_mixed, "SignedAccPercentiles.csv")
 
 # Loading in the data
 signedPercentiles <- read.csv("created_data/SignedAccPercentiles.csv") |> 
   select(-X) |> 
-  mutate(diff_speed = -1 * diff_speed) |> # Accidentally subtracted the two wrong in the data frame
   rowwise() |> 
-  mutate(minimum_diff = ifelse(actual_acc >= 0, min(diff_a_top, diff_speed), min(diff_a_bottom, diff_speed)), # Finding minimum distance
+  mutate(minimum_diff = min(diff_a, diff_speed), # Finding minimum distance
          adj_minimum_diff = ifelse(minimum_diff <= 0, 0, minimum_diff), # Giving value of 0 for points past lines
-         adj_negative_acc_diff = ifelse(actual_acc < 0, adj_minimum_diff * 1.25, adj_minimum_diff)) |> # Penalty for deccelerating
-  mutate(s_mph = actual_speed, dir_a_mpsh = round(actual_acc, 5))
-
+         dis_stat = (1 / (1 + adj_minimum_diff)),
+         dis_stat_adj = ifelse(actual_acc < 0, dis_stat / 2, dis_stat)) # Penalty for deccelerating
 
 # Final effort score for players
 dis_scores_players <- signedPercentiles |> 
   group_by(displayName) |> 
-  summarize(dis_score_mix = mean(1 / (1 + adj_negative_acc_diff)))|> 
+  summarize(dis_score_mix = mean(dis_stat_adj)) |> 
   ungroup()
 
+# For plays
 dis_scores_plays <- signedPercentiles |> 
   group_by(gameId, playId, displayName) |> 
-  summarize(dis_score_mix = mean(1 / (1 + adj_negative_acc_diff)))|> 
+  summarize(dis_score_mix = mean(dis_stat_adj)) |> 
   ungroup()
+
+# Factoring in rushing yards
+scores_and_rushingYards <- tracking_bc_play_stats |> 
+  left_join(dis_scores_plays) |> 
+  mutate(dis_score_rush = dis_score_mix * rushingYards)
+
+players_scoresRushed <- scores_and_rushingYards |> 
+  group_by(bc_id, displayName) |> 
+  summarize(dis_score_rush = mean(dis_score_rush))
+
+cor(scores_and_rushingYards$expectedPointsAdded, scores_and_rushingYards$dis_score_rush)

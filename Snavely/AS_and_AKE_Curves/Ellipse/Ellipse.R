@@ -322,11 +322,12 @@ ellipse_scores <- purrr::map(rbs_names, ellipse) |>
 
 ellipse_scores <- ellipse_scores |> 
   mutate(adj_min_dist_ellipse = ifelse(above, 0, min_dist_ellipse),
-         ellipse_stat = 1/(1+adj_min_dist_ellipse))
+         ellipse_stat = 1/(1+adj_min_dist_ellipse),
+         adj_ellipse_stat = ifelse(dir_a_mpsh < 0,  ellipse_stat / 2, ellipse_stat))
 
 ellipse_stats <- ellipse_scores |> 
   group_by(displayName) |> 
-  summarize(final_ellipse_score = mean(ellipse_stat),
+  summarize(final_ellipse_score = mean(adj_ellipse_stat),
             prop_out = mean(above),
             prop_in = 1-prop_out) |> 
   ungroup()
@@ -339,7 +340,7 @@ cor(ellipse_stats$final_ellipse_score, ellipse_stats$prop_out)
 
 ellipse_stats_play <- ellipse_scores |> 
   group_by(gameId, playId) |> 
-  summarize(final_ellipse_score = mean(ellipse_stat),
+  summarize(final_ellipse_score = mean(adj_ellipse_stat),
             prop_out = mean(above),
             prop_in = 1-prop_out) |> 
   ungroup()
