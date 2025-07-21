@@ -210,6 +210,7 @@ signedPercentiles <- read.csv("created_data/SignedAccPercentiles.csv") |>
          dis_stat = (1 / (1 + adj_minimum_diff)),
          dis_stat_adj = ifelse(actual_acc < 0, dis_stat / 2, dis_stat)) # Penalty for deccelerating
 
+## Mean interpretation
 # Final effort score for players
 dis_scores_players <- signedPercentiles |> 
   group_by(displayName) |> 
@@ -221,6 +222,21 @@ dis_scores_plays <- signedPercentiles |>
   group_by(gameId, playId, displayName) |> 
   summarize(dis_score_mix = mean(dis_stat_adj)) |> 
   ungroup()
+
+## Max effortful second interpretation
+sec_dis_scores_plays <- signedPercentiles |> 
+  group_by(gameId, playId, bc_id, displayName) |> 
+  slice_max(order_by = dis_stat_adj, n = 10) |> 
+  summarize(dis_score_mix = mean(dis_stat_adj)) |> 
+  ungroup()
+
+sec_dis_scores_players <- sec_dis_scores_plays |> 
+  group_by(bc_id, displayName) |> 
+  summarize(dis_score_mix = mean(dis_score_mix)) |> 
+  ungroup()
+
+cor(tracking_bc_play_stats$expectedPointsAdded, sec_dis_scores_plays$dis_score_mix)
+
 
 # Factoring in rushing yards
 scores_and_rushingYards <- tracking_bc_play_stats |> 
