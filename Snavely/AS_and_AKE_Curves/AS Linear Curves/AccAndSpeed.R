@@ -418,6 +418,9 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
   if (graph == TRUE) {
     player_graph <- player_runs |> 
       ggplot(aes(x = s_mph, y = a_mpsh)) +
+      geom_point(size = 2, alpha = .6, col = "grey2") +
+      geom_rect(aes(xmin = -Inf, xmax = 3, ymin = -Inf, ymax = Inf), 
+                fill = "#e7e7e7", alpha = 0.04) +
       # geom_smooth(method = lm, aes(x = speed, y = acceleration), data = max_acc_clean, lwd = 1.5, se = FALSE) +
       geom_abline(aes(color = "Regression line",
                       intercept = player_lm_clean$coefficients[1], slope = player_lm_clean$coefficients[2]),
@@ -432,7 +435,8 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
       #             intercept = player_lm_clean$coefficients[1] - .75, slope = player_lm_clean$coefficients[2]), 
       #             lty = 2, lwd = 1.5) +
       scale_color_manual("Line", values = c("#0072B2", "#D55E00")) +
-      geom_point(size = 2, alpha = .5, col = "grey2") +
+      geom_point(data=max_acc_clean, aes(x = speed, y = acceleration), 
+                 size = 4, fill = "#b3b3b3", col = "black", stroke = 1.2, shape = 21)+
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
            title = paste0(name, "'s effort: ", round(eff$eff_metric_perc,2), "%")) +
