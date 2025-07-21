@@ -62,7 +62,7 @@ By quantifying effort, we hope to provide not only to teams and sport data analy
 
 ## Data
 
-The data used for this project were the games, plays, players, tracking data sets from NFL Big Data Bowl 2022, weeks 1-9 on Kaggle [@nfl2022].
+The data used for this project were the games, plays, players, tracking data sets from the NFL Big Data Bowl 2025, weeks 1-9 on Kaggle [@nfl2022].
 
 #### Data pre-porcessing
 
@@ -71,28 +71,22 @@ The data used for this project were the games, plays, players, tracking data set
  - We Trimmed each play to frames between handoff and at end of a play.
  
 
-
 ## Methods
 
-### Individual Acceleration-Speed Profile
-
-- Our main methodological approach to addressing this question centered around previous research that has explored soccer players reaching their theoretical max capacity in terms of their raw acceleration and speed [@AS]. We adopted a similar framework by plotting an individual running back's frames with with acceleration on the y-axis and speed on the x-axis. 
+In this project, we define effort as a running back's ability to consistently reach a combination of their individual maximal acceleration for any given speed.
 
 ### Metric #1: Linear Regression
 
-- Effort = percentage of points above the transformed regression line 
+- Our main methodological approach to addressing this question centered around previous research that has explored soccer players reaching their theoretical max acceleration capacity for every running speed [@AS]. Similarly, we adopted this framework by plotting an individual running back's profile based on the maximal acceleration the running back could generate for every possible running speed as follows:
 
+   - Within a speed interval ranging between 3 mph and the RB’s maximal speed, the two maximal acceleration values attained for each 0.2 mph sub-intervals were selected. 
+   - A first linear regression was fit to these speed-acceleration points. 
+   - Outlier points lying outside of 95% confidence interval around the linear function were removed. 
+   - A linear regression was fit to the remaining points.
+  
+- This effort metric was derived by transforming final regression line downward by 0.25 units.
+- **Effort =** percentage of points above the transformed regression line
 
-::: {.callout-note title="Effort v1" style="font-size: 1.5em;"}
-$$
-\left(\sum\limits_{i=1}^{n_{\text{below}}} {\frac{1}{1+d_i}}\right)\bigg/n_{\text{below}}
-$$
-➜️ Quantifies *how close* a player comes to his "best" (99th percentile) accelerations
-
-➜ Saquon Barkley: 0.152 
-
-➜ Rex Burkhead: 0.149
-:::
 
 
 ```{r}
@@ -210,7 +204,7 @@ eff_function("Saquon Barkley", graph = TRUE)
 
 #===================[ making interactive drop down menu ]=======================
 
-# rb_dd_list <- c("Chase Edmonds", "Rachaad White", "D'Andre Swift", 
+# rb_dd_list <- c("Saquon Barkley", "Rex Burkhead", "Chase Edmonds", "Rachaad White", "D'Andre Swift", 
 #                 "Samaje Perine", "Joshua Kelley", "Matt Breida", "Alexander Mattison",
 #                 "Josh Jacobs", "James Cook", "Melvin Gordon")
 # 
@@ -285,16 +279,17 @@ eff_function("Saquon Barkley", graph = TRUE)
 
 ### Metric #2: Additive Quantile Regression Model
 
+- This metric quantifies *how often* a runnng back comes close to their maximal acceleration capacity.
+- **Assumption of this effort metric:** high acceleration and/or high speed movements are effortful.
+- For each running back, two regression models with adaptive spline bases were fitted to the 0.98 quantiles of positive and negative acceleration, respectively, both as functions of running speed. A vertical line at the 0.99 quantile of speed was also drawn. 
+- This metric was derived by 
 
-::: {.callout-note title="Effort v2" style="font-size: 1.5em;"} 
-Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$
+             [LATEX equation] 
 
-➜ Quantifies *how often* a player comes close to his "best" (99th percentile) accelerations
+where di is the shortest distance from each point to its corresponding quantile regression line (either for positive or negative acceleration) or to the vertical line at the 0.99 quantile of speed.
 
-➜ Saquon Barkley: 0.074 
-
-➜ Rex Burkhead: 0.069
-:::
+   - For points outside the quantile regression lines and/or the vertical line, the distance di was set to 0. 
+   - For negative acceleration points, **the effort score[change]** was penalized with by a factor of 0.5 as deceleration is deemed less effortful.
 
 
 
@@ -497,7 +492,10 @@ fig2
 
 ```
 
-### Ellipse
+### Metric #3: Ellipse [this metric might go on the appendix(???)]
+
+- For each running back, an ellipse was plotted with a vertex (x-intercept) at the 99th percentile of speed and co-vertices (y-intercepts) at the 99th percentiles of positive and negative acceleration, respectively.
+- This effort metric was derived in the same manner as for the quantile regression above, where di here is the shortest distance from each point to the ellipse.
 
 
 ```{r}
@@ -604,12 +602,6 @@ fig2
 
 
 
-
-
-
-
-
-
 ## Results
 
 **[Describe your results. This can include tables and plots showing your results, as well as text describing how your models worked and the appropriate interpretations of the relevant output. (Note: Don’t just write out the textbook interpretations of all model coefficients. Instead, interpret the output that is relevant for your question of interest that is framed in the introduction)]]**
@@ -618,12 +610,12 @@ fig2
 
 ## Discussion
 
-Give your conclusions and summarize what you have learned with regards to your question of interest. Are there any limitations with the approaches you used? What do you think are the next steps to follow-up your project?
+**[Give your conclusions and summarize what you have learned with regards to your question of interest. Are there any limitations with the approaches you used? What do you think are the next steps to follow-up your project?]**
 
-- AS didn't translate into football (maybe works for other sports where you don't get tackled but just run at hand-off)
-- there are many dependencies in the nfl
-- this is a productive place to start attempting
-- further research should look into taking into account
+- AS profile framework didn't translate into football (maybe it works for other sports where players don't get tackled but just run at hand-off)
+- there are many dependencies in NFL
+- this is a productive place to start quantifying effort
+- further research should look into taking into account other factors/variables
 
 
 ## Appendix
@@ -1055,7 +1047,7 @@ Give your conclusions and summarize what you have learned with regards to your q
 :::
 
 
-# Acknowledgements
+## Acknowledgements
 
 - Used Dr. Ron Yurko and Quang Nguyen's code to calculate distance from the nearest defender [@qntkhvnAngle]
 - Still using the non-linear quantile regression plot? [@quantReg]
