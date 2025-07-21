@@ -375,18 +375,18 @@ gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "ad")
 
     # ggplot
     p <- ggplot() +
-      geom_point(data = player_runs_test_preds, aes(
+      geom_point(data = player_runs_test_preds %>% mutate(color = "gray"), aes(
         x = actual_speed, 
         y = actual_acc,
+        color = color,
         text = paste0("Speed: ", round(actual_speed, 2),
                       "<br>Acceleration: ", round(actual_acc, 2))), 
       alpha = 0.55, 
-      color = "grey40",
       # so the data point's color doesn't show on the legend
       show.legend = FALSE) + 
       geom_line(data = pred_df, aes(x = s, y = pred_99, color = "99th percentile"), size = 1.2) +
       geom_line(data = pred_df, aes(x = s, y = pred_99m3, color = "99th percentile - 3"), linetype = "dashed", size = 1.2) +
-      scale_color_manual("Line", values = c("99th percentile" = "#0072B2", "99th percentile - 3" = "black")) +
+      scale_color_manual(values = c("99th percentile" = "#0072B2", "99th percentile - 3" = "black")) +
       labs(
         title = paste0(name, "'s Effort Quantile Curve (99%)"),
         x = "Speed (mph)",
@@ -417,6 +417,7 @@ gam_fit_99m3 <- mgcv::gam(qgam_pred_minus_3 ~ s(actual_speed, k = 15, bs = "ad")
 #| fig-cap: "Top 10"
 #| message: false
 #| warning: false
+#| cache: true
 
 # Player list
 rb_dd_list <- c("Chase Edmonds", "Rachaad White", "D'Andre Swift", 
@@ -436,6 +437,10 @@ for (i in seq_along(rb_dd_list)) {
   
   player_traces <- list()
   for (trace in plot_obj$x$data) {
+    if (trace$mode == "markers") {
+      trace$marker$color <- "grey40"
+      trace$marker$line$color <- "grey40"
+    }
     trace$visible <- (i == 1) 
     
     # this is to display the first running back's AS quantile regression 
@@ -445,6 +450,7 @@ for (i in seq_along(rb_dd_list)) {
       type = trace$type,
       mode = trace$mode,
       line = trace$line,
+      marker = trace$marker,
       name = trace$name,
       text = trace$text,
       hoverinfo = trace$hoverinfo,
@@ -506,39 +512,39 @@ fig2
 
 # load("web_data/player_runs_pos_a.Rdata")
 # load("web_data/player_runs_neg_a.Rdata")
-# 
-# 
-# # creating an ellipse function --------------------------------------------
+
+
+# creating an ellipse function --------------------------------------------
 # 
 # ellipse <- function(name, graph = FALSE) {
 #   # Choosing name
-#   player_runs <- tracking_bc |> 
+#   player_runs <- tracking_bc |>
 #     filter(displayName == name)
-#   
-#   player_runs_pos_a <- player_runs |> 
+# 
+#   player_runs_pos_a <- player_runs |>
 #     filter(dir_a_mpsh>=0)
-#   
-#   player_runs_neg_a <- player_runs |> 
+# 
+#   player_runs_neg_a <- player_runs |>
 #     filter(dir_a_mpsh<0)
-#   
+# 
 #   # Defining intercepts of the ellipse
 #   a <- quantile(player_runs_pos_a$s_mph, probs=.99)
 #   pos_b <- quantile(player_runs_pos_a$dir_a_mpsh, probs=.99)
 #   neg_b <- quantile(player_runs_neg_a$dir_a_mpsh, probs=.01)
-#   
-#   
-#   
+# 
+# 
+# 
 #   # Generating x-vals and y-vals to graph
 #   x_vals <- seq(0, a, length.out = 300)
 #   pos_y_vals <- pos_b * sqrt(1 - (x_vals^2 / a^2))
 #   neg_y_vals <- neg_b * sqrt(1 - (x_vals^2 / a^2))
-#   
+# 
 #   # Building the ellipse df
 #   ellipse_df <- data.frame(x = x_vals, pos_y = pos_y_vals, neg_y = neg_y_vals)
-#   
+# 
 #   # Plotting the ellipse on the AS curve
 #   if (graph == TRUE) {
-#     graph <- player_runs |> 
+#     graph <- player_runs |>
 #     ggplot(aes(x = s_mph, y = dir_a_mpsh)) +
 #     geom_point(aes(x = s_mph, y = dir_a_mpsh), alpha=.3, color="grey2")+
 #     geom_path(data = ellipse_df, aes(x = x, y = pos_y), color = "#0072B2", linewidth = 1.2) +
@@ -549,7 +555,7 @@ fig2
 #            caption = "Data from Weeks 1-9 of the 2022 NFL Season") +
 #       theme_minimal(base_size=16) +
 #       theme(plot.title = element_text(face = "bold.italic",
-#                                       size = 18, 
+#                                       size = 18,
 #                                       hjust = .5),
 #             legend.title = element_text(face = "bold"),
 #             axis.title = element_text(face = "bold"),
@@ -557,23 +563,23 @@ fig2
 #             plot.caption = element_text(face = "italic", size = 8))
 #     return(graph)
 #   }
-#   
+# 
 #   # Calculating the minimum distance away from the point and the line
 #   min_dist <- function(s_mph, dir_a_mpsh, ex, ey) {
 #     dist <- sqrt((s_mph - ex)^2 + (dir_a_mpsh - ey)^2)
 #     return(min(dist))
 #   }
-#   
+# 
 #   # Finding the minimum distance from AS point to ellipse line
-#   player_runs_dist_pos <- player_runs_pos_a |> 
+#   player_runs_dist_pos <- player_runs_pos_a |>
 #     mutate(min_dist_to_ellipse= purrr::map2_dbl(s_mph, dir_a_mpsh, ~ min_dist(.x, .y, ellipse_df$x, ellipse_df$pos_y)))
-#   
-#   player_runs_dist_neg <- player_runs_neg_a |> 
+# 
+#   player_runs_dist_neg <- player_runs_neg_a |>
 #     mutate(min_dist_to_ellipse= purrr::map2_dbl(s_mph, dir_a_mpsh, ~ min_dist(.x, .y, ellipse_df$x, ellipse_df$neg_y)))
-#   
+# 
 #   player_runs_dist <- rbind(player_runs_dist_pos, player_runs_dist_neg)
-#   
-#   
+# 
+# 
 #   out <- tibble(
 #     displayName = name,
 #     bc_id = player_runs$bc_id,
