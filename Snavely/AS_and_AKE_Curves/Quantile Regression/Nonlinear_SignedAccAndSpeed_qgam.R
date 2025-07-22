@@ -328,7 +328,7 @@ eff_function_nlrq <- function(name, graph = FALSE) {
       scale_fill_manual("Point", values = c("#b3b3b3")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name, "'s effort score: 22.63%")) +
+           title = paste0(name, "'s effort score: 18.65%")) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -338,7 +338,9 @@ eff_function_nlrq <- function(name, graph = FALSE) {
             legend.text=element_text(size=15),
             plot.caption = element_text(face = "italic", size = 8),
             legend.key.height = unit(1.4, "cm"),
-            legend.position = "right")
+            legend.position = "right") +
+      xlim(0, 25) +
+      ylim(-15, 15)
     return(player_graph)
   }
   return(player_runs_test_preds)
@@ -452,7 +454,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
       scale_fill_manual("Point", values = c("#b3b3b3")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name, "'s effort score: 18.78%")) +
+           title = paste0(name, "'s effort score: 22.60%")) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -463,7 +465,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
             plot.caption = element_text(face = "italic", size = 8),
             legend.key.height = unit(1.4, "cm")) +
       xlim(0, 25) +
-      ylim(15, 15)
+      ylim(-15, 15)
     return(player_graph)
   }
   return(player_runs_test_preds)
@@ -513,3 +515,35 @@ qgam_dis_player_gt |>
   gtsave(file = "Effort2Rank.png",
          vwidth = 380,
          vheight = 600)
+
+
+## Scatterplot
+dis_scatter <- qgam_dis_player |> 
+  mutate(dis_score_qgam = dis_score,
+         rank_qgam = rank) |> 
+  select(-dis_score, -rank) |> 
+  left_join(nlrq_dis_player, by = c("bc_id", "displayName"))
+
+label_names <- dis_scatter |> 
+  filter(rank_qgam <= 6 | rank <= 6 | rank_qgam >=64 
+         | rank >= 64 | displayName %in% c("Saquon Barkley", "James Cook"))
+
+dis_scatter |> 
+  ggplot(aes(x = dis_score, y = dis_score_qgam)) +
+  geom_hline(aes(yintercept = mean(dis_score_qgam)), lwd = 1.2, lty = 2, color = "#D50A0A") +
+  geom_vline(aes(xintercept = mean(dis_score)), lwd = 1.2, lty = 2, color = "#D50A0A") +
+  geom_point(aes(color = dis_score), size = 3, alpha = .8) +
+  scale_color_gradient(low = "#0072B2", high = "#D55E00") +
+  labs(title = "Player effort metrics positively correlate with each other",
+       x = "Effort metric #1 (non-linear quantile regression)",
+       y = "Effort metric #2 (GAM quantile regression)")+
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        legend.position = "none",
+        axis.title = element_text(face = "bold")) +
+  ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
+                           size = 5, max.overlaps = 15,
+                           fontface = "italic")
+  
