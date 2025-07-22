@@ -17,3 +17,5 @@ nlme
 mgcv
 qgam
 kableExtra
+gridExtra
+patchwork
