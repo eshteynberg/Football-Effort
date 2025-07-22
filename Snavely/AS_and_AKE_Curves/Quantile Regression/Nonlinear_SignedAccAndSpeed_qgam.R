@@ -364,7 +364,29 @@ nlrq_dis_play <- nlrq_dis |>
 nlrq_dis_player <- nlrq_dis |> 
   group_by(bc_id, displayName) |> 
   summarize(dis_score = mean(dis_score_adj)) |> 
-  ungroup()
+  ungroup() |> 
+  arrange(desc(dis_score)) |> 
+  mutate(dis_score = round(dis_score, 4) *100,
+         rank = 1:n())
+
+## GT TABLE FOR NLRQ
+nlrq_dis_player_gt <- nlrq_dis_player |> 
+  filter(rank %in% c(1:5, 9, 63, 65:79))
+
+library(gt)
+library(gtExtras)
+nlrq_dis_player_gt |>
+  select(displayName, dis_score, rank) |> 
+  gt() |>
+  tab_header(title = md("**Top and Bottom RBs Ranked \nby Effort Metric #1**")) |>
+  cols_label(displayName = "Name", dis_score = "Effort Score (%)", rank = "Rank") |>
+  data_color(columns = c(rank),
+             fn = scales::col_numeric(palette = c("#D55E00","white", "#0072B2"), domain = NULL)) |>
+  gtExtras::gt_theme_espn() |>
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "Effort1Rank.png",
+         vwidth = 380,
+         vheight = 600)
 
 # qgam right --------------------------------------------------------------
 
@@ -439,7 +461,9 @@ eff_function_qgam <- function(name, graph = FALSE) {
             axis.title = element_text(face = "bold"),
             legend.text=element_text(size=15),
             plot.caption = element_text(face = "italic", size = 8),
-            legend.key.height = unit(1.4, "cm"))
+            legend.key.height = unit(1.4, "cm")) +
+      xlim(0, 25) +
+      ylim(15, 15)
     return(player_graph)
   }
   return(player_runs_test_preds)
@@ -466,7 +490,26 @@ qgam_dis_play <- qgam_dis |>
 qgam_dis_player <- qgam_dis |> 
   group_by(bc_id, displayName) |> 
   summarize(dis_score = mean(dis_score_adj)) |> 
-  ungroup()
+  ungroup() |> 
+  arrange(desc(dis_score)) |> 
+  mutate(dis_score = round(dis_score, 4) *100,
+         rank = 1:n())
 
 ## GT TABLE FOR QGAM
-qgam_dis_play
+qgam_dis_player_gt <- qgam_dis_player |> 
+  filter(rank %in% c(1:5, 8, 58, 65:79))
+
+library(gt)
+library(gtExtras)
+qgam_dis_player_gt |>
+  select(displayName, dis_score, rank) |> 
+  gt() |>
+  tab_header(title = md("**Top and Bottom RBs Ranked \nby Effort Metric #2**")) |>
+  cols_label(displayName = "Name", dis_score = "Effort Score (%)", rank = "Rank") |>
+  data_color(columns = c(rank),
+             fn = scales::col_numeric(palette = c("#D55E00","white", "#0072B2"), domain = NULL)) |>
+  gtExtras::gt_theme_espn() |>
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "Effort2Rank.png",
+         vwidth = 380,
+         vheight = 600)
