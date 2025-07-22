@@ -328,7 +328,7 @@ eff_function_nlrq <- function(name, graph = FALSE) {
       scale_fill_manual("Point", values = c("#b3b3b3")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name)) +
+           title = paste0(name, "'s effort score: 22.63%")) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -337,7 +337,8 @@ eff_function_nlrq <- function(name, graph = FALSE) {
             axis.title = element_text(face = "bold"),
             legend.text=element_text(size=15),
             plot.caption = element_text(face = "italic", size = 8),
-            legend.key.height = unit(1.4, "cm"))
+            legend.key.height = unit(1.4, "cm"),
+            legend.position = "right")
     return(player_graph)
   }
   return(player_runs_test_preds)
@@ -388,13 +389,13 @@ eff_function_qgam <- function(name, graph = FALSE) {
   
   qgam_fit_a_top <- qgam(dir_a_mpsh ~ s(s_mph, k = 10, bs = "ad"),
                          data = data_pos,
-                         qu = .90,
+                         qu = .95,
                          multicore = TRUE,
                          ncores = 7)
   
   qgam_fit_a_bottom <- qgam(dir_a_mpsh ~ s(s_mph, k = 10, bs = "ad"),
                             data = data_neg,
-                            qu = .10,
+                            qu = .05,
                             multicore = TRUE,
                             ncores = 7)
   
@@ -411,19 +412,25 @@ eff_function_qgam <- function(name, graph = FALSE) {
     player_runs_test_preds <- rbind(data_pos_final, data_neg_final)
   
   if (graph == TRUE) {
+    out_line <- player_runs_test_preds |> 
+      filter(diff_a <= 0)
+    
     player_graph <- player_runs_test_preds |> 
       ggplot(aes(x = s_mph, y = dir_a_mpsh)) +
-      geom_point(alpha=.3, color="grey2")+
-      geom_line(data = data_pos_final, aes(y = qgam_pred, color = "hi"), lwd = 1.2) +
-      geom_line(data = data_neg_final, aes(y = qgam_pred, color = "hello"), lwd = 1.2) +
+      geom_point(alpha=.6, color="grey2")+
+      geom_point(data = out_line, aes(x = s_mph, y = dir_a_mpsh, fill = "Adjusted distance = 0"), size = 4, 
+                 stroke = 1.2, color="black", shape = 21) +
+      geom_line(data = data_pos_final, aes(y = qgam_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.2) +
+      geom_line(data = data_neg_final, aes(y = qgam_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.2) +
       # geom_vline(aes(color = "Speed 0.99 quantile line", 
       #                xintercept = quantile(s_mph, probs = c(.99))), 
       #            lty = 2, lwd = 1.5) +
       geom_hline(aes(yintercept = 0), color = "black", lwd = 1.2, lty = 2) +
       scale_color_manual("Line", values = c("#D55E00", "#0072B2")) +
+      scale_fill_manual("Point", values = c("#b3b3b3")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name)) +
+           title = paste0(name, "'s effort score: 18.78%")) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -431,7 +438,8 @@ eff_function_qgam <- function(name, graph = FALSE) {
             legend.title = element_text(face = "bold"),
             axis.title = element_text(face = "bold"),
             legend.text=element_text(size=15),
-            plot.caption = element_text(face = "italic", size = 8))
+            plot.caption = element_text(face = "italic", size = 8),
+            legend.key.height = unit(1.4, "cm"))
     return(player_graph)
   }
   return(player_runs_test_preds)
@@ -459,3 +467,6 @@ qgam_dis_player <- qgam_dis |>
   group_by(bc_id, displayName) |> 
   summarize(dis_score = mean(dis_score_adj)) |> 
   ungroup()
+
+## GT TABLE FOR QGAM
+qgam_dis_play

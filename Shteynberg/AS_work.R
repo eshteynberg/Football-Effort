@@ -817,6 +817,23 @@ Rex_qr <- image_scale(Rex_qr, "x500")
 Rex_Saquon_qr <- image_append(c(Saquon_qr, Rex_qr)) 
 image_write(Rex_Saquon_qr, "Rex_Saquon_qr.png")
 
+# nlrq
+Barkley_nlrq <- image_read("Poster_images/Barkley_nlrq.png")
+Cook_nlrq <- image_read("Poster_images/Cook_nlrq.png")
+Barkley_nlrq <- image_scale(Barkley_nlrq, "x500") 
+Cook_nlrq <- image_scale(Cook_nlrq, "x500") 
+
+Cook_Saquon_nlrq <- image_append(c(Barkley_nlrq, Cook_nlrq)) 
+image_write(Cook_Saquon_nlrq, "Cook_Saquon_nlrq.png")
+
+Barkley_qgam <- image_read("Poster_images/Barkley_qgam.png")
+Cook_qgam <- image_read("Poster_images/Cook_qgam.png")
+Barkley_qgam <- image_scale(Barkley_qgam) 
+Cook_qgam <- image_scale(Cook_qgam) 
+
+Cook_Saquon_qgam <- image_append(c(Barkley_qam, Cook_qgam)) 
+image_write(Cook_Saquon_qgam, "Cook_Saquon_qgam.png")
+
 
 
 # Nonparam regression 2 splines  ------------------------------------------

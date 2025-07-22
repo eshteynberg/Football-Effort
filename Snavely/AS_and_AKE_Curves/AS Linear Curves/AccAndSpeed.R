@@ -439,7 +439,7 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
                  size = 4, fill = "#b3b3b3", col = "black", stroke = 1.2, shape = 21)+
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name, "'s effort: ", round(eff$eff_metric_perc,2), "%")) +
+           title = paste0(name, "'s effort score: ", round(eff$eff_metric_perc,2), "%")) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
