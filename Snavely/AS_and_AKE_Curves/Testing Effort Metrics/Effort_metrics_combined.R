@@ -186,3 +186,7 @@ effort_play_ac |>
   geom_point() +
   geom_smooth(method = "lm")
 cor(effort_play_ac$time_ac, effort_play_ac$num_of_effort_move)
+
+
+
+# Final validation for plays --------------------------------------------------------

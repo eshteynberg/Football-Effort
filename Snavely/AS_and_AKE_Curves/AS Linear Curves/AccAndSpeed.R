@@ -355,7 +355,7 @@ eff_metric <- (sum(saquon_final$eff == TRUE) / nrow(saquon_final)) * 100
 
 
 # Creating a function -----------------------------------------------------
-eff_function <- function(name, graph = FALSE, player_table = FALSE) {
+eff_function <- function(name, graph = FALSE, player_table = FALSE, regress = FALSE) {
   # Filtering the data set to only include the inputted player
   player_runs <- tracking_bc |> 
     filter(displayName == name)
@@ -422,24 +422,24 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
       geom_rect(aes(xmin = -Inf, xmax = 3, ymin = -Inf, ymax = Inf), 
                 fill = "#e7e7e7", alpha = 0.04) +
       # geom_smooth(method = lm, aes(x = speed, y = acceleration), data = max_acc_clean, lwd = 1.5, se = FALSE) +
-      geom_abline(aes(color = "Regression line",
-                      intercept = player_lm_clean$coefficients[1], slope = player_lm_clean$coefficients[2]),
-                      lwd = 1.5,) +
-      geom_abline(aes(color = "Regression line - .25",
-                  intercept = player_lm_clean$coefficients[1] - .25, slope = player_lm_clean$coefficients[2]), 
-                  lty = 2, lwd = 1.5) +
+      geom_abline(aes(intercept = player_lm_clean$coefficients[1], slope = player_lm_clean$coefficients[2]),
+                      lwd = 1.5, col = "#0072B2") +
+      # geom_abline(aes(color = "Regression line - .25",
+      #             intercept = player_lm_clean$coefficients[1] - .25, slope = player_lm_clean$coefficients[2]), 
+      #             lty = 2, lwd = 1.5) +
       # geom_abline(aes(color = "Minimum line (.5)",
       #             intercept = player_lm_clean$coefficients[1] - .5, slope = player_lm_clean$coefficients[2]),
       #             lty = 2, lwd = 1.5) +
       # geom_abline(aes(color = "Minimum line (.75)",
       #             intercept = player_lm_clean$coefficients[1] - .75, slope = player_lm_clean$coefficients[2]), 
       #             lty = 2, lwd = 1.5) +
-      scale_color_manual("Line", values = c("#0072B2", "#D55E00")) +
+      # scale_color_manual("Line", values = c("#0072B2", "#D55E00")) +
       geom_point(data=max_acc_clean, aes(x = speed, y = acceleration), 
                  size = 4, fill = "#b3b3b3", col = "black", stroke = 1.2, shape = 21)+
       labs(x = "Speed (mph)",
-           y = "Acceleration (mph/s)",
-           title = paste0("Points near ", name, "'s regression line reach \nhis theoretical maximum acceleration per speed")) +
+           y = "Magnitude of \nacceleration (mph/s)",
+           title = "We consider points close to and above a player's \nmaximum acceleration frontier effortful",
+           subtitle = paste0("Acceleration-Speed (A-S) profile for ", name)) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -448,7 +448,9 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
             axis.title = element_text(face = "bold"),
             legend.text=element_text(size=15),
             plot.caption = element_text(face = "italic",
-                                        size = 8))
+                                        size = 8),
+            plot.subtitle = element_text(face = "italic",
+                                         hjust = .5))
     
     return(player_graph)
   }
@@ -457,14 +459,24 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
     return(player_final)
   }
   
+  if (regress == TRUE) {
+    regress_tibble <- tibble(
+      displayName = name,
+      A_0 = player_lm_clean$coefficients[1],
+      S_0 = (-player_lm_clean$coefficients[1]) / player_lm_clean$coefficients[2]
+    )
+    return(regress_tibble)
+  }
+  
   return(eff)
 }
 
+
 # Test
 eff_function("Rex Burkhead", graph = TRUE)
+eff_function("Javonte Williams", graph = TRUE)
 eff_function("Saquon Barkley", graph = TRUE)
-eff_function("Saquon Barkley", player_table = TRUE)
-eff_function("Saquon Barkley")
+eff_function("Saquon Barkley", regress = TRUE)
 
 # Eff metric for all players ----------------------------------------------
 
@@ -473,6 +485,38 @@ rbs <- unique(rb_stats_total_filtered$displayName)
 eff_movements <- purrr::map(rbs, eff_function) |> 
   bind_rows() |> 
   mutate(displayName = rbs)
+
+max_speed_acc <- purrr::map(rbs, eff_function, regress = TRUE) |> 
+  bind_rows() |> 
+  left_join(eff_movements)
+
+data_labels <- max_speed_acc |> 
+  arrange(desc(eff_metric_perc)) |> 
+  mutate(rank = 1:69) |> 
+  filter(rank %in% c(1:5, 65:69) | displayName %in% c("Saquon Barkley","James Cook"))
+
+
+## A-0, S-0 graph
+max_speed_acc |> 
+  ggplot(aes(x = eff_metric_perc, y = A_0)) +
+  geom_point(size = 2, alpha = .8, col = "#0072B2") +
+  geom_point(data = data_labels, size = 2, alpha = .8, col = "#D50A0A") +
+  labs(title = "Unfairly penalized: players with high max accelerations \nare denoted less effortful",
+       x = "% of effortful points",
+       y = expression(bold("Theoretical maximum acceleration (A"[0]*")"))) +
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        axis.title = element_text(face = "bold")) +
+  ggrepel::geom_text_repel(data = data_labels, aes(label = displayName), 
+                           size = 5, max.overlaps = 15,
+                           fontface = "italic")
+
+max_speed_acc |> 
+  ggplot(aes(x = eff_metric_perc, y = A_0)) +
+  geom_point()
+
 
 eff_movements_top <- eff_movements |> 
   slice_max(eff_metric, n = 5) |> 
