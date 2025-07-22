@@ -360,7 +360,56 @@ dis_scatter |>
   ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
                            size = 5, max.overlaps = 15,
                            fontface = "italic")
+
+
+
+
+#looking at metric #1 vs S_0, A_0, and num of rushes for each player
+#scatterplot
+max_speed_acc <- tracking_bc_combined |> 
+  group_by(displayName) |> 
+  summarize(max_dir_a_mpsh = max(dir_a_mpsh),
+            max_s_mph = max(s_mph))
   
+
+dis_scatter_s0_a0 <- qgam_dis_player |> 
+  mutate(dis_score_qgam = dis_score,
+         rank_qgam = rank) |> 
+  select(-dis_score, -rank) |> 
+  left_join(nlrq_dis_player, by = c("bc_id", "displayName")) |> 
+  left_join(max_speed_acc) |> 
+  left_join(rb_stats_total_filtered, select=c("displayName", "num_of_rushes"))
+
+label_names <- dis_scatter |> 
+  filter(rank_qgam <= 5 | rank <= 5 | rank_qgam >=65 
+         | rank >= 65 | displayName %in% c("Saquon Barkley", "James Cook"))
+
+Barkley_and_cook <- dis_scatter |> 
+  filter(displayName %in% c("Saquon Barkley", "James Cook"))
+
+dis_scatter |> 
+  ggplot(aes(x = dis_score, y = dis_score_qgam)) +
+  geom_hline(aes(yintercept = mean(dis_score_qgam)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_vline(aes(xintercept = mean(dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_point(size = 3, alpha = .8, color = "#0072B2") +
+  geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
+  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  labs(title = "Player effort metrics are positively correlated",
+       x = "Effort metric #1 (Quadratic quantile regression)",
+       y = "Effort metric #2 (QGAM)")+
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        legend.position = "none",
+        axis.title = element_text(face = "bold")) +
+  ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
+                           size = 5, max.overlaps = 15,
+                           fontface = "italic")
+
+
+
+
 
 # Combining play sets
 qgam_dis_play <- qgam_dis |> 
