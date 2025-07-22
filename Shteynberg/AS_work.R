@@ -831,7 +831,7 @@ Cook_qgam <- image_read("Poster_images/Cook_qgam.png")
 Barkley_qgam <- image_scale(Barkley_qgam) 
 Cook_qgam <- image_scale(Cook_qgam) 
 
-Cook_Saquon_qgam <- image_append(c(Barkley_qam, Cook_qgam)) 
+Cook_Saquon_qgam <- image_append(c(Barkley_qgam, Cook_qgam)) 
 image_write(Cook_Saquon_qgam, "Cook_Saquon_qgam.png")
 
 
