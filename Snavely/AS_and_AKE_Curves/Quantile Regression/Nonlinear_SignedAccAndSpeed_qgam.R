@@ -121,7 +121,7 @@ eff_function_nlrq <- function(name, graph = FALSE) {
       scale_fill_manual("Point", values = c("#b3b3b3")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name, "'s effort score: 22.63%")) +
+           title = paste0(name)) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -247,7 +247,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
       scale_fill_manual("Point", values = c("#b3b3b3")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name, "'s effort score: 18.78%")) +
+           title = paste0(name)) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -382,14 +382,27 @@ play_stats_effort <- effort_plays_combined |>
   left_join(tracking_bc_play_stats) |>
   left_join(select(plays, gameId, playId, down, quarter))
 
-cor(play_stats_effort$dis_score_qgam, play_stats_effort$dis_gained_x_ac)
-cor(play_stats_effort$dis_score_qgam, play_stats_effort$expectedPointsAdded)
-cor(play_stats_effort$dis_score_qgam, play_stats_effort$rushingYards)
-
-cor(play_stats_effort$dis_score_nlrq, play_stats_effort$dis_gained_x_ac)
-cor(play_stats_effort$dis_score_nlrq, play_stats_effort$expectedPointsAdded)
-cor(play_stats_effort$dis_score_nlrq, play_stats_effort$rushingYards)
-
-cor(play_stats_effort$mean_acc, play_stats_effort$dis_gained_x_ac)
-cor(play_stats_effort$mean_acc, play_stats_effort$rushingYards)
-cor(play_stats_effort$mean_acc, play_stats_effort$expectedPointsAdded)
+correlations <- data.frame(type = rep(c("QGAM", "Quadratic", "Mean Acceleration"), 3), 
+                           dis_gained_ac = c(cor(play_stats_effort$dis_score_qgam, play_stats_effort$dis_gained_x_ac),
+                                             cor(play_stats_effort$dis_score_nlrq, play_stats_effort$dis_gained_x_ac),
+                                             cor(play_stats_effort$mean_acc, play_stats_effort$dis_gained_x_ac)),
+                           EPA = c(cor(play_stats_effort$dis_score_qgam, play_stats_effort$expectedPointsAdded),
+                                   cor(play_stats_effort$dis_score_nlrq, play_stats_effort$expectedPointsAdded),
+                                   cor(play_stats_effort$mean_acc, play_stats_effort$expectedPointsAdded)),
+                           rushingYards = c(cor(play_stats_effort$dis_score_qgam, play_stats_effort$rushingYards),
+                                            cor(play_stats_effort$dis_score_nlrq, play_stats_effort$rushingYards),
+                                            cor(play_stats_effort$mean_acc, play_stats_effort$rushingYards)))
+# GT table of correlations
+qgam_dis_player_gt |>
+  select(displayName, dis_score, rank) |> 
+  gt() |>
+  tab_header(title = md("**Top and Bottom RBs Ranked \nby Effort Metric #2**")) |>
+  cols_label(displayName = "Name", dis_score = "Effort Score (%)", rank = "Rank") |>
+  data_color(columns = c(rank),
+             fn = scales::col_numeric(palette = c("#D55E00","white", "#0072B2"), domain = NULL)) |>
+  gtExtras::gt_theme_espn() |>
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "Effort2Rank.png",
+         vwidth = 380,
+         vheight = 600)
+                                            
