@@ -9,6 +9,9 @@ format: html
 save(tracking_bc,
      file = "website/web_data/tracking_bc.Rdata")
 
+save(tracking_bc,
+     file = "website/web_data/tracking_bc2.Rdata")
+
 save(player_runs_modeling,
      file = "website/web_data/player_runs_modeling.Rdata")
 
