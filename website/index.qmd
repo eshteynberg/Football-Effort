@@ -67,7 +67,7 @@ The objective of this study is twofold: (1) to improve estimation of individual 
 
 ## Data
 
-The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsored analytics competition that provides game, play, player, and tracking data recorded at 10 frames per second [@]. The dataset covers weeks 1-9 of the 2022 NFL season, comprising 136 games. 
+The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsored analytics competition that provides game, play, player, and tracking data recorded at 10 frames per second [@nfl2025]. The dataset covers weeks 1-9 of the 2022 NFL season, comprising 136 games. 
 
 ### Pre-processing steps: 
 
@@ -80,7 +80,7 @@ The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsor
 
 ### Motivation
 
-Our initial approach was adapted from prior research building individual acceleration-speed (A-S) profiles of soccer players [@] For each RB, we plot the frame-level A-S profile based on the maximal acceleration they could generate for every possible running speed as follows:
+Our initial approach was adapted from prior research building individual acceleration-speed (A-S) profiles of soccer players [@AS] For each RB, we plot the frame-level A-S profile based on the maximal acceleration they could generate for every possible running speed as follows:
 
 Within a speed interval ranging between 3 mph and the RB’s maximal speed, the two maximal acceleration values attained for each 0.2 mph sub-intervals were selected. A first linear regression was fitted to these speed-acceleration points. Outlier points lying outside of the 95% confidence interval around the linear function were removed. A final linear regression was fitted to the remaining points, defining what we refer to as the “maximum acceleration frontier.”
 
@@ -91,7 +91,7 @@ However, this approach has several limitations. First, it excludes points with s
 For every RB, we again examine the joint distribution of frame-level speed and acceleration. We define two approaches to evaluate effort as follows:
 
 
-### Metric #1: Quadratic Quantile Regression
+#### Metric #1: Quadratic Quantile Regression
 
 - Our main methodological approach to addressing this question centered around previous research that has explored soccer players reaching their theoretical max acceleration capacity for every running speed [@AS]. Similarly, we adopted this framework by plotting an individual running back's profile based on the maximal acceleration the running back could generate for every possible running speed as follows:
 
@@ -102,6 +102,11 @@ For every RB, we again examine the joint distribution of frame-level speed and a
   
 - This effort metric was derived by transforming final regression line downward by 0.25 units.
 - **Effort =** percentage of points above the transformed regression line
+
+
+::: {.fragment}
+![](Football-Effort/Poster_images/Cook_Saquon_nlrq.png)
+:::
 
 
 ::: {.panel-tabset}
@@ -336,25 +341,6 @@ plot_cook <- eff_function_nlrq("James Cook", graph = TRUE)
 
 
 
-### side-by-side
-
-```{r}
-#| label: side-by-side
-#| message: false
-#| warning: false
-#| cache: true
-
-# load("web_data/tracking_bc2.Rdata")
-# load("web_data/player_runs_modeling.Rdata")
-# 
-# plot_saquon <- eff_function_nlrq("Saquon Barkley", graph = TRUE)
-# plot_cook <- eff_function_nlrq("James Cook", graph = TRUE)
-# 
-# # Combine plots side by side
-# plot_saquon + plot_cook
-```
-
-
 ### plotly
 
 ```{r, fig.width= 10, fig.height = 10}
@@ -530,7 +516,7 @@ eff_function_nlrq_plotly <- function(name, graph = FALSE) {
 ```
 
 
-### Metric #2: Quantile Generalized Additive Model
+#### Metric #2: Quantile Generalized Additive Model
 
 - This metric quantifies *how often* a runnng back comes close to their maximal acceleration capacity.
 - **Assumption of this effort metric:** high acceleration and/or high speed movements are effortful.
