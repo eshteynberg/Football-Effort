@@ -549,6 +549,7 @@ dis_scatter_s0_a0 |>
 
 
 
+cor(dis_scatter_s0_a0$dis_score, dis_scatter_s0_a0$num_of_rushes)
 
 
 # Combining play sets
