@@ -364,12 +364,28 @@ dis_scatter |>
 
 
 
-#looking at metric #1 vs S_0, A_0, and num of rushes for each player
+
+
+
+
+
+
+#looking at metric #1 vs S_0, A_0, and num of rushes for each player---------------------------
 #scatterplot
+
+
 max_speed_acc <- tracking_bc_combined |> 
   group_by(displayName) |> 
   summarize(max_dir_a_mpsh = max(dir_a_mpsh),
-            max_s_mph = max(s_mph))
+            max_s_mph = max(s_mph)) |>
+  left_join(select(rb_stats_total_filtered, displayName, num_of_rushes)) |>
+  arrange(desc(num_of_rushes)) |> 
+  mutate(rank_rush = 1:n()) |>
+  arrange(desc(max_dir_a_mpsh)) |>
+  mutate(rank_max_a = 1:n()) |>
+  arrange(desc(max_s_mph)) |>
+  mutate(rank_max_s = 1:n())
+  
   
 
 dis_scatter_s0_a0 <- qgam_dis_player |> 
@@ -377,26 +393,150 @@ dis_scatter_s0_a0 <- qgam_dis_player |>
          rank_qgam = rank) |> 
   select(-dis_score, -rank) |> 
   left_join(nlrq_dis_player, by = c("bc_id", "displayName")) |> 
-  left_join(max_speed_acc) |> 
-  left_join(rb_stats_total_filtered, select=c("displayName", "num_of_rushes"))
+  left_join(max_speed_acc) 
 
-label_names <- dis_scatter |> 
+label_names <- dis_scatter_s0_a0 |> 
   filter(rank_qgam <= 5 | rank <= 5 | rank_qgam >=65 
          | rank >= 65 | displayName %in% c("Saquon Barkley", "James Cook"))
 
-Barkley_and_cook <- dis_scatter |> 
+
+
+
+label_names_a_nlrq <- bind_rows(
+  dis_scatter_s0_a0 |> slice_max(rank<=3),
+  dis_scatter_s0_a0 |> slice_max(rank_max_a<=3),
+  dis_scatter_s0_a0 |> slice_max(rank>=67),
+  dis_scatter_s0_a0 |> slice_max(rank_max_a>=67),
+  dis_scatter_s0_a0 |> filter(displayName %in% c("Saquon Barkley", "James Cook"))) |>
+  distinct()
+
+  
+  
+  
+
+Barkley_and_cook <- dis_scatter_s0_a0 |> 
   filter(displayName %in% c("Saquon Barkley", "James Cook"))
 
-dis_scatter |> 
-  ggplot(aes(x = dis_score, y = dis_score_qgam)) +
-  geom_hline(aes(yintercept = mean(dis_score_qgam)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+
+
+#effort metric (#1 or #2) vs max dir accel---------------
+dis_scatter_s0_a0 |> 
+  ggplot(aes(x = dis_score, y = max_dir_a_mpsh)) +
+  geom_hline(aes(yintercept = mean(max_dir_a_mpsh)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_vline(aes(xintercept = mean(dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_point(size = 3, alpha = .8, color = "#0072B2") +
+  geom_point(data = label_names_a_nlrq, size = 3, alpha = .8, color = "#D50A0A") +
+  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  labs(title = "Blah",
+       x = "Effort metric #1 (Quadratic quantile regression)",
+       y = "Max Acceleration")+
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        legend.position = "none",
+        axis.title = element_text(face = "bold")) +
+  ggrepel::geom_text_repel(data = label_names_a_nlrq, aes(label = displayName), 
+                           size = 5, max.overlaps = 15,
+                           fontface = "italic")
+
+dis_scatter_s0_a0 |> 
+  ggplot(aes(x = dis_score_qgam, y = max_dir_a_mpsh)) +
+  geom_hline(aes(yintercept = mean(max_dir_a_mpsh)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_vline(aes(xintercept = mean(dis_score_qgam)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_point(size = 3, alpha = .8, color = "#0072B2") +
+  geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
+  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  labs(title = "Blah",
+       x = "Effort metric #2 (QGAM)",
+       y = "Max Acceleration")+
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        legend.position = "none",
+        axis.title = element_text(face = "bold")) +
+  ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
+                           size = 5, max.overlaps = 15,
+                           fontface = "italic")
+
+
+
+#effort metric (#1 or #2) vs max speed-----------
+
+
+dis_scatter_s0_a0 |> 
+  ggplot(aes(x = dis_score, y = max_s_mph)) +
+  geom_hline(aes(yintercept = mean(max_s_mph)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_vline(aes(xintercept = mean(dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
   geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
-  labs(title = "Player effort metrics are positively correlated",
+  labs(title = "Blah",
        x = "Effort metric #1 (Quadratic quantile regression)",
-       y = "Effort metric #2 (QGAM)")+
+       y = "Max Speed")+
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        legend.position = "none",
+        axis.title = element_text(face = "bold")) +
+  ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
+                           size = 5, max.overlaps = 15,
+                           fontface = "italic")
+dis_scatter_s0_a0 |> 
+  ggplot(aes(x = dis_score_qgam, y = max_s_mph)) +
+  geom_hline(aes(yintercept = mean(max_s_mph)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_vline(aes(xintercept = mean(dis_score_qgam)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_point(size = 3, alpha = .8, color = "#0072B2") +
+  geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
+  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  labs(title = "Blah",
+       x = "Effort metric #2 (QGAM)",
+       y = "Max Speed")+
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        legend.position = "none",
+        axis.title = element_text(face = "bold")) +
+  ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
+                           size = 5, max.overlaps = 15,
+                           fontface = "italic")
+
+
+#effort metric (#1 and #2) vs num of rushes-----------
+
+dis_scatter_s0_a0 |> 
+  ggplot(aes(x = dis_score, y = num_of_rushes)) +
+  geom_hline(aes(yintercept = mean(num_of_rushes)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_vline(aes(xintercept = mean(dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_point(size = 3, alpha = .8, color = "#0072B2") +
+  geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
+  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  labs(title = "Blah",
+       x = "Effort metric #1 (Quadratic quantile regression)",
+       y = "Num of rushes")+
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        legend.position = "none",
+        axis.title = element_text(face = "bold")) +
+  ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
+                           size = 5, max.overlaps = 15,
+                           fontface = "italic")
+
+dis_scatter_s0_a0 |> 
+  ggplot(aes(x = dis_score_qgam, y = num_of_rushes)) +
+  geom_hline(aes(yintercept = mean(num_of_rushes)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_vline(aes(xintercept = mean(dis_score_qgam)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_point(size = 3, alpha = .8, color = "#0072B2") +
+  geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
+  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  labs(title = "Blah",
+       x = "Effort metric #2 (QGAM)",
+       y = "Num of rushes")+
   theme_minimal(base_size=16) +
   theme(plot.title = element_text(face = "bold.italic",
                                   size = 18, 
@@ -450,7 +590,7 @@ correlations |>
   gt() |>
   tab_header(title = md("**Effort metrics do not show a strong correlation with play outcomes**"),
              subtitle = "Mean acceleration and speed per play included for reference") |>
-  cols_label(type = "Effort metric type", dis_gained_ac = "Distance gained after catch", EPA = "Expected points added",
+  cols_label(type = "Effort metric type", dis_gained_ac = "Yards gained after contact", EPA = "Expected points added",
              rushingYards = "Rushing Yards") |>
   gtExtras::gt_theme_espn() |> 
   gtsave(file = "EffortCorrelations.png",

@@ -422,29 +422,101 @@ eff_function_nlrq_plotly <- function(name, graph = FALSE) {
   return(player_runs_test_preds)
 }
 
-p1 <- eff_function_nlrq_plotly("Saquon Barkley", graph = TRUE)
-p2 <- eff_function_nlrq_plotly("James Cook", graph = TRUE)
-
-# Then assign subplot titles explicitly:
-subplot(p1, p2, nrows = 1, margin = 0.05, shareX = FALSE, shareY = FALSE, titleX = TRUE, titleY = TRUE) |>
-  layout(annotations = list(
-    list(
-      text = "Saquon Barkley",
-      x = 0.225, y = 1.05, xref = "paper", yref = "paper",
-      showarrow = FALSE, font = list(size = 16, color = "black", family = "Arial Bold")
-    ),
-    list(
-      text = "James Cook",
-      x = 0.775, y = 1.05, xref = "paper", yref = "paper",
-      showarrow = FALSE, font = list(size = 16, color = "black", family = "Arial Bold")
-    )
-  ))
-
+# testing player
+# eff_function_nlrq_plotly("Saquon Barkley", graph = TRUE)
 
 
 ```
 
 
+```{r}
+#| label: first-metric-drop
+#| fig-cap: "testing out a few players"
+#| message: false
+#| warning: false
+#| cache: true
+
+# Player list (in progress)
+rb_menu <- c("Saquon Barkley", "Rex Burkhead", "D'Andre Swift", 
+                "Samaje Perine", "Joshua Kelley", "Matt Breida", "Alexander Mattison")
+
+# Initialize plot
+fig6 <- plot_ly()
+all_traces <- list()
+visibility_masks <- list()
+trace_lengths <- c()
+
+#Loop through each running back to collect their traces
+for (i in seq_along(rb_menu)) {
+  player <- rb_menu[i]
+  plot_obj <- ggplotly(eff_function_qgam(player, graph = TRUE))
+  
+  player_traces <- list()
+  for (trace in plot_obj$x$data) {
+    if (trace$mode == "markers") {
+    }
+    trace$visible <- (i == 1) 
+    
+    # this is to display the first running back's AS quantile regression 
+    fig6 <- fig6 |> add_trace(
+      x = trace$x,
+      y = trace$y,
+      type = trace$type,
+      mode = trace$mode,
+      line = trace$line,
+      marker = if (!is.null(trace$marker$color)) trace$marker else NULL,
+      name = trace$name,
+      text = trace$text,
+      hoverinfo = trace$hoverinfo,
+      visible = trace$visible
+    )
+    player_traces <- append(player_traces, list(trace))
+  }
+  
+  all_traces[[i]] <- player_traces
+  trace_lengths[i] <- length(player_traces)
+}
+
+#  Visibility masks for dropdown
+total_traces <- sum(trace_lengths)
+
+for (i in seq_along(rb_menu)) {
+  mask <- rep(FALSE, total_traces)
+  start_index <- sum(trace_lengths[1:(i - 1)]) + 1
+  end_index <- sum(trace_lengths[1:i])
+  mask[start_index:end_index] <- TRUE
+  visibility_masks[[i]] <- mask
+}
+
+# Adding dropdown menu
+dropdown_buttons <- lapply(seq_along(rb_menu), function(i) {
+  list(
+    method = "update",  # update both trace visibility and layout
+    args = list(
+      list(visible = visibility_masks[[i]]),  # traces to show
+      list(title = list(text = paste0(rb_menu[i], "'s Effort Quantile (95%)")))  # title change
+    ),
+    label = rb_menu[i]
+  )
+})
+
+fig6 <- fig6 |>
+  layout(
+    title = list(text = paste0(rb_menu[1], "'s Effort Quantile (95%)")), 
+    yaxis = list(title = "Acceleration (mph/s)"),
+    xaxis = list(title = "Speed (mph)"),
+    updatemenus = list(
+      list(
+        type = "dropdown",
+        y = 0.8,
+        x = 1.1,
+        buttons = dropdown_buttons
+      )
+    )
+  )
+fig6
+
+```
 
 
 ### Metric #2: Additive Quantile Regression Model
