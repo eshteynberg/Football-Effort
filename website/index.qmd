@@ -55,32 +55,43 @@ include_graphics("docs/images/NFL2022.png")
 
 ## Introduction 
 
-Effort is a fundamental and yet often invisible and subjective dimension of athletic performance. In American Football, one of the most-watched and popular sports in the U.S., known for its quick decision-making, complex tactics, and athletically demanding displays of strength, endurance, and speed, traditional statistics like yards after contact or expected points added tend to focus on outcomes rather than the process behind them. This raises important questions: What does it take to gain a yard? Is a player exceeding their capabilities, therefore, making an effort? If so, how often or how close does a player come to their “best"?
+While athletes are often praised for “giving 100%,” what that entails remains poorly defined and difficult to measure objectively. Unlike physical traits such as endurance, strength, and agility, effort is intangible and often conflated with performance outcomes or inferred through subjective observation. Nevertheless, it is widely regarded as a crucial factor in athletic success, influencing both perceived competitiveness and in-game results. Developing a reliable, standardized method to evaluate effort could offer new insight into player behavior and decision-making.
 
-These questions are at the heart of our project. While previous research in professional soccer has used theoretical maximum acceleration as a proxy for effort, no such framework currently exists in the NFL. Our goal is to address that gap by developing a player-specific, data-driven metric for measuring effort among running backs (RBs). Specifically, we focus on physical effort as expressed through raw acceleration and speed, which are variables we can observe directly in player tracking data.
+This study focuses on running backs (RBs) in the NFL, a position characterized by short, high-intensity bursts of movement within clearly structured offensive plays. The nature of their role - frequent accelerations and heavy physical contact - make RBs a suitable candidate for analyzing exertion in a relatively controlled and consistent context.
 
-Effort, of course, is a complex, intangible, and most often subjective concept, influenced by mental and emotional state of a player as well as tactical and game factors, including player position, opposing defense, snap count or play volume to play call/assignment, and other game context. However, given the data available, we concentrate on one measurable facet: a player’s movement relative to his individual maximum capabilities. Using statistical models, we estimate each RB’s personal performance ceiling and assess how frequently and how closely they approach it during games.
+Our approach builds on prior work deriving professional soccer players’ theoretical maximum acceleration capacity as a function of running speed in-situ1. To date, no comparable methodology has been applied to American football. By adapting it to RBs, we aim to isolate the measurable, physical component of effort, independent of tactical decisions or situational context.
 
-By quantifying effort, we hope to provide not only to teams and sport data analysts, but also fans with deeper insights into how much football players are truly contributing on the field — even if they’re not reflected in conventional stats or the outcome of a game. In doing so, we also aim to contribute to a growing body of research around quantifying effort since most research focuses on win probabilities and other outcomes at the game level rather than at the individual level.
+The objective of this study is twofold: (1) to improve estimation of individual acceleration-speed (A-S) profiles using tracking data, and (2) to assess how frequently players operate near or exceed these limits as a proxy for effort.
 
 
 
 ## Data
 
-The data used for this project were the games, plays, players, tracking data sets from the NFL Big Data Bowl 2025, weeks 1-9 on Kaggle [@nfl2022].
+The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsored analytics competition that provides game, play, player, and tracking data recorded at 10 frames per second [@]. The dataset covers weeks 1-9 of the 2022 NFL season, comprising 136 games. 
 
-#### Data pre-porcessing
+### Pre-processing steps: 
 
- - We limited our dataset to NFL running backs with more than 20 rushes per play during the 2022 season.
- - We limited the rows to running plays where a running back (RB) is the ball carrier.
- - We Trimmed each play to frames between handoff and at end of a play.
- 
+  - Using the tracking data, we first standardized players’ positional coordinates and orientations so that all plays move from left to right, with the bottom-left corner of the field set as the “origin.”
+  - After merging the data, we filtered for running plays where the RB was the ball carrier and restricted the sample to RBs with at least 20 rushing attempts, yielding 69 players. Each observation corresponds to a single frame of tracking data.
+  - The tracking data provided only the magnitude of acceleration. To be able to differentiate between positive acceleration and negative acceleration (deceleration), we derived a variable for directional acceleration by multiplying the given magnitude of acceleration by the cosine of the angle of player motion. Speed and directional acceleration were converted to miles per hour (mph) and miles per hour per second (mph/s), respectively.
+
 
 ## Methods
 
-In this project, we define effort as a running back's ability to consistently reach a combination of their individual maximal acceleration for any given speed.
+### Motivation
 
-### Metric #1: Linear Regression
+Our initial approach was adapted from prior research building individual acceleration-speed (A-S) profiles of soccer players [@] For each RB, we plot the frame-level A-S profile based on the maximal acceleration they could generate for every possible running speed as follows:
+
+Within a speed interval ranging between 3 mph and the RB’s maximal speed, the two maximal acceleration values attained for each 0.2 mph sub-intervals were selected. A first linear regression was fitted to these speed-acceleration points. Outlier points lying outside of the 95% confidence interval around the linear function were removed. A final linear regression was fitted to the remaining points, defining what we refer to as the “maximum acceleration frontier.”
+
+To compute “effort” from the A-S profile, the regression line was first shifted downward by 0.25 units to include points sufficiently close to the estimated frontier. Effort was then defined as the percentage of a player’s points that fell above this relaxed threshold. 
+
+However, this approach has several limitations. First, it excludes points with speeds below 3 mph from the linear regression, effectively disregarding low-speed frames—even though effort may still be exerted at lower velocities. Second, the linear model extrapolates beyond the observed data, leading to unrealistic estimates of theoretical maximum speeds. Third, players with greater athletic ability may be disproportionately penalized. Because the frontier is estimated relative to each player’s own maximum accelerations, those with higher physical capacity face a stricter threshold, making their efforts appear less frequent with respect to their full potential. Finally, the model does not differentiate between acceleration and deceleration; all changes in velocity are treated equally, despite deceleration typically requiring less effort than acceleration3 and often reflecting tactical or situational constraints outside of the player’s control. 
+
+For every RB, we again examine the joint distribution of frame-level speed and acceleration. We define two approaches to evaluate effort as follows:
+
+
+### Metric #1: Quadratic Quantile Regression
 
 - Our main methodological approach to addressing this question centered around previous research that has explored soccer players reaching their theoretical max acceleration capacity for every running speed [@AS]. Similarly, we adopted this framework by plotting an individual running back's profile based on the maximal acceleration the running back could generate for every possible running speed as follows:
 
@@ -519,7 +530,7 @@ eff_function_nlrq_plotly <- function(name, graph = FALSE) {
 ```
 
 
-### Metric #2: Additive Quantile Regression Model
+### Metric #2: Quantile Generalized Additive Model
 
 - This metric quantifies *how often* a runnng back comes close to their maximal acceleration capacity.
 - **Assumption of this effort metric:** high acceleration and/or high speed movements are effortful.
@@ -759,6 +770,9 @@ fig5
 
 
 ```
+
+
+### Validation Model: 
 
 
 
@@ -1413,16 +1427,7 @@ dis_scatter |>
 
 ## Acknowledgements
 
-- Used Dr. Ron Yurko and Quang Nguyen's code to calculate distance from the nearest defender [@qntkhvnAngle]
-
-
-
-
-
-
-
-
-
+We are extremely grateful for all the guidance and support received throughout the duration of this project. Special thanks to our advisor, Sam Ventura from the Buffalo Sabres; program instructor, Quang Nguyen; program director, Ron Yurko; and program TAs Erin Franke, Leigh, Sara Colando, and Yuchen Chen.
 
 
 
