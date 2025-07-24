@@ -88,6 +88,172 @@ Within a speed interval ranging between 3 mph and the RB’s maximal speed, the 
 > To compute “effort” from the A-S profile, the regression line was first shifted downward by 0.25 units (determined via sensitivity analysis) to include points sufficiently close to the estimated frontier. Effort was then defined as the percentage of a player’s points that fell above this relaxed threshold.
 > </span>
 
+
+```{r}
+#| label: original-plot
+#| fig-cap: "......"
+#| message: false
+#| warning: false
+#| cache: true
+
+
+load("web_data/tracking_bc2.Rdata")
+load("web_data/player_runs_modeling.Rdata")
+
+
+eff_function <- function(name, graph = FALSE, player_table = FALSE, regress = FALSE) {
+  # Filter for player
+  player_runs <- tracking_bc |> filter(displayName == name)
+  
+  # Bin by speed
+  bins <- seq(3, round(max(player_runs$s_mph), 2) + .2, .2)
+  max_acc <- map_dfr(1:(length(bins) - 1), function(i) {
+    player_runs |> 
+      filter(s_mph > bins[i], s_mph <= bins[i + 1]) |> 
+      slice_max(a_mpsh, n = 2, with_ties = FALSE) |> 
+      select(speed = s_mph, acceleration = a_mpsh)
+  })
+  
+  # First regression
+  player_lm <- lm(acceleration ~ speed, data = max_acc)
+  confs <- predict(player_lm, interval = "confidence")
+  max_acc <- bind_cols(max_acc, confs)
+  
+  # Remove outliers and refit
+  max_acc_clean <- max_acc |> filter(acceleration >= lwr, acceleration <= upr)
+  player_lm_clean <- lm(acceleration ~ speed, data = max_acc_clean)
+  
+  # Predict acceleration for full data
+  test_player_a <- data.frame(speed = player_runs$s_mph, acceleration = player_runs$a_mpsh)
+  test_preds <- predict(player_lm_clean, newdata = test_player_a)
+  
+  player_final <- player_runs |> 
+    select(a_mpsh, s_mph) |> 
+    mutate(pred = test_preds,
+           diff = pred - a_mpsh,
+           eff = diff <= 0.25,
+           eff_50 = diff <= 0.5,
+           eff_75 = diff <= 0.75,
+           gameId = player_runs$gameId,
+           playId = player_runs$playId,
+           bc_id = player_runs$bc_id,
+           displayName = player_runs$displayName,
+           frameId = player_runs$frameId)
+  
+  eff <- tibble(
+    eff_metric = sum(player_final$eff, na.rm = TRUE),
+    eff_metric_perc = sum(player_final$eff, na.rm = TRUE) / nrow(player_final) * 100,
+    eff_metric_50 = sum(player_final$eff_50, na.rm = TRUE),
+    eff_metric_perc_50 = sum(player_final$eff_50, na.rm = TRUE) / nrow(player_final) * 100,
+    eff_metric_75 = sum(player_final$eff_75, na.rm = TRUE),
+    eff_metric_perc_75 = sum(player_final$eff_75, na.rm = TRUE) / nrow(player_final) * 100
+  )
+  
+  if (graph == TRUE) {
+    # Compute regression line
+    intercept <- player_lm_clean$coefficients[1]
+    slope <- player_lm_clean$coefficients[2]
+    s_seq <- seq(min(player_runs$s_mph), max(player_runs$s_mph), length.out = 200)
+    
+    reg_line <- tibble(
+      speed = s_seq,
+      reg = intercept + slope * s_seq
+    )
+    
+    # Compute max Y for shading
+    y_max <- max(player_runs$a_mpsh, na.rm = TRUE)
+
+    # Build plotly plot
+    p <- plot_ly() |>
+      # Player data
+      add_markers(
+        data = player_runs,
+        x = ~s_mph,
+        y = ~a_mpsh,
+        text = ~paste0("Speed: ", round(s_mph, 2), " mph<br>Accel: ", round(a_mpsh, 2), " m/s²"),
+        hoverinfo = "text",
+        marker = list(color = "black", size = 6, opacity = 0.6),
+        name = "Player Data"
+      ) |>
+      
+      # Top acceleration points (filled circles w/ black stroke)
+      add_markers(
+        data = max_acc_clean,
+        x = ~speed,
+        y = ~acceleration,
+        type = "scatter",
+        mode = "markers",
+        marker = list(size = 10, color = "#b3b3b3", line = list(width = 2, color = "black")),
+        name = "Top Accel Points"
+      ) |>
+      
+      # Regression line
+      add_trace(
+        data = reg_line,
+        x = ~speed,
+        y = ~reg,
+        type = "scatter",
+        mode = "lines",
+        line = list(color = "#0072B2", width = 2.5),
+        name = "Regression Line"
+      ) |>
+      
+      # Layout and shaded region
+      layout(
+        shapes = list(
+          list(
+            type = "rect",
+            x0 = 0,
+            x1 = 3,
+            y0 = 0,
+            y1 = y_max,
+            fillcolor = "#e7e7e7",
+            line = list(width = 0),
+            opacity = 0.04,
+            layer = "below"
+          )
+        ),
+        title = list(
+          text = "We consider points close to and above a player's<br><i>maximum acceleration frontier</i> effortful",
+          font = list(size = 18)
+        ),
+        xaxis = list(title = "Speed (mph)", titlefont = list(size = 14)),
+        yaxis = list(title = "Magnitude of acceleration (m/s²)", titlefont = list(size = 14)),
+        legend = list(
+          x = 1.05,
+          y = 0.5,
+          xanchor = "left",
+          yanchor = "middle",
+          font = list(size = 13)
+        ),
+        hoverlabel = list(font = list(size = 13)),
+        margin = list(l = 70, r = 130, b = 60, t = 100),
+        showlegend = TRUE
+      )
+
+    return(p)
+  }
+  
+  if (player_table == TRUE) return(player_final)
+  
+  if (regress == TRUE) {
+    return(tibble(
+      displayName = name,
+      A_0 = player_lm_clean$coefficients[1],
+      S_0 = (-player_lm_clean$coefficients[1]) / player_lm_clean$coefficients[2]
+    ))
+  }
+  
+  return(eff)
+}
+
+# TESTING
+eff_function("Saquon Barkley", graph = TRUE)
+
+```
+
+
+
 However, this approach has several limitations. First, it excludes points with speeds below 3 mph from the linear regression model, effectively disregarding low-speed frames—even though effort may still be exerted at lower velocities. Second, the model extrapolates beyond the observed data, leading to unrealistic estimates of theoretical maximum speeds. Third, players with greater athletic ability may be disproportionately penalized. Because the frontier is estimated relative to each player’s own maximal accelerations, players with a greater physical capacity must reach a higher threshold for their frames to be classified as effortful. Finally, the model does not differentiate between acceleration and deceleration; all changes in velocity are treated equally, despite our belief that deceleration requires less effort than acceleration, as it typically demands less metabolic power.^3^
 
 ::: {.panel-tabset}
@@ -961,80 +1127,11 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE) {
 # testing one player
 eff_function("Saquon Barkley", graph = TRUE)
 
-
-#===================[ making interactive drop down menu ]=======================
-
-# rb_dd_list <- c("Saquon Barkley", "Rex Burkhead", "Chase Edmonds", "Rachaad White", "D'Andre Swift", 
-#                 "Samaje Perine", "Joshua Kelley", "Matt Breida", "Alexander Mattison",
-#                 "Josh Jacobs", "James Cook", "Melvin Gordon")
-# 
-# # Initialize plot
-# fig2 <- plot_ly()
-# all_traces <- list()
-# visibility_masks <- list()
-# trace_lengths <- c()
-# 
-# #Loop through each running back to collect their traces
-# for (i in seq_along(rb_dd_list)) {
-#   player <- rb_dd_list[i]
-#   plot_obj <- ggplotly(eff_function_qgam(player, graph = TRUE))
-#   
-#   player_traces <- list()
-#   for (trace in plot_obj$x$data) {
-#     trace$visible <- (i == 1) 
-#     
-#     # this is to display the first running back's AS quantile regression 
-#     fig2 <- fig2 |> add_trace(
-#       x = trace$x,
-#       y = trace$y,
-#       type = trace$type,
-#       mode = trace$mode,
-#       line = trace$line,
-#       name = trace$name,
-#       text = trace$text,
-#       hoverinfo = trace$hoverinfo,
-#       visible = trace$visible
-#     )
-#     player_traces <- append(player_traces, list(trace))
-#   }
-#   
-#   all_traces[[i]] <- player_traces
-#   trace_lengths[i] <- length(player_traces)
-# }
-# 
-# #  Visibility masks for dropdown
-# total_traces <- sum(trace_lengths)
-# 
-# for (i in seq_along(rb_dd_list)) {
-#   mask <- rep(FALSE, total_traces)
-#   start_index <- sum(trace_lengths[1:(i - 1)]) + 1
-#   end_index <- sum(trace_lengths[1:i])
-#   mask[start_index:end_index] <- TRUE
-#   visibility_masks[[i]] <- mask
-# }
-# 
-# # Adding dropdown menu
-# dropdown_buttons <- lapply(seq_along(rb_dd_list), function(i) {
-#   list(method = "restyle",
-#        args = list("visible", visibility_masks[[i]]),
-#        label = rb_dd_list[i])
-# })
-# 
-# fig2 <- fig2 |>
-#   layout(
-#     title = "Acceleration vs Speed Individualized Profile by Running Back",
-#     updatemenus = list(
-#       list(
-#         type = "dropdown",
-#         y = 0.8,
-#         x = 1.1,
-#         buttons = dropdown_buttons
-#       )
-#     )
-#   )
-# fig2
-
-
 ```
+
+
+
+
+
 
 
