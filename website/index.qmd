@@ -369,7 +369,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
 }
 
 # testing player
-#eff_function_nlrq_plotly("Saquon Barkley", graph = TRUE)
+#eff_function_qgam("Saquon Barkley", graph = TRUE)
 
 
 #Player list (in progress)
