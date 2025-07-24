@@ -15,6 +15,7 @@ format:
     smooth-scroll: true
     toc: true
     toc-expand: true
+    toc-depth: 2  
     toc-location: left
     toc-title: "Contents"
     date: last-modified

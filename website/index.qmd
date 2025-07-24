@@ -55,25 +55,36 @@ include_graphics("docs/images/NFL2022.png")
 
 ## Introduction 
 
-While athletes are often praised for “giving 100%,” what that entails remains poorly defined and difficult to measure objectively. Unlike physical traits such as endurance, strength, and agility, effort is intangible and often conflated with performance outcomes or inferred through subjective observation. Nevertheless, it is widely regarded as a crucial factor in athletic success, influencing both perceived competitiveness and in-game results. Developing a reliable, standardized method to evaluate effort could offer new insight into player behavior and decision-making.
+While athletes are often praised for “giving 100%,” what that entails remains poorly defined and difficult to measure objectively. Unlike physical traits such as endurance, strength, and agility, effort is intangible and often conflated with performance outcomes or inferred through subjective observation. Nevertheless, it is widely regarded as a crucial factor in athletic success, influencing both perceived competitiveness and in-game results. Developing a reliable, standardized method to evaluate effort could offer new insight into player capabilities and decision-making.
 
-This study focuses on running backs (RBs) in the NFL, a position characterized by short, high-intensity bursts of movement within clearly structured offensive plays. The nature of their role - frequent accelerations and heavy physical contact - make RBs a suitable candidate for analyzing exertion in a relatively controlled and consistent context.
+This study focuses on running backs (RBs) in the NFL, a position characterized by short, high-intensity bursts of movement within clearly structured offensive plays. The nature of their role—frequent accelerations and heavy physical contact—makes RBs a suitable candidate for analyzing exertion in a relatively controlled and consistent context.
 
-Our approach builds on prior work deriving professional soccer players’ theoretical maximum acceleration capacity as a function of running speed in-situ1. To date, no comparable methodology has been applied to American football. By adapting it to RBs, we aim to isolate the measurable, physical component of effort, independent of tactical decisions or situational context.
+Our approach builds on prior work deriving professional soccer players’ theoretical maximum acceleration capacity as a function of running speed in-situ.1 To date, no comparable methodology has been applied to American football. By adapting it to RBs, we aim to isolate the measurable, movement-based component of effort, independent of tactical decisions or situational context.
 
 The objective of this study is twofold: (1) to improve estimation of individual acceleration-speed (A-S) profiles using tracking data, and (2) to assess how frequently players operate near or exceed these limits as a proxy for effort.
 
 
-
 ## Data
 
-The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsored analytics competition that provides game, play, player, and tracking data recorded at 10 frames per second [@nfl2025]. The dataset covers weeks 1-9 of the 2022 NFL season, comprising 136 games. 
+The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsored analytics competition that provides game, play, player, and tracking data recorded at 10 frames per second.2 The dataset covers weeks 1-9 of the 2022 NFL season, comprising 136 games. 
+
 
 ### Pre-processing steps: 
 
   - Using the tracking data, we first standardized players’ positional coordinates and orientations so that all plays move from left to right, with the bottom-left corner of the field set as the “origin.”
   - After merging the data, we filtered for running plays where the RB was the ball carrier and restricted the sample to RBs with at least 20 rushing attempts, yielding 69 players. Each observation corresponds to a single frame of tracking data.
-  - The tracking data provided only the magnitude of acceleration. To be able to differentiate between positive acceleration and negative acceleration (deceleration), we derived a variable for directional acceleration by multiplying the given magnitude of acceleration by the cosine of the angle of player motion. Speed and directional acceleration were converted to miles per hour (mph) and miles per hour per second (mph/s), respectively.
+
+### Feature engineering:
+
+ - The tracking data provided only the magnitude of acceleration. To be able to differentiate between positive acceleration and negative acceleration (deceleration), we derived a variable for directional acceleration by multiplying the given magnitude of acceleration by the cosine of the angle of player motion. Speed and directional acceleration were converted to miles per hour (mph) and miles per hour per second (mph/s), respectively.
+ - We also created several variables, all measured at the time of handoff, for our validation model (see Methods) as follows:
+
+    - Distance to nearest defender: compute the Euclidean distance between all defenders’ and RB’s positional coordinates; select the minimum distance 
+     - Number of defenders within 5 yards of the RB: compute the Euclidean distance between all defenders’ and RB’s positional coordinates; count the number of defenders whose distance is at most 5 yards 
+     - Number of blockers in front of the RB: the number of blockers (defined as offensive linemen or fullbacks) whose x-coordinates exceed that of the RB
+
+
+
 
 
 ## Methods
@@ -93,15 +104,10 @@ For every RB, we again examine the joint distribution of frame-level speed and a
 
 #### Metric #1: Quadratic Quantile Regression
 
-- Our main methodological approach to addressing this question centered around previous research that has explored soccer players reaching their theoretical max acceleration capacity for every running speed [@AS]. Similarly, we adopted this framework by plotting an individual running back's profile based on the maximal acceleration the running back could generate for every possible running speed as follows:
+To address the shortcomings of the linear regression approach, we developed an effort metric based on quadratic quantile regression. This method was selected for two reasons: first, the relationship between acceleration and speed is empirically nonlinear; second, quantile regression enables an estimation of the upper envelope of a player’s acceleration distribution. Unlike traditional ordinary least squares techniques (e.g., linear regression), which estimate the conditional mean, quantile regression is more appropriate, in this case, for identifying players’ maximum acceleration capacities. Specifically, the 0.95 quantile was used to represent each player’s maximum acceleration frontier, capturing some of their highest observed exertions while minimizing the impact of outliers (in, say, the 0.99 quantile) that could distort the frontier.
 
-   - Within a speed interval ranging between 3 mph and the RB’s maximal speed, the two maximal acceleration values attained for each 0.2 mph sub-intervals were selected. 
-   - A first linear regression was fit to these speed-acceleration points. 
-   - Outlier points lying outside of 95% confidence interval around the linear function were removed. 
-   - A linear regression was fit to the remaining points.
-  
-- This effort metric was derived by transforming final regression line downward by 0.25 units.
-- **Effort =** percentage of points above the transformed regression line
+For every RB, we again examine the joint distribution of frame-level speed and acceleration. We fit two separate player-specific quadratic quantile regressions to estimate the 0.95 quantiles (i.e., the 95th percentiles) of acceleration and deceleration, respectively, as functions of speed. Each model was trained on all available frames for a given player. The resulting curves define the individualized maximum acceleration frontiers: one for positive acceleration values and another for negative acceleration values. 
+
 
 
 ::: {.fragment}
@@ -760,6 +766,37 @@ fig5
 
 ### Validation Model: 
 
+As a way to validate our effort metrics, we developed an Expected Points Added (EPA) over expected model. EPA is derived from Expected Points (EP), which estimates how many points a team is likely to score on that drive. EPA is the difference of EP before the play and after the play. We chose to model EPA because the metric gives value to how a play contributes to helping a team score. By correlating the residuals of the model with our effort metrics, we could quantify how much effort contributes to EPA.
+
+For our model, we only used predictor variables at the time of the handoff to the RB. Utilizing full play metrics creates data leakage, as EPA can only be calculated after a play is over. 
+
+We are interested in predicting EPA using the following variables:
+
+ - Game context
+   - Home field advantage
+   - Quarter
+   - Down
+   - Score differential
+   
+ - Play context
+   - Yards to go to a first down
+   - Yards to go to the endzone
+   - Number of blockers in front of the RB
+   - Number of defenders within 5 yards of the RB
+   - Offensive formation
+   - Run concept
+ - RB characteristics
+   - Speed
+   - Directional acceleration
+   - Weight
+   - Coordinates of RB on field
+ - Nearest defender characteristics
+   - Speed
+   - Directional acceleration
+   - Angle with the RB
+   - Distance to RB
+
+After finalizing our variable selection, we utilized 5-fold cross validation, ensuring each game was in a different fold to reduce possible dependence. We used a random forest model due to its fair accuracy and its propensity to avoid overfitting.
 
 
 ###  Top Running backs
@@ -1413,7 +1450,9 @@ dis_scatter |>
 
 ## Acknowledgements
 
-We are extremely grateful for all the guidance and support received throughout the duration of this project. Special thanks to our advisor, Sam Ventura from the Buffalo Sabres; program instructor, Quang Nguyen; program director, Ron Yurko; and program TAs Erin Franke, Leigh, Sara Colando, and Yuchen Chen.
+Many thanks to Sam Ventura, from the Buffalo Sabres, for his guidance and mentorship throughout the project. We are grateful for the time and dedication Sam has put into this project.
+We also want to thank Quang Nguyen for his instruction, advice, and support throughout the summer research experience. Quang had provided us with the resources necessary to get started with the NFL Big Data Bowl tracking data. Finally, we would like to thank Dr. Ron Yurko and the CMSAC teaching staff for sharing with us their knowledge and inspiring ideas. 
+
 
 
 
