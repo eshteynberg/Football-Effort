@@ -109,14 +109,14 @@ nlrq_dis_play_epa <- nlrq_dis |>
 
 ## GT TABLE FOR NLRQ
 nlrq_dis_player_gt <- nlrq_dis_player |> 
-  filter(rank %in% c(1:5, 9, 63, 65:79))
+  filter(rank %in% c(1:10, 60:69) | displayName %in% c("Christian McCaffrey", "Khalil Herbert"))
 
 library(gt)
 library(gtExtras)
 nlrq_dis_player_gt |>
   select(displayName, dis_score, rank) |> 
   gt() |>
-  tab_header(title = md("**Top and Bottom RBs Ranked \nby Effort Metric #1**")) |>
+  tab_header(title = md("**Top and Bottom RBs Ranked \nby Effort Metric #1 (Quadratic)**")) |>
   cols_label(displayName = "Name", dis_score = "Effort Score (%)", rank = "Rank") |>
   data_color(columns = c(rank),
              fn = scales::col_numeric(palette = c("#D50A0A","white", "#0072B2"), domain = NULL)) |>
@@ -242,19 +242,19 @@ qgam_dis_player <- qgam_dis |>
 
 ## GT TABLE FOR QGAM
 qgam_dis_player_gt <- qgam_dis_player |> 
-  filter(rank %in% c(1:5, 8, 58, 65:79))
+  filter(rank %in% c(1:10, 60:69) | displayName %in% c("Christian McCaffrey", "Khalil Herbert"))
 
 library(gt)
 library(gtExtras)
 qgam_dis_player_gt |>
   select(displayName, dis_score, rank) |> 
   gt() |>
-  tab_header(title = md("**Top and Bottom RBs Ranked \nby Effort Metric #2**")) |>
+  tab_header(title = md("**Top and Bottom RBs Ranked \nby Effort Metric #2 (QGAM)**")) |>
   cols_label(displayName = "Name", dis_score = "Effort Score (%)", rank = "Rank") |>
   data_color(columns = c(rank),
              fn = scales::col_numeric(palette = c("#D50A0A","white", "#0072B2"), domain = NULL)) |>
   gtExtras::gt_theme_espn() |>
-  opt_align_table_header(align = "center") #|> 
+  opt_align_table_header(align = "center") |> 
   gtsave(file = "Effort2Rank.png",
          vwidth = 380,
          vheight = 600)

@@ -62,7 +62,7 @@ The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsor
 
 ### Feature engineering:
 
-* The tracking data provided only the magnitude of acceleration. To be able to differentiate between positive acceleration and negative acceleration (deceleration), we derived a variable for *directional* acceleration by multiplying the given magnitude of acceleration by the cosine of the angle of player motion. 
+* The tracking data provided only the magnitudes of velocity (speed) and acceleration. To be able to distinguish between positive acceleration and negative acceleration (deceleration), we first derived the x- and y-components of velocity by multiplying the given speed by the sine and cosine of the angle of player motion, respectively. Next, we computed the x- and y-components of acceleration by calculating the frame-to-frame change in the corresponding components of velocity over the 0.1 second time interval. Finally, we constructed a variable for *directional* acceleration by dividing the dot product of the velocity and acceleration vectors by the magnitude of velocity. 
 
 * We converted speed and directional acceleration to miles per hour (mph) and miles per hour per second (mph/s), respectively.
 
@@ -248,7 +248,7 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE, regress = FA
 }
 
 # TEST
-eff_function("Saquon Barkley", graph = TRUE)
+eff_function("Christian McCaffrey", graph = TRUE)
 
 ```
 
@@ -740,6 +740,17 @@ We used a random forest model for its ability to capture nonlinear relationships
 
 ## Results
 
+::: {.columns}
+::: {.column width="50%"}
+![](photos_right/Effort1Rank.png){width=60%}
+:::
+
+::: {.column width="50%"}
+![](photos_right/Effort2Rank.png){width=60%}
+:::
+:::
+
+
 Our findings indicate that backup RBs consistently exhibit higher frame-level effort across both metrics compared to starters. This may reflect a tendency to capitalize on limited playing time by more frequently approaching or exceeding their individual maximum acceleration frontiers. Playing fewer snaps also likely reduces cumulative fatigue, enabling backups to sustain higher-effort movements when on the field. Conversely, starters may possess greater innate talent, physical ability, or experience, allowing them to achieve comparable or superior performance with less exertion per play.
 
 ![](photos_right/EffMetrics.png){width=80%}
@@ -763,11 +774,13 @@ The two metrics are positively correlated, as expected given their similar deriv
 
 Our expected EPA model yielded a root mean squared error (RMSE) of 0.929. Given that EPA values typically range from -10 to +6, this level of error is acceptable. However, the random forest model demonstrates limited accuracy on plays with extreme EPA values. It is plausible to initially speculate that this underperformance stems from the model’s omission of effort as a predictor, impairing its ability to fully explain EPA variation.
 
-The correlations between model residuals and each effort metric were near zero, indicating that the model’s prediction errors are likely not due to the absence of effort-based features, contrary to our initial hypothesis. This suggests that effort—as defined by proximity to the maximum acceleration frontier–does not reliably predict deviations from expected play value, and thus may not necessarily translate to better on-field performance.  
+![](photos_right/EPAResiduals.png){width=80%}
 
-![](photos/EffortCorrelations.png){width=80%}
+The correlations between model residuals and each effort metric were weak, indicating that the model’s prediction errors are likely not due to the absence of effort-based features, contrary to our initial hypothesis. This suggests that effort—as defined by proximity to the maximum acceleration frontier–does not reliably predict deviations from expected play value, and thus may not necessarily translate to better on-field performance.  
 
-Further analysis confirms this result: both effort metrics show negligible correlation with several play outcome variables. Taken together, these findings corroborate that effort, by our definition, does not directly contribute to superior results. 
+![](photos_right/EffortCorrelations.png){width=80%}
+
+Further analysis confirms this result: both effort metrics show relatively low correlation with several play outcome variables. Taken together, these findings corroborate that effort, by our definition, does not directly contribute to superior results. 
 
 
 ## Discussion
@@ -779,7 +792,7 @@ Quantifying effort remains a complex task with no single definitive solution. No
 ### Limitations
 A key limitation of our effort metrics is their inability to fully account for player and game context. For instance, if a RB decelerates sharply due to a tackle, the model interprets this deceleration as effortful—despite it being the result of external contact rather than intentional exertion. By omitting physical interactions or play-specific dynamics, the metrics risk misclassifying non-effortful outcomes. A more robust alternative might involve modeling expected acceleration based on situational variables and using these predictions—rather than observed values—in the A-S profile to better capture true exertion.
 
-Another shortcoming arises from the individualized nature of each player’s A-S profile. While this approach accounts for physical differences between players, it holds each to a different standard. For example, athletically gifted players, such as Saquon Barkley, generate higher 0.95 quantile acceleration curves, thereby requiring greater exertion to meet the same relative effort threshold. In other words, the same level of physical output may be classified differently depending on the athlete’s profile, complicating comparisons across players.
+Another shortcoming arises from the individualized nature of each player’s A-S profile. While this approach accounts for physical differences between players, it holds each to a different standard. For example, athletically gifted players, such as Christian McCaffrey, generate higher 0.95 quantile acceleration curves, thereby requiring greater exertion to meet the same relative effort threshold. In other words, the same level of physical output may be classified differently depending on the athlete’s profile, complicating comparisons across players.
 
 Finally, our use of EPA over expected as a validation method may not fully isolate the RB’s individual contribution. Since EPA is influenced by various external and team-level factors outside of the RB’s direct control (e.g., offensive efficiency, blocking, play calling), it does not exclusively reflect the impact of a single player’s effort. Consequently, high EPA plays might be driven more by team execution than personal exertion. Validating against metrics more directly attributable to RB-specific action may offer a clearer assessment of our approach. 
 
