@@ -450,7 +450,7 @@ fig1 <- fig1 |>
       )
     )
   )
-print(fig1)
+fig1
 ```
 
 
@@ -742,19 +742,19 @@ We used a random forest model for its ability to capture nonlinear relationships
 
 Our findings indicate that backup RBs consistently exhibit higher frame-level effort across both metrics compared to starters. This may reflect a tendency to capitalize on limited playing time by more frequently approaching or exceeding their individual maximum acceleration frontiers. Playing fewer snaps also likely reduces cumulative fatigue, enabling backups to sustain higher-effort movements when on the field. Conversely, starters may possess greater innate talent, physical ability, or experience, allowing them to achieve comparable or superior performance with less exertion per play.
 
-![](photos/EffMetricsChart.png){width=80%}
+![](photos_right/EffMetrics.png){width=80%}
 
 The two metrics are positively correlated, as expected given their similar derivation. Both were ultimately designed to capture the same underlying concept: how a RB’s observed acceleration compares to their individual maximum acceleration frontier. 
 
 ::: {.panel-tabset}
 ### Effort vs. Max Acceleration
-![](photos/MaxAccel.png){width=80%}
+![](photos_right/MaxAcc.png){width=80%}
 
 ### Effort vs. Max Speed
-![](photos/MaxSpeed.png){width=80%}
+![](photos_right/MaxSpeed.png){width=80%}
 
 ### Effort vs. Number of Rushes
-![](photos/NumRushes.png){width=80%}
+![](photos_right/NumRushes.png){width=80%}
 :::
 
 ### Validation Model
