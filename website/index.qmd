@@ -44,31 +44,34 @@ While athletes are often praised for “giving 100%,” what that entails remain
 
 This study focuses on running backs (RBs) in the NFL, a position characterized by short, high-intensity bursts of movement within clearly structured offensive plays. The nature of their role—frequent accelerations and heavy physical contact—makes RBs a suitable candidate for analyzing exertion in a relatively controlled and consistent context.
 
-Our approach builds on prior work deriving professional soccer players’ theoretical maximum acceleration capacity as a function of running speed in-situ.1 To date, no comparable methodology has been applied to American football. By adapting it to RBs, we aim to isolate the measurable, movement-based component of effort, independent of tactical decisions or situational context.
+Our approach builds on prior work deriving professional soccer players’ theoretical maximum acceleration capacity as a function of running speed in-situ.^1^ To date, no comparable methodology has been applied to American football. By adapting it to RBs, we aim to isolate the measurable, movement-based component of effort, independent of tactical decisions or situational context.
 
 The objective of this study is twofold: (1) to improve estimation of individual acceleration-speed (A-S) profiles using tracking data, and (2) to assess how frequently players operate near or exceed these limits as a proxy for effort.
 
 
 ## Data
 
-The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsored analytics competition that provides game, play, player, and tracking data recorded at 10 frames per second.^2^ The dataset covers weeks 1-9 of the 2022 NFL season, comprising 136 games. 
+The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsored analytics competition that provides game, play, player, and tracking data recorded at 10 frames per second.^2^ The dataset covers weeks 1-9 of the 2022 NFL season, comprising 136 games.
 
 ### Pre-processing: 
 
-* Using the tracking data, we first standardized players’ positional coordinates and orientations so that all plays move from left to right, with the bottom-left corner of the field set as the “origin.”
+* Using the tracking data, we first standardized players’ positional coordinates and orientations such that all plays move from left to right, with the bottom-left corner of the field set as the “origin.”
 
 * After merging the data, we filtered for running plays where the RB was the ball carrier and restricted the sample to RBs with at least 20 rushing attempts, yielding 69 players. Each observation corresponds to a single frame of tracking data.
 
+
 ### Feature engineering:
 
-* The tracking data provided only the magnitude of acceleration. To be able to differentiate between positive acceleration and negative acceleration (deceleration), we derived a variable for *directional* acceleration by multiplying the given magnitude of acceleration by the cosine of the angle of player motion. Speed and directional acceleration were converted to miles per hour (mph) and miles per hour per second (mph/s), respectively.
+* The tracking data provided only the magnitude of acceleration. To be able to differentiate between positive acceleration and negative acceleration (deceleration), we derived a variable for *directional* acceleration by multiplying the given magnitude of acceleration by the cosine of the angle of player motion. 
 
-* We also created several variables, all measured at the time of handoff, for our validation model *(see Methods)* as follows:
+* We converted speed and directional acceleration to miles per hour (mph) and miles per hour per second (mph/s), respectively.
 
-  * **Distance to nearest defender**: compute the Euclidean distance between all defenders’ and RB’s positional coordinates; select the minimum distance 
-  
-  * **Number of defenders within 5 yards of the RB**: compute the Euclidean distance between all defenders’ and RB’s positional coordinates; count the number of defenders whose distance is at most 5 yards 
-  
+* We created several frame-level variables, all measured at the time of handoff, for use in our validation model *(see Methods)* as follows:
+
+  * **Distance to nearest defender**: compute the Euclidean distance between the RB’s and each defender’s positional coordinates; select the minimum distance 
+
+  * **Number of defenders within 5 yards of the RB**: count the number of defenders whose Euclidean distance to the RB is less than or equal to 5 yards 
+
   * **Number of blockers in front of the RB**: the number of blockers (defined as offensive linemen or fullbacks) whose x-coordinates exceed that of the RBs
 
 
@@ -76,34 +79,150 @@ The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsor
 
 ### Motivation
 
-Our initial approach was adapted from the aforementioned prior research building individual A-S profiles of soccer players.^1^ For each RB, we plot the frame-level A-S profile based on the maximal acceleration they could generate for every possible running speed using *Morin et al., 2021* procedure as follows:
+Our initial approach was adapted from the aforementioned prior research building individual A-S profiles of soccer players.^1^ For each RB, we plot the frame-level A-S profile based on the maximal acceleration they could generate for every possible running speed using the *Morin et al., 2021* procedure as follows:
 
 
-<p style="text-indent: 2em;">
-Within a speed interval ranging between 3 mph and the RB’s maximal speed, the two maximal acceleration values attained for each 0.2 mph sub-intervals were selected. A first linear regression was fitted to these speed-acceleration points. Outlier points lying outside of the 95% confidence interval around the linear function were removed. A final linear regression was fitted to the remaining points, defining what we refer to as the “maximum acceleration frontier.”
-</p>
+Within a speed interval ranging between 3 mph and the RB’s maximal speed, the two maximal acceleration values attained for each 0.2 mph subinterval were selected. A first linear regression was fitted to these speed-acceleration points. Outlier points lying outside of the 95% confidence interval around the linear function were removed. A final linear regression was fitted to the remaining points, defining what we refer to as the “maximum acceleration frontier.”
 
-To compute “effort” from the A-S profile, the regression line was first shifted downward by 0.25 units to include points sufficiently close to the estimated frontier. Effort was then defined as the percentage of a player’s points that fell above this relaxed threshold. 
+> <span style="color: black; font-style: normal;">
+> To compute “effort” from the A-S profile, the regression line was first shifted downward by 0.25 units (determined via sensitivity analysis) to include points sufficiently close to the estimated frontier. Effort was then defined as the percentage of a player’s points that fell above this relaxed threshold.
+> </span>
 
-However, this approach has several limitations. First, it excludes points with speeds below 3 mph from the linear regression, effectively disregarding low-speed frames—even though effort may still be exerted at lower velocities. Second, the linear model extrapolates beyond the observed data, leading to unrealistic estimates of theoretical maximum speeds. Third, players with greater athletic ability may be disproportionately penalized. Because the frontier is estimated relative to each player’s own maximum accelerations, those with higher physical capacity face a stricter threshold, making their efforts appear less frequent with respect to their full potential. Finally, the model does not differentiate between acceleration and deceleration; all changes in velocity are treated equally, despite deceleration typically requiring less effort than acceleration3 and often reflecting tactical or situational constraints outside of the player’s control. 
-
-For every RB, we again examine the joint distribution of frame-level speed and acceleration. We define two approaches to evaluate effort as follows:
+However, this approach has several limitations. First, it excludes points with speeds below 3 mph from the linear regression model, effectively disregarding low-speed frames—even though effort may still be exerted at lower velocities. Second, the model extrapolates beyond the observed data, leading to unrealistic estimates of theoretical maximum speeds. Third, players with greater athletic ability may be disproportionately penalized. Because the frontier is estimated relative to each player’s own maximal accelerations, players with a greater physical capacity must reach a higher threshold for their frames to be classified as effortful. Finally, the model does not differentiate between acceleration and deceleration; all changes in velocity are treated equally, despite our belief that deceleration requires less effort than acceleration, as it typically demands less metabolic power.^3^
 
 
 #### Metric #1: Quadratic Quantile Regression
 
-To address the shortcomings of the linear regression approach, we developed an effort metric based on quadratic quantile regression. This method was selected for two reasons: first, the relationship between acceleration and speed is empirically nonlinear; second, quantile regression enables an estimation of the upper envelope of a player’s acceleration distribution. Unlike traditional ordinary least squares techniques (e.g., linear regression), which estimate the conditional mean, quantile regression is more appropriate, in this case, for identifying players’ maximum acceleration capacities. Specifically, the 0.95 quantile was used to represent each player’s maximum acceleration frontier, capturing some of their highest observed exertions while minimizing the impact of outliers (in, say, the 0.99 quantile) that could distort the frontier.
+To address the shortcomings of the linear regression approach, we developed an effort metric based on quadratic quantile regression. This method was selected for two reasons. First, the relationship between acceleration and speed is empirically nonlinear. Second, quantile regression enables an estimation of the upper envelope of a player’s acceleration distribution. Unlike ordinary least squares techniques (e.g., linear regression), which estimate the conditional mean, quantile regression is more appropriate for identifying players’ maximum acceleration capacities. Specifically, the 0.95 quantile (i.e., the 95th percentile) was used to represent each player’s maximum acceleration frontier, capturing some of their highest observed exertions while minimizing the impact of outliers. For example, extreme, one-off accelerations in the 0.99 quantile might distort the frontier.
 
-For every RB, we again examine the joint distribution of frame-level speed and acceleration. We fit two separate player-specific quadratic quantile regressions to estimate the 0.95 quantiles (i.e., the 95th percentiles) of acceleration and deceleration, respectively, as functions of speed. Each model was trained on all available frames for a given player. The resulting curves define the individualized maximum acceleration frontiers: one for positive acceleration values and another for negative acceleration values. 
+For every RB, we again examine the joint distribution of frame-level speed and acceleration. We fit two quadratic quantile regressions to estimate the 0.95 quantiles of acceleration and deceleration, respectively, as functions of speed. Each model was trained on all available frames for a given player. The resulting curves define the individual maximum acceleration frontiers: one for acceleration and another for deceleration.  
+
+We compute effort as follows: first, calculate the vertical distance $d_i$ from each point to the frontier corresponding to its acceleration sign, setting $d_i=0$ for points on or past the curve. Each frame is assigned a score according to 
+
+$$
+\Psi_i = \begin{cases}
+  \frac{1}{1+d_i} & a_i\geq 0 \\
+  \frac{1}{2}\cdot\frac{1}{1+d_i} & a_i<0,
+    \end{cases}
+$$
+where $a_i$ denotes the point’s acceleration.
+
+Points with negative acceleration are penalized by a factor of 0.5, reflecting prior findings that deceleration is 2-4 times less metabolically demanding than acceleration.^3^ We thus consider deceleration less effortful. 
+
+Finally, average effort for each player is computed as the mean of their frame-level scores:
+
+$$
+\text{Effort} = \frac{\sum_{i=1}^n \Psi}{n}
+$$
+
+#### Metric #2: Quantile Generalized Additive Model (QGAM)
+
+As an alternative to the fixed-form quadratic quantile regression, we implemented a QGAM to allow greater flexibility in estimating the individual maximum acceleration frontier. A GAM is particularly well-suited to our context, as the true A-S profile may vary in form across players and is unlikely to consistently follow a simple quadratic curve. We continued to use the 0.95 quantile to capture near-maximal acceleration while mitigating sensitivity to outliers.
+
+For each RB, we fit two QGAMs with adaptive spline bases to the 0.95 quantiles of acceleration and deceleration, respectively, as functions of speed. The resulting curves again define the individualized frontiers for acceleration and deceleration. Average frame-level effort is then computed according to the same procedure as for Metric #1 above.
 
 
+#### Validation Model
 
-::: {.fragment}
-![](Football-Effort/Poster_images/Cook_Saquon_nlrq.png)
+To evaluate the predictive power of our effort metrics, we developed an Expected Points Added (EPA) over expected model. EPA is derived from Expected Points (EP), which estimates the number of points a team is likely to score on a drive based on the current game context. EPA is calculated as the difference between EP before and after a play, providing a measure of its contribution to a team’s scoring potential. 
+
+EPA was selected as the outcome variable because it reflects the effectiveness of a play in terms of point value. To assess whether effort explains meaningful variance in play success, we computed correlations between model residuals and our effort metrics. A significant correlation would suggest that effort captures information not already explained by standard pre-play features. 
+
+The model uses only variables available at the time of handoff to the RB. Including features from later in the play would introduce data leakage, since EPA is calculated only after the play is complete. Predictor variables include:
+
+::: {.columns}
+
+::: {.column width="50%"}
+
+##### Game context
+* Home field advantage
+* Quarter
+* Down
+* Score differential
+
+##### Play context
+* Yards to go to a first down
+* Yards to go to the endzone
+* Number of blockers in front of the RB
+* Number of defenders within 5 yards of the RB
+* Offensive formation
+* Run concept
+
+:::
+
+::: {.column width="50%"}
+
+##### RB characteristics
+* Speed
+* Directional acceleration
+* Weight
+* Positional coordinates of RB on field
+
+##### Nearest defender characteristics
+* Speed
+* Directional acceleration
+* Angle with the RB
+* Distance to RB
+
+:::
+
 :::
 
 
-::: {.panel-tabset}
+We used a random forest model for its ability to capture nonlinear relationships and reduce the risk of overfitting. We performed 5-fold cross validation, assigning entire games to individual folds to mitigate possible dependencies.
+
+
+## Results
+
+Our findings indicate that backup RBs consistently exhibit higher frame-level effort across both metrics compared to starters. This may reflect a tendency to capitalize on limited playing time by more frequently approaching or exceeding their individual maximum acceleration frontiers. Playing fewer snaps also likely reduces cumulative fatigue, enabling backups to sustain higher-effort movements when on the field. Conversely, starters may possess greater innate talent, physical ability, or experience, allowing them to achieve comparable or superior performance with less exertion per play.
+
+The two metrics are positively correlated, as expected given their similar derivation. Both were ultimately designed to capture the same underlying concept: how a RB’s observed acceleration compares to their individual maximum acceleration frontier. 
+
+#### Validation Model
+
+Our expected EPA model yielded a root mean squared error (RMSE) of 0.929. Given that EPA values typically range from -10 to +6, this level of error is acceptable. However, the random forest model demonstrates limited accuracy on plays with extreme EPA values. It is plausible to initially speculate that this underperformance stems from the model’s omission of effort as a predictor, impairing its ability to fully explain EPA variation.
+
+The correlations between model residuals and each effort metric were near zero, indicating that the model’s prediction errors are likely not due to the absence of effort-based features, contrary to our initial hypothesis. This suggests that effort—as defined by proximity to the maximum acceleration frontier–does not reliably predict deviations from expected play value, and thus may not necessarily translate to better on-field performance.  
+
+Further analysis confirms this result: both effort metrics show negligible correlation with several play outcome variables. Taken together, these findings corroborate that effort, by our definition, does not directly contribute to superior results. 
+
+
+## Discussion
+
+A-S-based effort, while measurable and player-specific, is insufficient on its own to explain RB performance. A player’s ability to consistently reach or exceed their individual maximum acceleration frontier might indicate physical exertion, intent, or athletic capacity, but it does not directly correspond to play outcomes such as rushing yards and EPA. This implies that effort, as captured by our metrics, reflects only one dimension of performance—namely, the intensity of a player’s movement—while omitting cognitive, tactical, and contextual influences that likely play an equal or greater role in shaping on-field outcomes. As such, A-S-based effort should be interpreted as a complementary metric rather than a standalone indicator of performance or effectiveness.  
+
+Quantifying effort remains a complex task with no single definitive solution. Nonetheless, isolating and measuring its physical component provides a concrete foundation for developing more comprehensive metrics in the future. 
+
+#### Limitations
+A key limitation of our effort metrics is their inability to fully account for player and game context. For instance, if a RB decelerates sharply due to a tackle, the model interprets this deceleration as effortful—despite it being the result of external contact rather than intentional exertion. By omitting physical interactions or play-specific dynamics, the metrics risk misclassifying non-effortful outcomes. A more robust alternative might involve modeling expected acceleration based on situational variables and using these predictions—rather than observed values—in the A-S profile to better capture true exertion.
+
+Another shortcoming arises from the individualized nature of each player’s A-S profile. While this approach accounts for physical differences between players, it holds each to a different standard. For example, athletically gifted players, such as Saquon Barkley, generate higher 0.95 quantile acceleration curves, thereby requiring greater exertion to meet the same relative effort threshold. In other words, the same level of physical output may be classified differently depending on the athlete’s profile, complicating comparisons across players.
+
+Finally, our use of EPA over expected as a validation method may not fully isolate the RB’s individual contribution. Since EPA is influenced by various external and team-level factors outside of the RB’s direct control (e.g., offensive efficiency, blocking, play calling), it does not exclusively reflect the impact of a single player’s effort. Consequently, high EPA plays might be driven more by team execution than personal exertion. Validating against metrics more directly attributable to RB-specific action may offer a clearer assessment of our approach. 
+
+#### Future Work
+A natural extension of this study is applying the effort metrics to wide receivers. One area of interest is how a receiver's effort differs when they anticipate being targeted versus when they do not. By examining how often a receiver approaches or exceeds their maximum acceleration frontier in each scenario, we can evaluate whether effort remains consistent regardless of play assignment.
+
+Another direction involves refining our definition of effort to more accurately reflect its relationship with performance. While our current metrics measure how often a RB attains near-maximal acceleration, they do not directly account for whether this effort translates into successful play outcomes. Given the subjective and context-dependent nature of effort, future research may involve integrating additional situational or performance-based variables to better link exertion with effectiveness. 
+
+
+## Acknowledgements
+Many thanks to Sam Ventura from the Buffalo Sabres for his guidance and mentorship throughout the project. We are grateful for the time and dedication Sam has put into this work.
+We also want to thank Quang Nguyen for his instruction, advice, and support throughout the summer research experience. Quang had provided us with the resources necessary to get started with the NFL Big Data Bowl tracking data. Finally, we would like to thank Dr. Ron Yurko and the CMSAC teaching staff for sharing with us their knowledge and inspiring ideas. 
+
+
+## References
+<div style="text-indent: -1.5em; padding-left: 1.5em; margin-bottom: 1em;">
+[1] Morin, J., Mat, Y. L., Osgnach, C., Barnabò, A., Pilati, A., Samozino, P., & Di Prampero, P. E. (2021). Individual acceleration-speed profile in-situ: A proof of concept in professional football players. Journal of Biomechanics, 123, 110524. https://doi.org/10.1016/j.jbiomech.2021.110524
+</div>
+
+<div style="text-indent: -1.5em; padding-left: 1.5em; margin-bottom: 1em;">
+[2] Michael Lopez, Thompson Bliss, Ally Blake, Paul Mooney, and Addison Howard. NFL Big Data Bowl 2025. https://kaggle.com/competitions/nfl-big-data-bowl-2025, 2024. Kaggle.
+</div>
+
+<div style="text-indent: -1.5em; padding-left: 1.5em; margin-bottom: 1em;">
+[3] Hader, K., Mendez-Villanueva, A., Palazzi, D., Ahmaidi, S., & Buchheit, M. (2016). Metabolic Power Requirement of Change of Direction Speed in Young Soccer Players: Not All Is What It Seems. PloS one, 11(3), e0149839. https://doi.org/10.1371/journal.pone.0149839
+</div>
 
 ### Tab 1: Saquon Barkley  (QGAM)
 ```{r}
@@ -509,23 +628,7 @@ eff_function_nlrq_plotly <- function(name, graph = FALSE) {
 
 ```
 
-
-#### Metric #2: Quantile Generalized Additive Model
-
-- This metric quantifies *how often* a runnng back comes close to their maximal acceleration capacity.
-- **Assumption of this effort metric:** high acceleration and/or high speed movements are effortful.
-- For each running back, two regression models with adaptive spline bases were fitted to the 0.98 quantiles of positive and negative acceleration, respectively, both as functions of running speed. A vertical line at the 0.99 quantile of speed was also drawn. 
-- This metric was derived by 
-
-             [LATEX equation] 
-
-where di is the shortest distance from each point to its corresponding quantile regression line (either for positive or negative acceleration) or to the vertical line at the 0.99 quantile of speed.
-
-   - For points outside the quantile regression lines and/or the vertical line, the distance di was set to 0. 
-   - For negative acceleration points, **the effort score[change]** was penalized with by a factor of 0.5 as deceleration is deemed less effortful.
    
-   
-### Qgam
 
 ```{r}
 #| label: effort-metric-one
@@ -752,43 +855,6 @@ fig5
 ```
 
 
-### Validation Model: 
-
-As a way to validate our effort metrics, we developed an Expected Points Added (EPA) over expected model. EPA is derived from Expected Points (EP), which estimates how many points a team is likely to score on that drive. EPA is the difference of EP before the play and after the play. We chose to model EPA because the metric gives value to how a play contributes to helping a team score. By correlating the residuals of the model with our effort metrics, we could quantify how much effort contributes to EPA.
-
-For our model, we only used predictor variables at the time of the handoff to the RB. Utilizing full play metrics creates data leakage, as EPA can only be calculated after a play is over. 
-
-We are interested in predicting EPA using the following variables:
-
- - Game context
-   - Home field advantage
-   - Quarter
-   - Down
-   - Score differential
-   
- - Play context
-   - Yards to go to a first down
-   - Yards to go to the endzone
-   - Number of blockers in front of the RB
-   - Number of defenders within 5 yards of the RB
-   - Offensive formation
-   - Run concept
- - RB characteristics
-   - Speed
-   - Directional acceleration
-   - Weight
-   - Coordinates of RB on field
- - Nearest defender characteristics
-   - Speed
-   - Directional acceleration
-   - Angle with the RB
-   - Distance to RB
-
-After finalizing our variable selection, we utilized 5-fold cross validation, ensuring each game was in a different fold to reduce possible dependence. We used a random forest model due to its fair accuracy and its propensity to avoid overfitting.
-
-
-###  Top Running backs
-
 ```{r}
 ##| label: percentile-lines-regression
 ##| fig-cap: "Percentage of total points that lie in between the percentile $P_{99}$ and $P_{99}-3$"
@@ -995,9 +1061,6 @@ fig2
 
 
 
-
-### linear regression
-
 ```{r}
 #| label: linear-regression
 #| fig-cap: "Linear quantile regression for acceleration(mph/s) vs speed(mph)"
@@ -1188,8 +1251,6 @@ eff_function("Saquon Barkley", graph = TRUE)
 
 
 
-### scatterplot
-
 ```{r}
 #| label: results-scatterplot
 #| fig-cap: "correlation between metric #1 and metric #2"
@@ -1228,21 +1289,6 @@ dis_scatter |>
                            fontface = "italic")
   
 ```
-
-
-
-
-## Discussion
-
-**[Give your conclusions and summarize what you have learned with regards to your question of interest. Are there any limitations with the approaches you used? What do you think are the next steps to follow-up your project?]**
-
-- AS profile framework didn't translate into football (maybe it works for other sports where players don't get tackled but just run at hand-off)
-- there are many dependencies in NFL
-- this is a productive place to start quantifying effort
-- further research should look into taking into account other factors/variables
-
-
-## Appendix
 
 
 
@@ -1431,9 +1477,6 @@ dis_scatter |>
 :::
 
 
-## Acknowledgements
-
-Many thanks to Sam Ventura, from the Buffalo Sabres, for his guidance and mentorship throughout the project. We are grateful for the time and dedication Sam has put into this project. We also want to thank Quang Nguyen for his instruction, advice, and support throughout the summer research experience. Quang had provided us with the resources necessary to get started with the NFL Big Data Bowl tracking data. Finally, we would like to thank Dr. Ron Yurko and the CMSAC teaching staff for sharing with us their knowledge and inspiring ideas. 
 
 
 
