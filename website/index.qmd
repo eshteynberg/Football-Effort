@@ -124,6 +124,213 @@ $$
 \text{Effort} = \frac{\sum_{i=1}^n \Psi}{n}
 $$
 
+::: {.panel-tabset}
+
+### Tab 1: Saquon Barkley  (QGAM)
+```{r}
+#| label: effort-metric-two
+#| fig-cap: "....."
+#| message: false
+#| warning: false
+#| cache: true
+
+load("web_data/tracking_bc2.Rdata")
+load("web_data/player_runs_modeling.Rdata")
+
+eff_function_nlrq <- function(name, graph = FALSE) {
+  # Choosing player name
+  player_runs <- tracking_bc |> 
+    filter(displayName == name)
+  
+  # Making the modeling data frame
+  player_runs_modeling <- player_runs |> 
+    select(s_mph, dir_a_mpsh, gameId, displayName, bc_id, playId, frameId)
+  
+  # Data to be in model
+  data_pos <- player_runs_modeling |> 
+    filter(dir_a_mpsh >= 0)
+  
+  data_neg <- player_runs_modeling |> 
+    filter(dir_a_mpsh < 0)
+  
+  # Models
+  nlrq_pos <- nlrq(dir_a_mpsh ~ x * s_mph^2 + y * s_mph + z,
+                   data = data_pos,
+                   tau = .95,
+                   start = list(x = 10, y = 2, z = 5))
+
+  nlrq_neg <- nlrq(dir_a_mpsh ~ x * s_mph^2 + y * s_mph + z,
+                   data = data_neg,
+                   tau = .05,
+                   start = list(x = 10, y = 2, z = 5))
+  
+  data_pos_final <- data_pos |> 
+    mutate(nlrq_pred = nlrq_pos$m$fitted(),
+           diff_a = nlrq_pred - dir_a_mpsh)
+  
+  data_neg_final <- data_neg |> 
+    mutate(nlrq_pred = nlrq_neg$m$fitted(),
+           diff_a = dir_a_mpsh - nlrq_pred)
+  
+  
+  # Combining positive and negative vals
+  player_runs_test_preds <- rbind(data_pos_final, data_neg_final)
+  
+  if (graph == TRUE) {
+    out_line <- player_runs_test_preds |> 
+      filter(diff_a <= 0)
+    
+    player_graph <- player_runs_test_preds |> 
+      ggplot(aes(x = s_mph, y = dir_a_mpsh)) +
+      geom_point(alpha=.6, color="grey2")+
+      geom_point(data = out_line, aes(x = s_mph, y = dir_a_mpsh, fill = "Adjusted distance = 0"), size = 4, 
+                 stroke = 1.2, color="black", shape = 21) +
+      geom_line(data = data_pos_final, aes(y = nlrq_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.2) +
+      geom_line(data = data_neg_final, aes(y = nlrq_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.2) +
+      geom_hline(aes(yintercept = 0), color = "black", lwd = 1.2, lty = 2) +
+      scale_color_manual("Line", values = c("#D55E00", "#0072B2", "goldenrod")) +
+      scale_fill_manual("Point", values = c("#b3b3b3")) +
+      labs(x = "Speed (mph)",
+           y = "Acceleration (mph/s)",
+           title = paste0(name, "'s effort score: 18.65%")) +
+      theme_minimal(base_size=16) +
+      theme(plot.title = element_text(face = "bold.italic",
+                                      size = 18, 
+                                      hjust = .5),
+            legend.title = element_text(face = "bold"),
+            axis.title = element_text(face = "bold"),
+            legend.text=element_text(size=15),
+            plot.caption = element_text(face = "italic", size = 8),
+            legend.key.height = unit(1.4, "cm"),
+            legend.position = "right") +
+      xlim(0, 25) +
+      ylim(-15, 15)
+    return(player_graph)
+  }
+  return(player_runs_test_preds)
+}
+eff_function_nlrq("Saquon Barkley", graph = TRUE)
+
+
+nlrq_combined <- purrr::map(rbs_names, eff_function_nlrq) |>
+  bind_rows()
+
+nlrq_dis <- nlrq_combined |> 
+  mutate(diff_adj = ifelse(diff_a <= 0, 0, diff_a),
+         dis_score = 1 / (1 + diff_adj),
+         dis_score_adj = ifelse(dir_a_mpsh < 0, dis_score / 2, dis_score))
+
+# Play level
+nlrq_dis_play <- nlrq_dis |> 
+  group_by(gameId, playId, bc_id, displayName) |> 
+  summarize(dis_score = mean(dis_score_adj)) |> 
+  ungroup()
+
+# Player level
+nlrq_dis_player <- nlrq_dis |> 
+  group_by(bc_id, displayName) |> 
+  summarize(dis_score = mean(dis_score_adj)) |> 
+  ungroup() |> 
+  arrange(desc(dis_score)) |> 
+  mutate(dis_score = round(dis_score, 4) *100,
+         rank = 1:n())
+
+```
+
+
+### Tab 2: James Cook
+
+```{r}
+#| label: james-cook
+#| fig-cap: "....."
+#| message: false
+#| warning: false
+#| cache: true
+
+load("web_data/tracking_bc2.Rdata")
+load("web_data/player_runs_modeling.Rdata")
+
+eff_function_nlrq <- function(name, graph = FALSE) {
+  # Choosing player name
+  player_runs <- tracking_bc |> 
+    filter(displayName == name)
+  
+  # Making the modeling data frame
+  player_runs_modeling <- player_runs |> 
+    select(s_mph, dir_a_mpsh, gameId, displayName, bc_id, playId, frameId)
+  
+  # Data to be in model
+  data_pos <- player_runs_modeling |> 
+    filter(dir_a_mpsh >= 0)
+  
+  data_neg <- player_runs_modeling |> 
+    filter(dir_a_mpsh < 0)
+  
+  # Models
+  nlrq_pos <- nlrq(dir_a_mpsh ~ x * s_mph^2 + y * s_mph + z,
+                   data = data_pos,
+                   tau = .95,
+                   start = list(x = 10, y = 2, z = 5))
+
+  nlrq_neg <- nlrq(dir_a_mpsh ~ x * s_mph^2 + y * s_mph + z,
+                   data = data_neg,
+                   tau = .05,
+                   start = list(x = 10, y = 2, z = 5))
+  
+  data_pos_final <- data_pos |> 
+    mutate(nlrq_pred = nlrq_pos$m$fitted(),
+           diff_a = nlrq_pred - dir_a_mpsh)
+  
+  data_neg_final <- data_neg |> 
+    mutate(nlrq_pred = nlrq_neg$m$fitted(),
+           diff_a = dir_a_mpsh - nlrq_pred)
+  
+  
+  # Combining positive and negative vals
+  player_runs_test_preds <- rbind(data_pos_final, data_neg_final)
+  
+  if (graph == TRUE) {
+    out_line <- player_runs_test_preds |> 
+      filter(diff_a <= 0)
+    
+    player_graph <- player_runs_test_preds |> 
+      ggplot(aes(x = s_mph, y = dir_a_mpsh)) +
+      geom_point(alpha=.6, color="grey2")+
+      geom_point(data = out_line, aes(x = s_mph, y = dir_a_mpsh, fill = "Adjusted distance = 0"), size = 4, 
+                 stroke = 1.2, color="black", shape = 21) +
+      geom_line(data = data_pos_final, aes(y = nlrq_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.2) +
+      geom_line(data = data_neg_final, aes(y = nlrq_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.2) +
+      geom_hline(aes(yintercept = 0), color = "black", lwd = 1.2, lty = 2) +
+      scale_color_manual("Line", values = c("#D55E00", "#0072B2", "goldenrod")) +
+      scale_fill_manual("Point", values = c("#b3b3b3")) +
+      labs(x = "Speed (mph)",
+           y = "Acceleration (mph/s)",
+           title = paste0(name, "'s effort score: 22.60%")) +
+      theme_minimal(base_size=16) +
+      theme(plot.title = element_text(face = "bold.italic",
+                                      size = 18, 
+                                      hjust = .5),
+            legend.title = element_text(face = "bold"),
+            axis.title = element_text(face = "bold"),
+            legend.text=element_text(size=15),
+            plot.caption = element_text(face = "italic", size = 8),
+            legend.key.height = unit(1.4, "cm"),
+            legend.position = "right") +
+      xlim(0, 25) +
+      ylim(-15, 15)
+    return(player_graph)
+  }
+  return(player_runs_test_preds)
+}
+
+
+eff_function_nlrq("James Cook", graph = TRUE)
+```
+:::
+
+
+
+
 ### Metric #2: Quantile Generalized Additive Model (QGAM)
 
 As an alternative to the fixed-form quadratic quantile regression, we implemented a QGAM to allow greater flexibility in estimating the individual maximum acceleration frontier. A GAM is particularly well-suited to our context, as the true A-S profile may vary in form across players and is unlikely to consistently follow a simple quadratic curve. We continued to use the 0.95 quantile to capture near-maximal acceleration while mitigating sensitivity to outliers.
@@ -463,208 +670,6 @@ We also want to thank Quang Nguyen for his instruction, advice, and support thro
 [3] Hader, K., Mendez-Villanueva, A., Palazzi, D., Ahmaidi, S., & Buchheit, M. (2016). Metabolic Power Requirement of Change of Direction Speed in Young Soccer Players: Not All Is What It Seems. PloS one, 11(3), e0149839. https://doi.org/10.1371/journal.pone.0149839
 </div>
 
-### Tab 1: Saquon Barkley  (QGAM)
-```{r}
-#| label: effort-metric-two
-#| fig-cap: "....."
-#| message: false
-#| warning: false
-#| cache: true
-
-load("web_data/tracking_bc2.Rdata")
-load("web_data/player_runs_modeling.Rdata")
-
-eff_function_nlrq <- function(name, graph = FALSE) {
-  # Choosing player name
-  player_runs <- tracking_bc |> 
-    filter(displayName == name)
-  
-  # Making the modeling data frame
-  player_runs_modeling <- player_runs |> 
-    select(s_mph, dir_a_mpsh, gameId, displayName, bc_id, playId, frameId)
-  
-  # Data to be in model
-  data_pos <- player_runs_modeling |> 
-    filter(dir_a_mpsh >= 0)
-  
-  data_neg <- player_runs_modeling |> 
-    filter(dir_a_mpsh < 0)
-  
-  # Models
-  nlrq_pos <- nlrq(dir_a_mpsh ~ x * s_mph^2 + y * s_mph + z,
-                   data = data_pos,
-                   tau = .95,
-                   start = list(x = 10, y = 2, z = 5))
-
-  nlrq_neg <- nlrq(dir_a_mpsh ~ x * s_mph^2 + y * s_mph + z,
-                   data = data_neg,
-                   tau = .05,
-                   start = list(x = 10, y = 2, z = 5))
-  
-  data_pos_final <- data_pos |> 
-    mutate(nlrq_pred = nlrq_pos$m$fitted(),
-           diff_a = nlrq_pred - dir_a_mpsh)
-  
-  data_neg_final <- data_neg |> 
-    mutate(nlrq_pred = nlrq_neg$m$fitted(),
-           diff_a = dir_a_mpsh - nlrq_pred)
-  
-  
-  # Combining positive and negative vals
-  player_runs_test_preds <- rbind(data_pos_final, data_neg_final)
-  
-  if (graph == TRUE) {
-    out_line <- player_runs_test_preds |> 
-      filter(diff_a <= 0)
-    
-    player_graph <- player_runs_test_preds |> 
-      ggplot(aes(x = s_mph, y = dir_a_mpsh)) +
-      geom_point(alpha=.6, color="grey2")+
-      geom_point(data = out_line, aes(x = s_mph, y = dir_a_mpsh, fill = "Adjusted distance = 0"), size = 4, 
-                 stroke = 1.2, color="black", shape = 21) +
-      geom_line(data = data_pos_final, aes(y = nlrq_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.2) +
-      geom_line(data = data_neg_final, aes(y = nlrq_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.2) +
-      geom_hline(aes(yintercept = 0), color = "black", lwd = 1.2, lty = 2) +
-      scale_color_manual("Line", values = c("#D55E00", "#0072B2", "goldenrod")) +
-      scale_fill_manual("Point", values = c("#b3b3b3")) +
-      labs(x = "Speed (mph)",
-           y = "Acceleration (mph/s)",
-           title = paste0(name, "'s effort score: 18.65%")) +
-      theme_minimal(base_size=16) +
-      theme(plot.title = element_text(face = "bold.italic",
-                                      size = 18, 
-                                      hjust = .5),
-            legend.title = element_text(face = "bold"),
-            axis.title = element_text(face = "bold"),
-            legend.text=element_text(size=15),
-            plot.caption = element_text(face = "italic", size = 8),
-            legend.key.height = unit(1.4, "cm"),
-            legend.position = "right") +
-      xlim(0, 25) +
-      ylim(-15, 15)
-    return(player_graph)
-  }
-  return(player_runs_test_preds)
-}
-eff_function_nlrq("Saquon Barkley", graph = TRUE)
-
-
-nlrq_combined <- purrr::map(rbs_names, eff_function_nlrq) |>
-  bind_rows()
-
-nlrq_dis <- nlrq_combined |> 
-  mutate(diff_adj = ifelse(diff_a <= 0, 0, diff_a),
-         dis_score = 1 / (1 + diff_adj),
-         dis_score_adj = ifelse(dir_a_mpsh < 0, dis_score / 2, dis_score))
-
-# Play level
-nlrq_dis_play <- nlrq_dis |> 
-  group_by(gameId, playId, bc_id, displayName) |> 
-  summarize(dis_score = mean(dis_score_adj)) |> 
-  ungroup()
-
-# Player level
-nlrq_dis_player <- nlrq_dis |> 
-  group_by(bc_id, displayName) |> 
-  summarize(dis_score = mean(dis_score_adj)) |> 
-  ungroup() |> 
-  arrange(desc(dis_score)) |> 
-  mutate(dis_score = round(dis_score, 4) *100,
-         rank = 1:n())
-
-```
-
-
-
-### Tab 2: James Cook
-
-```{r}
-#| label: james-cook
-#| fig-cap: "....."
-#| message: false
-#| warning: false
-#| cache: true
-
-load("web_data/tracking_bc2.Rdata")
-load("web_data/player_runs_modeling.Rdata")
-
-eff_function_nlrq <- function(name, graph = FALSE) {
-  # Choosing player name
-  player_runs <- tracking_bc |> 
-    filter(displayName == name)
-  
-  # Making the modeling data frame
-  player_runs_modeling <- player_runs |> 
-    select(s_mph, dir_a_mpsh, gameId, displayName, bc_id, playId, frameId)
-  
-  # Data to be in model
-  data_pos <- player_runs_modeling |> 
-    filter(dir_a_mpsh >= 0)
-  
-  data_neg <- player_runs_modeling |> 
-    filter(dir_a_mpsh < 0)
-  
-  # Models
-  nlrq_pos <- nlrq(dir_a_mpsh ~ x * s_mph^2 + y * s_mph + z,
-                   data = data_pos,
-                   tau = .95,
-                   start = list(x = 10, y = 2, z = 5))
-
-  nlrq_neg <- nlrq(dir_a_mpsh ~ x * s_mph^2 + y * s_mph + z,
-                   data = data_neg,
-                   tau = .05,
-                   start = list(x = 10, y = 2, z = 5))
-  
-  data_pos_final <- data_pos |> 
-    mutate(nlrq_pred = nlrq_pos$m$fitted(),
-           diff_a = nlrq_pred - dir_a_mpsh)
-  
-  data_neg_final <- data_neg |> 
-    mutate(nlrq_pred = nlrq_neg$m$fitted(),
-           diff_a = dir_a_mpsh - nlrq_pred)
-  
-  
-  # Combining positive and negative vals
-  player_runs_test_preds <- rbind(data_pos_final, data_neg_final)
-  
-  if (graph == TRUE) {
-    out_line <- player_runs_test_preds |> 
-      filter(diff_a <= 0)
-    
-    player_graph <- player_runs_test_preds |> 
-      ggplot(aes(x = s_mph, y = dir_a_mpsh)) +
-      geom_point(alpha=.6, color="grey2")+
-      geom_point(data = out_line, aes(x = s_mph, y = dir_a_mpsh, fill = "Adjusted distance = 0"), size = 4, 
-                 stroke = 1.2, color="black", shape = 21) +
-      geom_line(data = data_pos_final, aes(y = nlrq_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.2) +
-      geom_line(data = data_neg_final, aes(y = nlrq_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.2) +
-      geom_hline(aes(yintercept = 0), color = "black", lwd = 1.2, lty = 2) +
-      scale_color_manual("Line", values = c("#D55E00", "#0072B2", "goldenrod")) +
-      scale_fill_manual("Point", values = c("#b3b3b3")) +
-      labs(x = "Speed (mph)",
-           y = "Acceleration (mph/s)",
-           title = paste0(name, "'s effort score: 22.60%")) +
-      theme_minimal(base_size=16) +
-      theme(plot.title = element_text(face = "bold.italic",
-                                      size = 18, 
-                                      hjust = .5),
-            legend.title = element_text(face = "bold"),
-            axis.title = element_text(face = "bold"),
-            legend.text=element_text(size=15),
-            plot.caption = element_text(face = "italic", size = 8),
-            legend.key.height = unit(1.4, "cm"),
-            legend.position = "right") +
-      xlim(0, 25) +
-      ylim(-15, 15)
-    return(player_graph)
-  }
-  return(player_runs_test_preds)
-}
-
-
-eff_function_nlrq("James Cook", graph = TRUE)
-```
-:::
 
 ```{r, fig.width=17, fig.height= 7}
 #| label: combined
