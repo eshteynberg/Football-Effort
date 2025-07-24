@@ -35,21 +35,6 @@ library(patchwork)
 
 ```
 
-```{r}
-#| fig-width: 8
-#| fig-height: 4
-#| out.width: "85%"
-#| fig-align: "center"
-
-
-include_graphics("docs/images/NFL2022.png")
-
-```
-
-*Image source: [The Tower](https://sbadamsthetower.com/7756/sports/2022-2023-nfl-preview/)*
-
-
-
 
 ---
 
@@ -66,34 +51,37 @@ The objective of this study is twofold: (1) to improve estimation of individual 
 
 ## Data
 
-The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsored analytics competition that provides game, play, player, and tracking data recorded at 10 frames per second.2 The dataset covers weeks 1-9 of the 2022 NFL season, comprising 136 games. 
+The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsored analytics competition that provides game, play, player, and tracking data recorded at 10 frames per second.^2^ The dataset covers weeks 1-9 of the 2022 NFL season, comprising 136 games. 
 
+### Pre-processing: 
 
-### Pre-processing steps: 
+* Using the tracking data, we first standardized players’ positional coordinates and orientations so that all plays move from left to right, with the bottom-left corner of the field set as the “origin.”
 
-  - Using the tracking data, we first standardized players’ positional coordinates and orientations so that all plays move from left to right, with the bottom-left corner of the field set as the “origin.”
-  - After merging the data, we filtered for running plays where the RB was the ball carrier and restricted the sample to RBs with at least 20 rushing attempts, yielding 69 players. Each observation corresponds to a single frame of tracking data.
+* After merging the data, we filtered for running plays where the RB was the ball carrier and restricted the sample to RBs with at least 20 rushing attempts, yielding 69 players. Each observation corresponds to a single frame of tracking data.
 
 ### Feature engineering:
 
- - The tracking data provided only the magnitude of acceleration. To be able to differentiate between positive acceleration and negative acceleration (deceleration), we derived a variable for directional acceleration by multiplying the given magnitude of acceleration by the cosine of the angle of player motion. Speed and directional acceleration were converted to miles per hour (mph) and miles per hour per second (mph/s), respectively.
- - We also created several variables, all measured at the time of handoff, for our validation model (see Methods) as follows:
+* The tracking data provided only the magnitude of acceleration. To be able to differentiate between positive acceleration and negative acceleration (deceleration), we derived a variable for *directional* acceleration by multiplying the given magnitude of acceleration by the cosine of the angle of player motion. Speed and directional acceleration were converted to miles per hour (mph) and miles per hour per second (mph/s), respectively.
 
-    - Distance to nearest defender: compute the Euclidean distance between all defenders’ and RB’s positional coordinates; select the minimum distance 
-     - Number of defenders within 5 yards of the RB: compute the Euclidean distance between all defenders’ and RB’s positional coordinates; count the number of defenders whose distance is at most 5 yards 
-     - Number of blockers in front of the RB: the number of blockers (defined as offensive linemen or fullbacks) whose x-coordinates exceed that of the RB
+* We also created several variables, all measured at the time of handoff, for our validation model *(see Methods)* as follows:
 
-
-
+  * **Distance to nearest defender**: compute the Euclidean distance between all defenders’ and RB’s positional coordinates; select the minimum distance 
+  
+  * **Number of defenders within 5 yards of the RB**: compute the Euclidean distance between all defenders’ and RB’s positional coordinates; count the number of defenders whose distance is at most 5 yards 
+  
+  * **Number of blockers in front of the RB**: the number of blockers (defined as offensive linemen or fullbacks) whose x-coordinates exceed that of the RBs
 
 
 ## Methods
 
 ### Motivation
 
-Our initial approach was adapted from prior research building individual acceleration-speed (A-S) profiles of soccer players [@AS] For each RB, we plot the frame-level A-S profile based on the maximal acceleration they could generate for every possible running speed as follows:
+Our initial approach was adapted from the aforementioned prior research building individual A-S profiles of soccer players.^1^ For each RB, we plot the frame-level A-S profile based on the maximal acceleration they could generate for every possible running speed using *Morin et al., 2021* procedure as follows:
 
+
+<p style="text-indent: 2em;">
 Within a speed interval ranging between 3 mph and the RB’s maximal speed, the two maximal acceleration values attained for each 0.2 mph sub-intervals were selected. A first linear regression was fitted to these speed-acceleration points. Outlier points lying outside of the 95% confidence interval around the linear function were removed. A final linear regression was fitted to the remaining points, defining what we refer to as the “maximum acceleration frontier.”
+</p>
 
 To compute “effort” from the A-S profile, the regression line was first shifted downward by 0.25 units to include points sufficiently close to the estimated frontier. Effort was then defined as the percentage of a player’s points that fell above this relaxed threshold. 
 

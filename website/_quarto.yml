@@ -18,13 +18,10 @@ format:
     toc-depth: 2  
     toc-location: left
     toc-title: "Contents"
-    date: last-modified
-    published-title: "Last updated"
-    date-format: "MMMM D, YYYY"
+    date: "July 25, 2025"
+    published-title: false
     bibliography: "bib/library.bib" # Edit the contents of this file
     highlight-style: arrow
-    theme: 
-      light: navy blue
-      dark: journal
+    theme: cosmo
     fontsize: 15pt
     css: styles.css
