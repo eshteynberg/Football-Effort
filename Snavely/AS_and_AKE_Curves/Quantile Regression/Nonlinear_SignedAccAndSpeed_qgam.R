@@ -436,7 +436,7 @@ plot1 <- dis_scatter_s0_a0 |>
         legend.position = "none",
         axis.title = element_text(face = "bold")) +
   ggrepel::geom_text_repel(data = label_names_a_nlrq, aes(label = displayName), 
-                           size = 5, max.overlaps = 15,
+                           size = 4, max.overlaps = 15,
                            fontface = "italic")
 
 plot2 <- dis_scatter_s0_a0 |> 
@@ -455,7 +455,7 @@ plot2 <- dis_scatter_s0_a0 |>
         legend.position = "none",
         axis.title = element_text(face = "bold")) +
   ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
-                           size = 5, max.overlaps = 15,
+                           size = 4, max.overlaps = 15,
                            fontface = "italic")
 
 
@@ -465,22 +465,24 @@ library(patchwork)
                   subtitle = "Each point represents the single frame of highest acceleration recorded for each RB",
                   theme = theme(plot.title = element_text(size = 18, 
                                                           face = "bold",
-                                                          hjust = .5)))
+                                                          hjust = .5),
+                                plot.subtitle = element_text(size = 16,
+                                                             face = "italic",
+                                                             hjust = .5)))
 
 
 #effort metric (#1 or #2) vs max speed-----------
 
 
-dis_scatter_s0_a0 |> 
+plot3 <- dis_scatter_s0_a0 |> 
   ggplot(aes(x = dis_score, y = max_s_mph)) +
   geom_hline(aes(yintercept = mean(max_s_mph)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_vline(aes(xintercept = mean(dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
   # geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
-  labs(title = "Blah",
-       x = "Effort metric #1 (Quadratic quantile regression)",
-       y = "Max Speed")+
+  labs(x = "Effort metric #1 (Quadratic quantile regression)",
+       y = "Max speed (mph)")+
   theme_minimal(base_size=16) +
   theme(plot.title = element_text(face = "bold.italic",
                                   size = 18, 
@@ -488,18 +490,17 @@ dis_scatter_s0_a0 |>
         legend.position = "none",
         axis.title = element_text(face = "bold")) +
   ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
-                           size = 5, max.overlaps = 15,
+                           size = 4, max.overlaps = 15,
                            fontface = "italic")
-dis_scatter_s0_a0 |> 
+plot4 <- dis_scatter_s0_a0 |> 
   ggplot(aes(x = dis_score_qgam, y = max_s_mph)) +
   geom_hline(aes(yintercept = mean(max_s_mph)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_vline(aes(xintercept = mean(dis_score_qgam)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
   # geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
-  labs(title = "Blah",
-       x = "Effort metric #2 (QGAM)",
-       y = "Max Speed")+
+  labs(x = "Effort metric #2 (QGAM)",
+       y = "")+
   theme_minimal(base_size=16) +
   theme(plot.title = element_text(face = "bold.italic",
                                   size = 18, 
@@ -507,22 +508,32 @@ dis_scatter_s0_a0 |>
         legend.position = "none",
         axis.title = element_text(face = "bold")) +
   ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
-                           size = 5, max.overlaps = 15,
+                           size = 4, max.overlaps = 15,
                            fontface = "italic")
+
+library(patchwork)
+(plot3 | plot4) + 
+  plot_annotation(title = "RBs with high max speeds do not necessarily exhibit high effort levels",
+                  subtitle = "Each point represents the single frame of highest speed recorded for each RB",
+                  theme = theme(plot.title = element_text(size = 18, 
+                                                          face = "bold",
+                                                          hjust = .5),
+                                plot.subtitle = element_text(size = 16,
+                                                             face = "italic",
+                                                             hjust = .5)))
 
 
 #effort metric (#1 and #2) vs num of rushes-----------
 
-dis_scatter_s0_a0 |> 
+plot5 <- dis_scatter_s0_a0 |> 
   ggplot(aes(x = dis_score, y = num_of_rushes)) +
   geom_hline(aes(yintercept = mean(num_of_rushes)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_vline(aes(xintercept = mean(dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
   # geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
-  labs(title = "Blah",
-       x = "Effort metric #1 (Quadratic quantile regression)",
-       y = "Num of rushes")+
+  labs(x = "Effort metric #1 (Quadratic quantile regression)",
+       y = "Number of rushes")+
   theme_minimal(base_size=16) +
   theme(plot.title = element_text(face = "bold.italic",
                                   size = 18, 
@@ -530,19 +541,18 @@ dis_scatter_s0_a0 |>
         legend.position = "none",
         axis.title = element_text(face = "bold")) +
   ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
-                           size = 5, max.overlaps = 15,
+                           size = 4, max.overlaps = 15,
                            fontface = "italic")
 
-dis_scatter_s0_a0 |> 
+plot6 <- dis_scatter_s0_a0 |> 
   ggplot(aes(x = dis_score_qgam, y = num_of_rushes)) +
   geom_hline(aes(yintercept = mean(num_of_rushes)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_vline(aes(xintercept = mean(dis_score_qgam)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
   # geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
-  labs(title = "Blah",
-       x = "Effort metric #2 (QGAM)",
-       y = "Num of rushes")+
+  labs(x = "Effort metric #2 (QGAM)",
+       y = "")+
   theme_minimal(base_size=16) +
   theme(plot.title = element_text(face = "bold.italic",
                                   size = 18, 
@@ -550,8 +560,18 @@ dis_scatter_s0_a0 |>
         legend.position = "none",
         axis.title = element_text(face = "bold")) +
   ggrepel::geom_text_repel(data = label_names, aes(label = displayName), 
-                           size = 5, max.overlaps = 15,
+                           size = 4, max.overlaps = 15,
                            fontface = "italic")
+
+library(patchwork)
+(plot5 | plot6) + 
+  plot_annotation(title = "RBs with more rushes do not necessarily exhibit high effort levels",
+                  theme = theme(plot.title = element_text(size = 18, 
+                                                          face = "bold",
+                                                          hjust = .5),
+                                plot.subtitle = element_text(size = 16,
+                                                             face = "italic",
+                                                             hjust = .5)))
 
 
 
