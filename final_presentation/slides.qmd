@@ -18,7 +18,61 @@ format:
       url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
 ---
 
-# SOME INTRODUCTION
+## What Does It Mean To Give 100%?
 
-# Background
+* put the Saquon plot
 
+## Background
+
+* Effort is intangible and subjective
+
+* Currently no objective measure of effort exists in the NFL
+
+* Idea: previous research has explored pro soccer players reaching theoretical max acceleration capacity [^1]
+
+* Goals:
+
+  * Improve estimation of individual acceleration-speed (A-S) profiles using statistical models
+  
+  * Assess how frequently players operate near or exceed their limits as a proxy for effort
+
+[^1]: Morin, et al. 2021. “Individual Acceleration-Speed Profile in-Situ: A Proof of Concept in Professional Football Players.” Journal of Biomechanics 123: 110524.
+
+  
+## Data: 2022 NFL Season [^2]
+
+* Game, play, player data from Weeks 1-9: 136 games
+
+* Player tracking data: each observation is a frame in 10 fps
+
+* Pre-processing:
+
+  * Filtered to running plays where a running back (RB) is the ball carrier
+
+  * Trimmed each play to frames between handoff and end of play
+  
+  * Derived directional acceleration
+  
+[^2]: Courtesy of NFL Big Data Bowl 2025
+
+## Motivation: Estimate each RB's theoretical maximum acceleration frontier (Morin et al., 2021)
+
+
+## Effort Metric #1
+
+## Effort Metric #2
+
+## Back-up RBs consistently lead in both effort metrics
+
+## Effort metrics do not show a strong correlation with play outcomes
+
+## Discussion
+
+* A-S-based effort alone does not explain performance
+
+* Another way to validate effort metrics?
+
+* Change the definition of effort? Incorporate game context?
+
+
+# Appendix
