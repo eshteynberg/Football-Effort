@@ -438,8 +438,8 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE, regress = FA
                  size = 4, fill = "#b3b3b3", col = "black", stroke = 1.2, shape = 21)+
       labs(x = "Speed (mph)",
            y = "Magnitude of \nacceleration (mph/s)",
-           title = "We consider points close to and above a player's \nmaximum acceleration frontier effortful",
-           subtitle = paste0("Acceleration-Speed (A-S) profile for ", name)) +
+          # title = "We consider points close to and above a player's \nmaximum acceleration frontier effortful",
+           title = paste0(name, "'s effort: ", round(eff$eff_metric_perc,3), "%")) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -477,6 +477,10 @@ eff_function("Rex Burkhead", graph = TRUE)
 eff_function("Javonte Williams", graph = TRUE)
 eff_function("Saquon Barkley", graph = TRUE)
 eff_function("Saquon Barkley", regress = TRUE)
+eff_function("Christian McCaffrey", graph = TRUE)
+eff_function("Khalil Herbert", graph = TRUE)
+
+
 
 # Eff metric for all players ----------------------------------------------
 

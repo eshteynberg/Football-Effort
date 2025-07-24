@@ -835,6 +835,15 @@ Cook_Saquon_qgam <- image_append(c(Barkley_qgam, Cook_qgam))
 image_write(Cook_Saquon_qgam, "Cook_Saquon_qgam.png")
 
 
+#Linear AS
+cmc <- image_read("final_presentation/images/Linear_AS_CMC.png")
+kh <- image_read("final_presentation/images/Linear_AS_KH.png")
+cmc <- image_scale(cmc, "x500") 
+kh <- image_scale(kh, "x500") 
+
+CMC_KH_AS <- image_append(c(cmc, kh)) 
+image_write(CMC_KH_AS, "CMC_KH_AS.png")
+
 
 # Nonparam regression 2 splines  ------------------------------------------
 
