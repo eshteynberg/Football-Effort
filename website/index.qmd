@@ -173,7 +173,7 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE, regress = FA
         text = ~paste0("Speed: ", round(s_mph, 2), " mph<br>Accel: ", round(a_mpsh, 2), " m/s²"),
         hoverinfo = "text",
         marker = list(color = "black", size = 6, opacity = 0.6),
-        name = "Player Data"
+        name = "Frames"
       ) |>
       
       # Top acceleration points (filled circles w/ black stroke)
@@ -214,18 +214,18 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE, regress = FA
           )
         ),
         title = list(
-          text = "We consider points close to and above a player's<br><i>maximum acceleration frontier</i> effortful",
-          font = list(size = 18)
+          text = paste0(
+            "We consider points close to and above a player’s<br>",
+            "<i>maximum acceleration frontier</i> effortful",
+            "<br><sub><span style='font-size:14px;'>Acceleration-Speed (A-S) profile for ", name, "</span></sub>"
+          ),
+          font = list(size = 18),
+          x = 0.5,
+          xanchor = "center"
         ),
         xaxis = list(title = "Speed (mph)", titlefont = list(size = 14)),
         yaxis = list(title = "Magnitude of acceleration (m/s²)", titlefont = list(size = 14)),
-        legend = list(
-          x = 1.05,
-          y = 0.5,
-          xanchor = "left",
-          yanchor = "middle",
-          font = list(size = 13)
-        ),
+        showlegend = FALSE,
         hoverlabel = list(font = list(size = 13)),
         margin = list(l = 70, r = 130, b = 60, t = 100),
         showlegend = TRUE
@@ -247,7 +247,7 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE, regress = FA
   return(eff)
 }
 
-# TESTING
+# TEST
 eff_function("Saquon Barkley", graph = TRUE)
 
 ```
