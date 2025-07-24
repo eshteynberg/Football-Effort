@@ -514,10 +514,24 @@ max_speed_acc |>
                            fontface = "italic")
 
 max_speed_acc |> 
-  ggplot(aes(x = eff_metric_perc, y = A_0)) +
-  geom_point()
+  ggplot(aes(x = eff_metric_perc, y = S_0)) +
+  geom_point(size = 2, alpha = .8, col = "#0072B2") +
+  geom_point(data = data_labels, size = 2, alpha = .8, col = "#D50A0A") +
+  labs(title = "Linear A-S model produces unrealistic \ntheoretical maximum speeds",
+       x = "% of effortful points",
+       y = expression(bold("Theoretical maximum speed (S"[0]*")"))) +
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        axis.title = element_text(face = "bold")) +
+  ggrepel::geom_text_repel(data = data_labels, aes(label = displayName), 
+                           size = 5, max.overlaps = 15,
+                           fontface = "italic")
 
 
+
+# Rankings
 eff_movements_top <- eff_movements |> 
   slice_max(eff_metric, n = 5) |> 
   mutate(type = "high")

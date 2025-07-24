@@ -94,14 +94,31 @@ mean(RMSE$rmse)
 epa_test_preds |> 
   ggplot(aes(x=gam_pred, y=epa_actual))+
   geom_point(alpha = .7, col = "grey2") +
-  geom_abline(intercept = 0, slope = 1, lwd = 1.3, col = "red", lty = 2) +
+  geom_abline(intercept = 0, slope = 1, lwd = 1.3, col = "#D50A0A", lty = 2) +
   xlim(-10, 6)
 
 # Random forest graph
 epa_test_preds |> 
   ggplot(aes(x=epa_rf_pred, y=epa_actual))+
   geom_point(alpha = .7, col = "grey2") +
-  geom_abline(intercept = 0, slope = 1, lwd = 1.3, col = "red", lty = 2) +
+  geom_abline(intercept = 0, slope = 1, lwd = 1.3, col = "#D50A0A", lty = 2) +
+  labs(title = "Random forest model poorly predicts extreme values of EPA",
+       subtitle = "Points closer to the red line indicate more accurate predictions",
+       x = "Random Forest Prediction (Expected EPA)",
+       y = "Actual EPA")+
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        axis.title = element_text(face = "bold"),
+        plot.subtitle = element_text(face = "italic",
+                                     hjust = .5))
+
+# Residuals graph
+epa_test_preds |> 
+  ggplot(aes(x=epa_rf_pred, y=epa_actual))+
+  geom_point(alpha = .7, col = "grey2") +
+  geom_smooth(method = "lm", lwd = 1.3, col = "#D50A0A") +
   labs(title = "Random forest model is poor at predicting extreme values of EPA",
        subtitle = "For accurate predictions, we want points to be close to the red line",
        x = "Random Forest Prediction (Expected EPA)",

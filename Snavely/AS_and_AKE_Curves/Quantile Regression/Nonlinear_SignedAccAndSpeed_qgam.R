@@ -318,7 +318,7 @@ qgam_dis_player_gt |>
   tab_header(title = md("**Top and Bottom RBs Ranked \nby Effort Metric #2**")) |>
   cols_label(displayName = "Name", dis_score = "Effort Score (%)", rank = "Rank") |>
   data_color(columns = c(rank),
-             fn = scales::col_numeric(palette = c("#D55E00","white", "#0072B2"), domain = NULL)) |>
+             fn = scales::col_numeric(palette = c("#D50A0A","white", "#0072B2"), domain = NULL)) |>
   gtExtras::gt_theme_espn() |>
   opt_align_table_header(align = "center") |> 
   gtsave(file = "Effort2Rank.png",
@@ -347,7 +347,7 @@ dis_scatter |>
   geom_vline(aes(xintercept = mean(dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
-  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  #geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
   labs(title = "Player effort metrics are positively correlated",
        x = "Effort metric #1 (Quadratic quantile regression)",
        y = "Effort metric #2 (QGAM)")+
@@ -420,16 +420,15 @@ Barkley_and_cook <- dis_scatter_s0_a0 |>
 
 
 #effort metric (#1 or #2) vs max dir accel---------------
-dis_scatter_s0_a0 |> 
+plot1 <- dis_scatter_s0_a0 |> 
   ggplot(aes(x = dis_score, y = max_dir_a_mpsh)) +
   geom_hline(aes(yintercept = mean(max_dir_a_mpsh)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_vline(aes(xintercept = mean(dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names_a_nlrq, size = 3, alpha = .8, color = "#D50A0A") +
-  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
-  labs(title = "Blah",
-       x = "Effort metric #1 (Quadratic quantile regression)",
-       y = "Max Acceleration")+
+  # geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  labs(x = "Effort metric #1 (Quadratic quantile regression)",
+       y = "Max acceleration (mph/s)")+
   theme_minimal(base_size=16) +
   theme(plot.title = element_text(face = "bold.italic",
                                   size = 18, 
@@ -440,16 +439,15 @@ dis_scatter_s0_a0 |>
                            size = 5, max.overlaps = 15,
                            fontface = "italic")
 
-dis_scatter_s0_a0 |> 
+plot2 <- dis_scatter_s0_a0 |> 
   ggplot(aes(x = dis_score_qgam, y = max_dir_a_mpsh)) +
   geom_hline(aes(yintercept = mean(max_dir_a_mpsh)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_vline(aes(xintercept = mean(dis_score_qgam)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
-  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
-  labs(title = "Blah",
-       x = "Effort metric #2 (QGAM)",
-       y = "Max Acceleration")+
+  # geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  labs(x = "Effort metric #2 (QGAM)",
+       y = "")+
   theme_minimal(base_size=16) +
   theme(plot.title = element_text(face = "bold.italic",
                                   size = 18, 
@@ -461,6 +459,14 @@ dis_scatter_s0_a0 |>
                            fontface = "italic")
 
 
+library(patchwork)
+(plot1 | plot2) + 
+  plot_annotation(title = "RBs with high max accelerations do not necessarily exhibit high effort levels",
+                  subtitle = "Each point represents the single frame of highest acceleration recorded for each RB",
+                  theme = theme(plot.title = element_text(size = 18, 
+                                                          face = "bold",
+                                                          hjust = .5)))
+
 
 #effort metric (#1 or #2) vs max speed-----------
 
@@ -471,7 +477,7 @@ dis_scatter_s0_a0 |>
   geom_vline(aes(xintercept = mean(dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
-  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  # geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
   labs(title = "Blah",
        x = "Effort metric #1 (Quadratic quantile regression)",
        y = "Max Speed")+
@@ -490,7 +496,7 @@ dis_scatter_s0_a0 |>
   geom_vline(aes(xintercept = mean(dis_score_qgam)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
-  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  # geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
   labs(title = "Blah",
        x = "Effort metric #2 (QGAM)",
        y = "Max Speed")+
@@ -513,7 +519,7 @@ dis_scatter_s0_a0 |>
   geom_vline(aes(xintercept = mean(dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
-  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  # geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
   labs(title = "Blah",
        x = "Effort metric #1 (Quadratic quantile regression)",
        y = "Num of rushes")+
@@ -533,7 +539,7 @@ dis_scatter_s0_a0 |>
   geom_vline(aes(xintercept = mean(dis_score_qgam)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
   geom_point(size = 3, alpha = .8, color = "#0072B2") +
   geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
-  geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
+  # geom_point(data = Barkley_and_cook, size = 4, alpha = .8, shape = 21, stroke = 1.3, fill = "#D50A0A", col = "black") +
   labs(title = "Blah",
        x = "Effort metric #2 (QGAM)",
        y = "Num of rushes")+

@@ -21,3 +21,4 @@ cor(epa_test_preds$epa_rf_res, ellipse_stats_play$final_ellipse_score)
 cor(epa_test_preds$epa_rf_res, dis_scores_plays$dis_score_mix)
 
 cor(epa_test_preds$epa_rf_res, effort_play$ellipse_score)
+

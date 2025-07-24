@@ -90,6 +90,15 @@ Within a speed interval ranging between 3 mph and the RB’s maximal speed, the 
 
 However, this approach has several limitations. First, it excludes points with speeds below 3 mph from the linear regression model, effectively disregarding low-speed frames—even though effort may still be exerted at lower velocities. Second, the model extrapolates beyond the observed data, leading to unrealistic estimates of theoretical maximum speeds. Third, players with greater athletic ability may be disproportionately penalized. Because the frontier is estimated relative to each player’s own maximal accelerations, players with a greater physical capacity must reach a higher threshold for their frames to be classified as effortful. Finally, the model does not differentiate between acceleration and deceleration; all changes in velocity are treated equally, despite our belief that deceleration requires less effort than acceleration, as it typically demands less metabolic power.^3^
 
+::: {.panel-tabset}
+### Theoretical Max Acceleration (A~0~)
+
+![](photos/A_0_graph.png){width=80%}
+
+### Theoretical Max Speed (S~0~)
+
+![](photos/S_0_graph.png){width=80%}
+:::
 
 ### Metric #1: Quadratic Quantile Regression
 
@@ -131,9 +140,7 @@ EPA was selected as the outcome variable because it reflects the effectiveness o
 The model uses only variables available at the time of handoff to the RB. Including features from later in the play would introduce data leakage, since EPA is calculated only after the play is complete. Predictor variables include:
 
 ::: {.columns}
-
 ::: {.column width="50%"}
-
 #### **Game context**
 * Home field advantage
 * Quarter
@@ -165,7 +172,6 @@ The model uses only variables available at the time of handoff to the RB. Includ
 * Distance to RB
 
 :::
-
 :::
 
 
@@ -175,13 +181,19 @@ We used a random forest model for its ability to capture nonlinear relationships
 
 Our findings indicate that backup RBs consistently exhibit higher frame-level effort across both metrics compared to starters. This may reflect a tendency to capitalize on limited playing time by more frequently approaching or exceeding their individual maximum acceleration frontiers. Playing fewer snaps also likely reduces cumulative fatigue, enabling backups to sustain higher-effort movements when on the field. Conversely, starters may possess greater innate talent, physical ability, or experience, allowing them to achieve comparable or superior performance with less exertion per play.
 
+![](photos/EffMetricsChart.png){width=80%}
+
 The two metrics are positively correlated, as expected given their similar derivation. Both were ultimately designed to capture the same underlying concept: how a RB’s observed acceleration compares to their individual maximum acceleration frontier. 
 
 ### Validation Model
 
+![](photos/Rf_preds.png){width=80%}
+
 Our expected EPA model yielded a root mean squared error (RMSE) of 0.929. Given that EPA values typically range from -10 to +6, this level of error is acceptable. However, the random forest model demonstrates limited accuracy on plays with extreme EPA values. It is plausible to initially speculate that this underperformance stems from the model’s omission of effort as a predictor, impairing its ability to fully explain EPA variation.
 
 The correlations between model residuals and each effort metric were near zero, indicating that the model’s prediction errors are likely not due to the absence of effort-based features, contrary to our initial hypothesis. This suggests that effort—as defined by proximity to the maximum acceleration frontier–does not reliably predict deviations from expected play value, and thus may not necessarily translate to better on-field performance.  
+
+![](photos/EffortCorrelations.png){width=80%}
 
 Further analysis confirms this result: both effort metrics show negligible correlation with several play outcome variables. Taken together, these findings corroborate that effort, by our definition, does not directly contribute to superior results. 
 
