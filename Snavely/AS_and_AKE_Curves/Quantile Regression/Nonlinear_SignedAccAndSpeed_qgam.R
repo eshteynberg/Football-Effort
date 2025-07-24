@@ -58,7 +58,7 @@ eff_function_nlrq <- function(name, graph = FALSE) {
       scale_fill_manual("Point", values = c("#b3b3b3")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name)) +
+           title = paste0(name, "'s effort score: 19.84%")) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -75,8 +75,8 @@ eff_function_nlrq <- function(name, graph = FALSE) {
   }
   return(player_runs_test_preds)
 }
-
 eff_function_nlrq("Christian McCaffrey", graph = TRUE)
+eff_function_nlrq("Khalil Herbert", graph = TRUE)
 eff_function_nlrq("Saquon Barkley", graph = TRUE)
 nlrq_combined <- purrr::map(rbs_names, eff_function_nlrq) |>
   bind_rows()
@@ -190,7 +190,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
       scale_fill_manual("Point", values = c("#b3b3b3")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
-           title = paste0(name)) +
+           title = paste0(name, "'s effort score: 18.81%")) +
       theme_minimal(base_size=16) +
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
@@ -209,6 +209,9 @@ eff_function_qgam <- function(name, graph = FALSE) {
 
 eff_function_qgam("James Cook", graph = TRUE)
 eff_function_qgam("Saquon Barkley", graph = TRUE)
+eff_function_qgam("Christian McCaffrey", graph = TRUE)
+eff_function_qgam("Khalil Herbert", graph=TRUE)
+
 
 qgam_combined <- purrr::map(rbs_names, eff_function_qgam) |>
   bind_rows()
@@ -270,7 +273,7 @@ dis_scatter <- qgam_dis_player |>
 
 label_names <- dis_scatter |> 
   filter(rank_qgam <= 5 | rank <= 5 | rank_qgam >=65 
-         | rank >= 65 | displayName %in% c("Saquon Barkley", "James Cook"))
+         | rank >= 65)
 
 Barkley_and_cook <- dis_scatter |> 
   filter(displayName %in% c("Saquon Barkley", "James Cook"))

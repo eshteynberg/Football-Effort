@@ -19,3 +19,5 @@ qgam
 kableExtra
 gridExtra
 patchwork
+gt
+gtExtras

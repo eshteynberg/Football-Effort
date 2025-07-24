@@ -32,7 +32,8 @@ library(knitr)
 library(kableExtra)
 library(gridExtra)
 library(patchwork)
-
+library(gt)
+library(gtExtras)
 ```
 
 
@@ -74,6 +75,28 @@ The data were obtained from the NFL Big Data Bowl 2025, an annual league-sponsor
 
   * **Number of blockers in front of the RB**: the number of blockers (defined as offensive linemen or fullbacks) whose x-coordinates exceed that of the RBs
 
+```{r}
+#| label: data-table
+#| message: false
+#| warning: false
+#| cache: true
+load("web_data/tracking_bc3.Rdata")
+
+tracking_bc |> 
+  select(gameId, playId, bc_id, displayName, frameId, event, x, y, s_mph, dir_a_right_mpsh) |> 
+  mutate(s_mph = round(s_mph, 2),
+         dir_a_right_mpsh = round(dir_a_right_mpsh, 2)) |> 
+  filter(displayName == "Christian McCaffrey") |> 
+  slice_head(n = 5) |> 
+  gt() |> 
+  tab_header(title = md("**Cleaned tracking data**")) |>
+  cols_label(gameId = "Game", playId = "Play", bc_id = "Ball Carrier", displayName = "Name",
+             fameId = "Frame", event = "Event", x = "X Coordinate", y = "Y Coordinate", s_mph = "Speed (mph)", 
+             dir_a_right_mpsh = "Directional Acceleration (mph/s)") |> 
+  gtExtras::gt_theme_espn() |> 
+  cols_align(align = "left")
+```
+
 
 ## Methods
 
@@ -91,7 +114,6 @@ Within a speed interval ranging between 3 mph and the RB’s maximal speed, the 
 
 ```{r}
 #| label: original-plot
-#| fig-cap: "......"
 #| message: false
 #| warning: false
 #| cache: true
@@ -601,7 +623,6 @@ eff_function_qgam <- function(name, graph = FALSE) {
 
 ```{r}
 #| label: second-metric
-#| fig-cap: "testing out a few players"
 #| message: false
 #| warning: false
 #| cache: true
@@ -741,11 +762,11 @@ We used a random forest model for its ability to capture nonlinear relationships
 ## Results
 
 ::: {.columns}
-::: {.column width="50%"}
+::: {.column width="40%"}
 ![](photos_right/Effort1Rank.png){width=60%}
 :::
 
-::: {.column width="50%"}
+::: {.column width="40%"}
 ![](photos_right/Effort2Rank.png){width=60%}
 :::
 :::
