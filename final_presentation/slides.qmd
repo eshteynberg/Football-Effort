@@ -1,0 +1,24 @@
+---
+title: "Tracking the Intangible: Quantifying Effort in NFL Running Backs"
+author: "Emily Shteynberg, Luke Snavely, Sheryl Solorzano"
+date: 07/25/2025
+date-format: long
+format:
+  revealjs:
+    theme: theme.scss
+    smaller: true
+    incremental: true
+    math: mathjax
+    slide-number: c/t
+    embed-resources: true
+    code-line-numbers: false
+    linestretch: 1.25
+    html-math-method:
+      method: mathjax
+      url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+---
+
+# SOME INTRODUCTION
+
+# Background
+
