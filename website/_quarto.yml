@@ -23,5 +23,5 @@ format:
     bibliography: "bib/library.bib" # Edit the contents of this file
     highlight-style: arrow
     theme: cosmo
-    fontsize: 15pt
+    fontsize: 13pt
     css: styles.css
