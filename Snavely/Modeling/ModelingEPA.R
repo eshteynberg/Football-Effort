@@ -38,16 +38,12 @@ rb_modeling <- tracking_def_plays |>
          bc_s_mph, bc_dir_a_mpsh, angle_with_bc, num_blockers_ahead,
          weight, dist_to_bc, num_of_def_5, adj_bc_x, adj_bc_y,
          def_s_mph, def_dir_a_mpsh, offenseFormation, pff_runConceptPrimary,
-         expectedPointsAdded, gameId) |> 
+         expectedPointsAdded, gameId, playId, displayName, frameId) |> 
   left_join(plays_folds) |> 
   mutate(quarter = as.factor(quarter),
          down = as.factor(down),
          offenseFormation = as.factor(offenseFormation),
-         pff_runConceptPrimary = as.factor(pff_runConceptPrimary)) |> 
-  select(-gameId)
-
-
-str(rb_modeling)
+         pff_runConceptPrimary = as.factor(pff_runConceptPrimary))
 
 # Function to estimate EPA and rushingYards
 epa_cv <- function(x) {
@@ -57,7 +53,7 @@ epa_cv <- function(x) {
     filter(fold != x)
   
   # Models for epa
-  epa_rf <- ranger(expectedPointsAdded ~ . - fold, 
+  epa_rf <- ranger(expectedPointsAdded ~ . - fold - gameId - playId - displayName - frameId, 
                    num.trees = 1000, importance = "permutation", 
                    data = train_data)
   gam_fit <- gam(expectedPointsAdded ~ s(score_diff) + home + quarter + down + s(yardsToGo)+ s(yards_from_endzone)+
@@ -69,6 +65,10 @@ epa_cv <- function(x) {
   
   # Predictions
   out <- tibble(
+    gameId = test_data$gameId,
+    playId = test_data$playId,
+    frameId = test_data$frameId,
+    displayName = test_data$displayName,
     epa_rf_pred = (predict(epa_rf, data = test_data))$predictions,
     gam_pred = predict(gam_fit, newdata = test_data),
     epa_actual = test_data$expectedPointsAdded,
@@ -114,15 +114,18 @@ epa_test_preds |>
         plot.subtitle = element_text(face = "italic",
                                      hjust = .5))
 
-# Residuals graph
-epa_test_preds |> 
-  ggplot(aes(x=epa_rf_pred, y=epa_actual))+
+# Combining effort metrics and preds
+res_combined <- epa_test_preds |> 
+  left_join(select(qgam_dis_play_epa, gameId, playId, qgam_dis_score)) |> 
+  left_join(select(nlrq_dis_play_epa, gameId, playId, nlrq_dis_score))
+
+# Residuals dis_scatter# Residuals graph
+epa_plot1 <- res_combined |> 
+  ggplot(aes(x=qgam_dis_score, y=epa_rf_res))+
   geom_point(alpha = .7, col = "grey2") +
-  geom_smooth(method = "lm", lwd = 1.3, col = "#D50A0A") +
-  labs(title = "Random forest model is poor at predicting extreme values of EPA",
-       subtitle = "For accurate predictions, we want points to be close to the red line",
-       x = "Random Forest Prediction (Expected EPA)",
-       y = "Actual EPA")+
+  labs(title = "",
+       x = "Play-level effort metric #1 (Quadratic quantile regression)",
+       y = "Random forest EPA residuals")+
   theme_minimal(base_size=16) +
   theme(plot.title = element_text(face = "bold.italic",
                                   size = 18, 
@@ -131,11 +134,29 @@ epa_test_preds |>
         plot.subtitle = element_text(face = "italic",
                                      hjust = .5))
 
+epa_plot2 <- res_combined |> 
+  ggplot(aes(x=nlrq_dis_score, y=epa_rf_res))+
+  geom_point(alpha = .7, col = "grey2") +
+  labs(title = "",
+       x = "Play-level effort metric #2 (QGAM)",
+       y = "")+
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        axis.title = element_text(face = "bold"),
+        plot.subtitle = element_text(face = "italic",
+                                     hjust = .5))
 
-epa_test_preds |> 
-  ggplot(aes(x=epa_rf_pred, y=epa_rf_res))+
-  geom_point()
-
+library(patchwork)
+(epa_plot1 | epa_plot2) + 
+  plot_annotation(title = "No strong correlation between residuals of EPA model and each effort metric",
+                  theme = theme(plot.title = element_text(size = 18, 
+                                                          face = "bold",
+                                                          hjust = .5),
+                                plot.subtitle = element_text(size = 16,
+                                                             face = "italic",
+                                                             hjust = .5)))
 
 
 # Trying XGBoost ----------------------------------------------------------

@@ -12,6 +12,9 @@ save(tracking_bc,
 save(tracking_bc,
      file = "website/web_data/tracking_bc2.Rdata")
 
+save(tracking_bc,
+     file = "website/web_data/tracking_bc3.Rdata")
+
 save(player_runs_modeling,
      file = "website/web_data/player_runs_modeling.Rdata")
 

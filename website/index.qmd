@@ -224,7 +224,7 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE, regress = FA
           xanchor = "center"
         ),
         xaxis = list(title = "Speed (mph)", titlefont = list(size = 14)),
-        yaxis = list(title = "Magnitude of acceleration (m/s²)", titlefont = list(size = 14)),
+        yaxis = list(title = "Magnitude of acceleration (mph/s)", titlefont = list(size = 14)),
         showlegend = FALSE,
         hoverlabel = list(font = list(size = 13)),
         margin = list(l = 70, r = 130, b = 60, t = 100),
@@ -299,7 +299,7 @@ $$
 #| cache: true
 
 
-load("web_data/tracking_bc2.Rdata")
+load("web_data/tracking_bc3.Rdata")
 load("web_data/player_runs_modeling.Rdata")
 
 eff_function_qgam <- function(name, graph = FALSE) {
@@ -307,7 +307,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
     filter(displayName == name)
 
   player_runs_modeling <- player_runs |> 
-    select(s_mph, dir_a_mpsh, gameId, displayName, bc_id, playId, frameId)
+    select(s_mph, dir_a_mpsh = dir_a_right_mpsh, gameId, displayName, bc_id, playId, frameId)
 
   data_pos <- player_runs_modeling |> filter(dir_a_mpsh >= 0)
   data_neg <- player_runs_modeling |> filter(dir_a_mpsh < 0)
@@ -347,7 +347,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
       geom_line(data = data_pos_final, aes(y = nlrq_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.2) +
       geom_line(data = data_neg_final, aes(y = nlrq_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.2) +
       geom_hline(aes(yintercept = 0), color = "black", lwd = 1.2, lty = 2) +
-      scale_color_manual("Line", values = c("#D55E00", "#0072B2", "goldenrod")) +
+      scale_color_manual("Line", values = c("#D50A0A", "#0072B2", "goldenrod")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
            title = paste0(name, "'s effort Quantile (95%")) +
@@ -450,7 +450,7 @@ fig1 <- fig1 |>
       )
     )
   )
-fig1
+print(fig1)
 ```
 
 
@@ -473,7 +473,7 @@ For each RB, we fit two QGAMs with adaptive spline bases to the 0.95 quantiles o
 #| warning: false
 #| cache: true
 
-load("web_data/tracking_bc2.Rdata")
+load("web_data/tracking_bc3.Rdata")
 load("web_data/player_runs_modeling.Rdata")
 load("web_data/rbs_names.Rdata")
 
@@ -486,7 +486,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
   
   # Modeling dataframe
   player_runs_modeling <- player_runs |> 
-    select(s_mph, dir_a_mpsh, gameId, displayName, bc_id, playId, frameId)
+    select(s_mph, dir_a_mpsh = dir_a_right_mpsh, gameId, displayName, bc_id, playId, frameId)
   
   # Split positive and negative acceleration
   data_pos <- player_runs_modeling |> filter(dir_a_mpsh >= 0)
@@ -541,7 +541,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
       geom_line(data = data_pos_final, aes(y = qgam_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.2) +
       geom_line(data = data_neg_final, aes(y = qgam_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.2) +
       geom_hline(aes(yintercept = 0), color = "black", lwd = 1.2, lty = 2) +
-      scale_color_manual("Line", values = c("#D55E00", "#0072B2")) +
+      scale_color_manual("Line", values = c("#D50A0A", "#0072B2")) +
       labs(
         x = "Speed (mph)",
         y = "Acceleration (mph/s)",

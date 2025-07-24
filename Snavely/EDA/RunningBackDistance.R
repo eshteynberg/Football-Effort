@@ -246,9 +246,7 @@ rb_stats_per_play |>
 
 library(gganimate)
 library(sportyR)
-# install.packages("ggtext")
 library(ggtext)
-# install.packages("magick")  
 library(magick)
 
 # Filtering for the play with the highest avg KE
@@ -312,10 +310,9 @@ anim_save("AnimationA.gif", animation = a_gif)
 just_saquon <- tracking_bc |> 
   filter(playId == 1948,
          gameId == 2022091108) |> 
-  pivot_longer(c(ke, work),
+  pivot_longer(c(s_mph, dir_a_right_mpsh),
                names_to = "metric",
-               values_to = "val") |> 
-  mutate(metric = ifelse(metric == "ke", "KE", "Work"))
+               values_to = "val")
   
 
 b <- just_saquon |> 
@@ -323,8 +320,8 @@ b <- just_saquon |>
   geom_line(lwd = 2) +
   scale_color_manual("Metric", values = c("#0B2265", "#808080")) +
   labs(x = "Frame number since snap", 
-       y = "Energy units",
-       title = "<span style='color: #CC5500;'>S. Barkley</span> kinetic energy and work throughout play") +
+       y = "Speed (mph) and Acceleration (mph/s)",
+       title = "<span style='color: #CC5500;'>S. Barkley</span> speed and acceleration throughout play") +
   theme(plot.title = element_markdown(size = 28,
                                       face = "bold"),
         legend.title = element_text(size = 25,
@@ -334,7 +331,7 @@ b <- just_saquon |>
         axis.text = element_text(size = 25)) +
   transition_reveal(frameId)
 
-b_gif <- animate(b, height = 300, width = 950)
+b_gif <- animate(b, height = 400, width = 950)
 b_gif
 anim_save("AnimationB.gif", animation = b_gif)
 
