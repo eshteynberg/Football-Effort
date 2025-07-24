@@ -1186,11 +1186,6 @@ eff_function("Saquon Barkley", graph = TRUE)
 
 ```
 
-## Results
-
-**[Describe your results. This can include tables and plots showing your results, as well as text describing how your models worked and the appropriate interpretations of the relevant output. (Note: Don’t just write out the textbook interpretations of all model coefficients. Instead, interpret the output that is relevant for your question of interest that is framed in the introduction)]]**
-
-
 
 
 ### scatterplot
@@ -1438,8 +1433,7 @@ dis_scatter |>
 
 ## Acknowledgements
 
-Many thanks to Sam Ventura, from the Buffalo Sabres, for his guidance and mentorship throughout the project. We are grateful for the time and dedication Sam has put into this project.
-We also want to thank Quang Nguyen for his instruction, advice, and support throughout the summer research experience. Quang had provided us with the resources necessary to get started with the NFL Big Data Bowl tracking data. Finally, we would like to thank Dr. Ron Yurko and the CMSAC teaching staff for sharing with us their knowledge and inspiring ideas. 
+Many thanks to Sam Ventura, from the Buffalo Sabres, for his guidance and mentorship throughout the project. We are grateful for the time and dedication Sam has put into this project. We also want to thank Quang Nguyen for his instruction, advice, and support throughout the summer research experience. Quang had provided us with the resources necessary to get started with the NFL Big Data Bowl tracking data. Finally, we would like to thank Dr. Ron Yurko and the CMSAC teaching staff for sharing with us their knowledge and inspiring ideas. 
 
 
 

@@ -47,7 +47,7 @@ rb_modeling <- tracking_def_plays |>
   select(-gameId)
 
 
-
+str(rb_modeling)
 
 # Function to estimate EPA and rushingYards
 epa_cv <- function(x) {
@@ -60,11 +60,17 @@ epa_cv <- function(x) {
   epa_rf <- ranger(expectedPointsAdded ~ . - fold, 
                    num.trees = 1000, importance = "permutation", 
                    data = train_data)
+  gam_fit <- gam(expectedPointsAdded ~ s(score_diff) + home + quarter + down + s(yardsToGo)+ s(yards_from_endzone)+
+                 s(bc_s_mph)+ s(bc_dir_a_mpsh)+ s(angle_with_bc)+ num_blockers_ahead+
+                 s(weight)+ s(dist_to_bc)+ num_of_def_5+ s(adj_bc_x)+ s(adj_bc_y)+
+                 s(def_s_mph)+ s(def_dir_a_mpsh)+ offenseFormation+ pff_runConceptPrimary,
+                 data = train_data)
   
   
   # Predictions
   out <- tibble(
     epa_rf_pred = (predict(epa_rf, data = test_data))$predictions,
+    gam_pred = predict(gam_fit, newdata = test_data),
     epa_actual = test_data$expectedPointsAdded,
     epa_rf_res = epa_actual - epa_rf_pred,
     test_fold = x
@@ -85,11 +91,29 @@ RMSE <- epa_test_preds |>
 # Final RMSE
 mean(RMSE$rmse)
 
+epa_test_preds |> 
+  ggplot(aes(x=gam_pred, y=epa_actual))+
+  geom_point(alpha = .7, col = "grey2") +
+  geom_abline(intercept = 0, slope = 1, lwd = 1.3, col = "red", lty = 2) +
+  xlim(-10, 6)
+
 # Random forest graph
 epa_test_preds |> 
   ggplot(aes(x=epa_rf_pred, y=epa_actual))+
-  geom_point() +
-  geom_abline(intercept = 0, slope = 1)
+  geom_point(alpha = .7, col = "grey2") +
+  geom_abline(intercept = 0, slope = 1, lwd = 1.3, col = "red", lty = 2) +
+  labs(title = "Random forest model is poor at predicting extreme values of EPA",
+       subtitle = "For accurate predictions, we want points to be close to the red line",
+       x = "Random Forest Prediction (Expected EPA)",
+       y = "Actual EPA")+
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        axis.title = element_text(face = "bold"),
+        plot.subtitle = element_text(face = "italic",
+                                     hjust = .5))
+
 
 epa_test_preds |> 
   ggplot(aes(x=epa_rf_pred, y=epa_rf_res))+
