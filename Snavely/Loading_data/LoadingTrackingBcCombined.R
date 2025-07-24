@@ -21,7 +21,6 @@ tracking <- tracking |>
     o = ifelse(o > 360, o - 360, o)
   )
 
-# Don't care about pre-snap plays
 tracking <- tracking |> 
   filter(frameType != "BEFORE_SNAP")
 
@@ -39,7 +38,9 @@ tracking <- tracking |>
     s_y = dir_y * s,
     # directional acceleration
     a_x = dir_x * a,
-    a_y = dir_y * a
+    a_y = dir_y * a,
+    a_x2 = ((s_x - lag(s_x)) / 0.1),
+    a_y2 = ((s_y - lag(s_y)) / 0.1)
   )  
 
 # Filtering for all running back plays
@@ -82,7 +83,9 @@ tracking_bc <- tracking_rb_runs |>
          s_mph = s * (3600 / 1760),
          a_mpsh = a * (3600 / 1760),
          dir_a = a*cos(dir_rad),
-         dir_a_mpsh = dir_a*(3600/1760))
+         dir_a_mpsh = dir_a*(3600/1760),
+         dir_a_right = (s_x * a_x2 + s_y * a_y2) / sqrt(s_x ^ 2 + s_y^2),
+         dir_a_right_mpsh = dir_a_right * (3600/1760))
 
 tracking_bc_after_contact <- tracking_bc |> 
   group_by(gameId, playId) |> 

@@ -1,69 +1,6 @@
 library(tidyverse)
 library(qgam)
 
-# Player Test -------------------------------------------------------------
-set.seed(1)
-# Choosing player name
-player_runs <- tracking_bc |> 
-  filter(displayName == "Saquon Barkley")
-
-# 5 folds
-N_FOLDS <- 5
-
-# # Making sure plays are in the same fold
-plays_folds <- player_runs |>
-  distinct(gameId) |> 
-  mutate(fold = sample(rep(1:N_FOLDS, length.out = n())))
-
-# Making the modeling data frame
-player_runs_modeling <- player_runs |> 
-  select(s_mph, dir_a_mpsh, gameId) |> 
-  left_join(plays_folds) |>
-  select(-gameId)
-
-train_data <- player_runs_modeling |> 
-  filter(dir_a_mpsh > 0)
-
-qgam_fit <- qgam(dir_a_mpsh ~ s(s_mph, k = 10, bs = "ad"),
-                 data = train_data,
-                 qu = .99)
-
-plot(train_data$s_mph, qgam_fit$fitted.values)
-
-player_runs_cv <- function(x){
-  test_data <- player_runs_modeling |> 
-    filter(fold == 1) |> 
-    filter(dir_a_mpsh > 0)
-  train_data <- player_runs_modeling |> 
-    filter(fold != 1) |> 
-    filter(dir_a_mpsh > 0)
-  
-  nlrqs <- nlrq(dir_a_mpsh ~ a * s_mph^2 + b * s_mph + c, data = train_data, start = list(a = 2, b = 2, c = 0), tau = .95)
-
-  predict(nlrqs, newdata = test_data)
-  # Modeling
-  qgam_fit <- qgam(dir_a_mpsh ~ s(s_mph, k = 10, bs = "ad"),
-                   data = train_data,
-                   qu = .99)
-  qgam_fit_s <- qgam(s_mph ~ s(dir_a_mpsh, k = 10, bs = "ad"),
-                     data = train_data,
-                     qu = .99)
-  
-  out <- tibble(
-    displayName = "Saquon Barkley",
-    qgam_pred = predict(qgam_fit_s, newdata = test_data),
-    actual_acc = test_data$dir_a_mpsh,
-    actual_speed = test_data$s_mph,
-    res = abs(actual_acc - qgam_pred),
-    test_fold = x
-  )
-  return(out)
-}
-
-# Saquon
-player_runs_test_preds <- map(1:N_FOLDS, player_runs_cv) |> 
-  bind_rows()
-
 # nlrq model --------------------------------------------------------------
 
 eff_function_nlrq <- function(name, graph = FALSE) {
@@ -73,7 +10,7 @@ eff_function_nlrq <- function(name, graph = FALSE) {
   
   # Making the modeling data frame
   player_runs_modeling <- player_runs |> 
-    select(s_mph, dir_a_mpsh, gameId, displayName, bc_id, playId, frameId)
+    select(s_mph, dir_a_mpsh = dir_a_right_mpsh, gameId, displayName, bc_id, playId, frameId)
   
   # Data to be in model
   data_pos <- player_runs_modeling |> 
@@ -139,7 +76,7 @@ eff_function_nlrq <- function(name, graph = FALSE) {
   return(player_runs_test_preds)
 }
 
-eff_function_nlrq("James Cook", graph = TRUE)
+eff_function_nlrq("Christian McCaffrey", graph = TRUE)
 eff_function_nlrq("Saquon Barkley", graph = TRUE)
 nlrq_combined <- purrr::map(rbs_names, eff_function_nlrq) |>
   bind_rows()
@@ -163,6 +100,12 @@ nlrq_dis_player <- nlrq_dis |>
   arrange(desc(dis_score)) |> 
   mutate(dis_score = round(dis_score, 4) *100,
          rank = 1:n())
+
+# Player level to merge with EPA preds in ModelingEPA.R
+nlrq_dis_play_epa <- nlrq_dis |> 
+  group_by(gameId, playId, displayName) |> 
+  summarize(nlrq_dis_score = mean(dis_score_adj)) |> 
+  ungroup()
 
 ## GT TABLE FOR NLRQ
 nlrq_dis_player_gt <- nlrq_dis_player |> 
@@ -192,7 +135,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
   
   # Making the modeling data frame
   player_runs_modeling <- player_runs |> 
-    select(s_mph, dir_a_mpsh, gameId, displayName, bc_id, playId, frameId)
+    select(s_mph, dir_a_mpsh = dir_a_right_mpsh, gameId, displayName, bc_id, playId, frameId)
   
   # Data to be in model
   data_pos <- player_runs_modeling |> 
@@ -258,7 +201,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
             plot.caption = element_text(face = "italic", size = 8),
             legend.key.height = unit(1.4, "cm")) +
       xlim(0, 25) +
-      ylim(-15, 15)
+      ylim(-20, 20)
     return(player_graph)
   }
   return(player_runs_test_preds)
@@ -281,6 +224,12 @@ qgam_dis_play <- qgam_dis |>
   summarize(dis_score = mean(dis_score_adj)) |> 
   ungroup()
 
+# Play level to merge with EPA preds from ModelingEPA.R
+qgam_dis_play_epa <- qgam_dis |> 
+  group_by(gameId, playId, displayName) |> 
+  summarize(qgam_dis_score = mean(dis_score_adj)) |> 
+  ungroup()
+
 # Player level
 qgam_dis_player <- qgam_dis |> 
   group_by(bc_id, displayName) |> 
@@ -290,21 +239,6 @@ qgam_dis_player <- qgam_dis |>
   mutate(dis_score = round(dis_score, 4) *100,
          rank = 1:n())
 
-# Only looking at positive acceleration
-qgam_dis_player_pos <- qgam_dis |> 
-  filter(dir_a_mpsh >= 0) |> 
-  group_by(bc_id, displayName) |> 
-  summarize(dis_score_pos_qgam = mean(dis_score_adj)) |> 
-  ungroup() |> 
-  arrange(desc(dis_score_pos_qgam)) |> 
-  mutate(dis_score = round(dis_score_pos_qgam, 4) *100,
-         rank = 1:n())
-
-qgam_dis_play_pos <- qgam_dis |> 
-  filter(dir_a_mpsh >= 0) |> 
-  group_by(gameId, playId, bc_id, displayName) |> 
-  summarize(dis_score = mean(dis_score_adj)) |> 
-  ungroup()
 
 ## GT TABLE FOR QGAM
 qgam_dis_player_gt <- qgam_dis_player |> 
@@ -320,7 +254,7 @@ qgam_dis_player_gt |>
   data_color(columns = c(rank),
              fn = scales::col_numeric(palette = c("#D50A0A","white", "#0072B2"), domain = NULL)) |>
   gtExtras::gt_theme_espn() |>
-  opt_align_table_header(align = "center") |> 
+  opt_align_table_header(align = "center") #|> 
   gtsave(file = "Effort2Rank.png",
          vwidth = 380,
          vheight = 600)
