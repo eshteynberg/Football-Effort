@@ -36,7 +36,7 @@ format:
 
   * Improve estimation of individual acceleration-speed (A-S) profiles using statistical models
   
-  * Assess how frequently players operate near or exceed their physical limits as a proxy for effort
+  * Assess how frequently players operate near or exceed their physical limits as a **proxy for effort**
 
 [^1]: Morin, et al. 2021. “Individual Acceleration-Speed Profile in-Situ: A Proof of Concept in Professional Football Players.” Journal of Biomechanics 123: 110524.
 
@@ -104,11 +104,11 @@ $$
   * Christian McCaffrey: 16.52%
   * Khalil Herbert: 18.81%
 
-## Back-up RBs consistently lead in both effort metrics
+## Back-up RBs Consistently Lead in Both Effort Metrics
 
 ![](images/eff1_vs_eff2.png){fig-align="center" width="90%"}
 
-## Effort metrics do not show a strong correlation with play outcomes
+## Effort Metrics Do Not Show a Strong Correlation with Play Outcomes
 
 ![](images/effort_corr.png){width="90%"}
 
@@ -142,3 +142,79 @@ $$
 
 ![](images/Effort2Rank.png){style="transform: scale(0.65); transform-origin: top left;"}
 :::
+
+## Validating Effort: Does Effort Explain Parts of Play Success that Context and Situation Don't?
+
+EPA model: random forest using predictors available only at time of handoff
+
+
+::: {.columns}
+
+::: {.column width="25%" .fragment}
+**Game context**
+
+* Home field advantage
+
+* Quarter
+
+* Down
+
+* Score differential
+
+:::
+
+::: {.column width="25%" .fragment}
+
+**RB characteristics**
+
+* Speed
+
+* Directional acceleration
+
+* Weight
+
+* Positional coordinates of RB on field
+
+:::
+
+::: {.column width="25%" .fragment}
+
+**Nearest defender characteristics**
+
+* Speed
+
+* Directional acceleration
+
+* Angle with the RB
+
+* Distance to RB
+
+:::
+
+::: {.column width="25%" .fragment}
+
+**Play context**
+
+* Yards to go to a first down
+
+* Yards to go to the endzone
+
+* Number of blockers in front of the RB
+
+* Number of defenders within 5 yards of the RB
+
+* Offensive formation
+
+* Run concept
+
+:::
+
+:::
+
+## Validation Model Results: RF Model Poorly Predicts Extreme Values of EPA
+
+![](images/Rf_preds.png){width=80%}
+
+## Validation Model Results: No Strong Correlation Between Residuals of EPA Model and Each Effort Metric
+
+![](images/EPAresiduals.png){width="100%" height="400"}
