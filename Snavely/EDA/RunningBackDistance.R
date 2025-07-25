@@ -260,9 +260,9 @@ christian <- tracking_rb_runs |>
                               club == "CAR" & displayName != "Christian McCaffrey" ~ "#007FC8",
                               club == "football" ~ "#964B00",
                               displayName == "Christian McCaffrey" ~ "#D50A0A"),
-         size = case_when(club == "NO" ~ 5,
-                          club == "CAR" ~ 5,
-                          club == "football" ~ 3))
+         size = case_when(club == "NO" ~ 7,
+                          club == "CAR" ~ 7,
+                          club == "football" ~ 5))
 
 # Field characteristics
 field_params <- list(
@@ -287,7 +287,11 @@ a <- field_background +
   geom_point(data = christian,
              aes(120 - x, 160 / 3 - y),
              size = christian$size,
-             color = christian$team_col) +
+             fill = christian$team_col,
+             color = "black",
+             stroke = 1.1,
+             shape = 21,
+             alpha = .8) +
   labs(title = "<span style='color: #ceb53b;'> <br> New Orleans Saints</span> @ <span style='color: #007FC8;'>Carolina Panthers</span>, <br>week 3 of the 2022 NFL season",
        subtitle = "Q3: (7:16) C.McCaffrey left end pushed ob at NO 44 for 18 yards (P.Williams)") +
   theme(plot.subtitle = element_text(face = "italic",
