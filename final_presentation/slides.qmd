@@ -57,10 +57,36 @@ format:
 
 ## Motivation: Estimate each RB's theoretical maximum acceleration frontier (Morin et al., 2021)
 
+* Effort = % of a player's points (frames) above the relaxed regression line
 
-## Effort Metric #1
+![](images/linear_AS_CMC_KH.png){width="100%" height="400"}
 
-## Effort Metric #2
+## Effort Metric #1: Quadratic Quantile Regression
+
+![](images/Christian_Khalil_nlrq.png){width="100%" height="400"}
+
+## Effort Metric #2: Quantile Generalized Additive Model
+
+![](images/Christian_Khalil_qgam.png){width="100%" height="400"}
+## Computing Effort
+
+::: {.callout-note title="Average frame-level effort" style="font-size: 1.5em;"}
+$$
+\Psi_i = \begin{cases}
+  \frac{1}{1+d_i} & a_i\geq 0 \\
+  \frac{1}{2}\cdot\frac{1}{1+d_i} & a_i<0
+  \end{cases} \quad \implies \quad \text{Effort} = \frac{\sum_{i=1}^n \Psi}{n}
+$$
+:::
+
+* Effort Metric #1:
+  * Christian McCaffrey: 16.09%
+  * Khalil Herbert: 19.84%
+  
+* Effort Metric #2:
+  * Christian McCaffrey: 16.52%
+  * Khalil Herbert: 18.81%
+
 
 ## Back-up RBs consistently lead in both effort metrics
 

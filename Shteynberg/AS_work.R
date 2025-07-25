@@ -836,13 +836,31 @@ image_write(Cook_Saquon_qgam, "Cook_Saquon_qgam.png")
 
 
 #Linear AS
-cmc <- image_read("final_presentation/images/Linear_AS_CMC.png")
-kh <- image_read("final_presentation/images/Linear_AS_KH.png")
+cmc <- image_read("final_presentation/images/linear_AS_Christian.png")
+kh <- image_read("final_presentation/images/linear_AS_Khalil.png")
 cmc <- image_scale(cmc, "x500") 
 kh <- image_scale(kh, "x500") 
 
-CMC_KH_AS <- image_append(c(cmc, kh)) 
-image_write(CMC_KH_AS, "CMC_KH_AS.png")
+linear_AS_CMC_KH <- image_append(c(cmc, kh)) 
+image_write(linear_AS_CMC_KH, "linear_AS_CMC_KH.png")
+
+#qgam
+cmc_qgam <- image_read("final_presentation/images/Christian_qgam.png")
+kh_qgam <- image_read("final_presentation/images/Khalil_qgam.png")
+cmc_qgam <- image_scale(cmc_qgam, "x500") 
+kh_qgam <- image_scale(kh_qgam, "x500") 
+
+Christian_Khalil_qgam <- image_append(c(cmc_qgam, kh_qgam)) 
+image_write(Christian_Khalil_qgam, "Christian_Khalil_qgam.png")
+
+#nlrq
+cmc_nlrq <- image_read("final_presentation/images/Christian_nlrq.png")
+kh_nlrq <- image_read("final_presentation/images/Khalil_nlrq.png")
+cmc_nlrq <- image_scale(cmc_nlrq, "x500") 
+kh_nlrq <- image_scale(kh_nlrq, "x500") 
+
+Christian_Khalil_nlrq <- image_append(c(cmc_nlrq, kh_nlrq)) 
+image_write(Christian_Khalil_nlrq, "Christian_Khalil_nlrq.png")
 
 
 # Nonparam regression 2 splines  ------------------------------------------
