@@ -439,8 +439,9 @@ eff_function <- function(name, graph = FALSE, player_table = FALSE, regress = FA
       labs(x = "Speed (mph)",
            y = "Magnitude of \nacceleration (mph/s)",
           # title = "We consider points close to and above a player's \nmaximum acceleration frontier effortful",
-           title = paste0(name, "'s effort: ", round(eff$eff_metric_perc,3), "%")) +
+           title = paste0(name, "'s effort score: ", round(eff$eff_metric_perc,3), "%")) +
       theme_minimal(base_size=16) +
+      ylim(0, 22)+
       theme(plot.title = element_text(face = "bold.italic",
                                       size = 18, 
                                       hjust = .5),
