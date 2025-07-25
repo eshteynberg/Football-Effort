@@ -249,21 +249,19 @@ library(sportyR)
 library(ggtext)
 library(magick)
 
-# Filtering for the play with the highest avg KE
+# Christian animation
 # Week 1: Giants @ Titans
-play_1948 <- plays |> 
-  filter(playId == 1948,
-         gameId == 2022091108)
+View(play_2462)
 
-saquon <- tracking_rb_runs |> 
-  filter(playId == 1948,
-         gameId == 2022091108) |> 
-  mutate(team_col = case_when(club == "TEN" ~ "#808080",
-                              club == "NYG" & displayName != "Saquon Barkley" ~ "#0B2265",
+christian <- tracking_rb_runs |> 
+  filter(playId == 2462,
+         gameId == 2022092500) |> 
+  mutate(team_col = case_when(club == "NO" ~ "#ceb53b",
+                              club == "CAR" & displayName != "Christian McCaffrey" ~ "#007FC8",
                               club == "football" ~ "#964B00",
-                              displayName == "Saquon Barkley" ~ "#CC5500"),
-         size = case_when(club == "TEN" ~ 5,
-                          club == "NYG" ~ 5,
+                              displayName == "Christian McCaffrey" ~ "#D50A0A"),
+         size = case_when(club == "NO" ~ 5,
+                          club == "CAR" ~ 5,
                           club == "football" ~ 3))
 
 # Field characteristics
@@ -281,17 +279,17 @@ field_background <- geom_football(
   display_range = "in_bounds_only",
   x_trans = 60,
   y_trans = 26.6667,
-  xlims = c(30, 112),
+  xlims = c(45, 90),
   color_updates = field_params
 )
 
 a <- field_background +
-  geom_point(data = saquon,
+  geom_point(data = christian,
              aes(120 - x, 160 / 3 - y),
-             size = saquon$size,
-             color = saquon$team_col) +
-  labs(title = "<span style='color: #808080;'> <br> New York Giants</span> @ <span style='color: #0B2265;'>Tennessee Titans</span>, <br>week 1 of the 2022 NFL season",
-       subtitle = "Q3: (12:45) S. Barkley left end pushed out of bounds at TEN 22 for 68 (K. Byard)") +
+             size = christian$size,
+             color = christian$team_col) +
+  labs(title = "<span style='color: #ceb53b;'> <br> New Orleans Saints</span> @ <span style='color: #007FC8;'>Carolina Panthers</span>, <br>week 3 of the 2022 NFL season",
+       subtitle = "Q3: (7:16) C.McCaffrey left end pushed ob at NO 44 for 18 yards (P.Williams)") +
   theme(plot.subtitle = element_text(face = "italic",
                                      hjust = .5,
                                      size = 25,
@@ -300,34 +298,34 @@ a <- field_background +
                                   hjust = .5,
                                   size = 30,
                                   lineheight = 1.2)) +
-  transition_time(saquon$frameId)
+  transition_time(christian$frameId)
 
 # Animating the football play and saving it
-a_gif <- animate(a, height = 600, width = 950)
+a_gif <- animate(a, height = 600, width = 950, fps = 20)
 a_gif
 anim_save("AnimationA.gif", animation = a_gif)
 
-just_saquon <- tracking_bc |> 
-  filter(playId == 1948,
-         gameId == 2022091108) |> 
+just_christian <- tracking_bc |> 
+  filter(playId == 2462,
+         gameId == 2022092500) |> 
   pivot_longer(c(s_mph, dir_a_right_mpsh),
                names_to = "metric",
                values_to = "val")
   
 
-b <- just_saquon |> 
+b <- just_christian |> 
   ggplot(aes(x = frameId - 60, y = val, col = metric)) +
   geom_line(lwd = 2) +
-  scale_color_manual("Metric", values = c("#0B2265", "#808080")) +
+  scale_color_manual("Metric", values = c("#007FC8", "#808080")) +
   labs(x = "Frame number since snap", 
        y = "Speed (mph) and Acceleration (mph/s)",
-       title = "<span style='color: #CC5500;'>S. Barkley</span> speed and acceleration throughout play") +
+       title = "<span style='color: #D50A0A;'>C. McCaffrey</span> speed and acceleration throughout play") +
   theme(plot.title = element_markdown(size = 28,
                                       face = "bold"),
         legend.title = element_text(size = 25,
                                     face = "bold"),
         legend.text = element_text(size = 25),
-        axis.title = element_text(size = 25),
+        axis.title = element_text(size = 15),
         axis.text = element_text(size = 25)) +
   transition_reveal(frameId)
 

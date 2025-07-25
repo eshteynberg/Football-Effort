@@ -91,7 +91,7 @@ tracking_bc |>
   gt() |> 
   tab_header(title = md("**Cleaned tracking data**")) |>
   cols_label(gameId = "Game", playId = "Play", bc_id = "Ball Carrier", displayName = "Name",
-             fameId = "Frame", event = "Event", x = "X Coordinate", y = "Y Coordinate", s_mph = "Speed (mph)", 
+             frameId = "Frame", event = "Event", x = "X Coordinate", y = "Y Coordinate", s_mph = "Speed (mph)", 
              dir_a_right_mpsh = "Directional Acceleration (mph/s)") |> 
   gtExtras::gt_theme_espn() |> 
   cols_align(align = "left")
@@ -395,7 +395,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
 
 
 #Player list (in progress)
-rb_menu <- c("Saquon Barkley", "Rex Burkhead", "D'Andre Swift",
+rb_menu <- c("Christian McCaffrey", "Khalil Herbert", "Saquon Barkley", "Rex Burkhead", "D'Andre Swift",
                 "Samaje Perine", "Joshua Kelley", "Matt Breida", "Alexander Mattison")
 
 # Initialize plot
@@ -628,7 +628,8 @@ eff_function_qgam <- function(name, graph = FALSE) {
 #| cache: true
 
 # Player list
-rb_dd_menu <- c("Saquon Barkley", "James Cook", "Chase Edmonds", "Rachaad White", "D'Andre Swift", 
+rb_dd_menu <- c("Christian McCaffrey", "Khalil Herbert", "Saquon Barkley", 
+                "James Cook", "Chase Edmonds", "Rachaad White", "D'Andre Swift", 
                 "Samaje Perine", "Joshua Kelley", "Alexander Mattison",
                 "Josh Jacobs", "James Cook", "Melvin Gordon")
 
