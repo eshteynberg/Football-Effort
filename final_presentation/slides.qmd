@@ -30,19 +30,19 @@ format:
 
 * Currently no objective measure of effort exists in the NFL
 
-* Idea: previous research has explored pro soccer players reaching theoretical max acceleration capacity[^1]
+* Idea: previous research has explored professional soccer players reaching theoretical max acceleration capacity[^1]
 
 * Goals:
 
   * Improve estimation of individual acceleration-speed (A-S) profiles using statistical models
   
-  * Assess how frequently players operate near or exceed their limits as a proxy for effort
+  * Assess how frequently players operate near or exceed their physical limits as a proxy for effort
 
 [^1]: Morin, et al. 2021. “Individual Acceleration-Speed Profile in-Situ: A Proof of Concept in Professional Football Players.” Journal of Biomechanics 123: 110524.
 
   
 ## Data: 2022 NFL Season[^2]
-
+ 
 * Game, play, player data from Weeks 1-9: 136 games
 
 * Player tracking data: each observation is a frame in 10 fps
@@ -54,6 +54,10 @@ format:
   * Trimmed each play to frames between handoff and end of play
   
   * Derived directional acceleration
+  
+::: {.fragment style="margin-top: -1.4em;"}
+![](images/data_table.png)
+:::
   
 [^2]: Courtesy of NFL Big Data Bowl 2025
 
@@ -77,7 +81,7 @@ format:
 
 ![](images/Christian_Khalil_nlrq.png){width="100%" height="400"}
 
-## Effort Metric #2: Quantile Generalized Additive Model
+## Effort Metric #2: Quantile Generalized Additive Model (QGAM)
 
 ![](images/Christian_Khalil_qgam.png){width="100%" height="400"}
 
@@ -110,11 +114,24 @@ $$
 
 ## Discussion
 
-* A-S-based effort alone does not explain performance
+* Conclusions
 
-* Another way to validate effort metrics?
+  * A-S-based effort alone does not explain performance
+  
+  * Metric quantifies how often a player comes to his acceleration frontier
+  
+* Limitations
 
-* Change the definition of effort? Incorporate game context?
+  * Metric does not fully account for game context
+  
+  * Personalized A-S curves make cross-player comparison difficult
+  
+* Future work
+
+  * Applying metrics to wide receivers
+  
+  * Another way to validate effort metrics?
+
 
 # Appendix
 

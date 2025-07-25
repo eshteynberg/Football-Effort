@@ -87,14 +87,14 @@ tracking_bc |>
   mutate(s_mph = round(s_mph, 2),
          dir_a_right_mpsh = round(dir_a_right_mpsh, 2)) |> 
   filter(displayName == "Christian McCaffrey") |> 
-  slice_head(n = 5) |> 
+  slice_head(n = 3) |> 
   gt() |> 
   tab_header(title = md("**Cleaned tracking data**")) |>
   cols_label(gameId = "Game", playId = "Play", bc_id = "Ball Carrier", displayName = "Name",
              frameId = "Frame", event = "Event", x = "X Coordinate", y = "Y Coordinate", s_mph = "Speed (mph)", 
              dir_a_right_mpsh = "Directional Acceleration (mph/s)") |> 
   gtExtras::gt_theme_espn() |> 
-  cols_align(align = "left")
+  cols_align(align = "left") 
 ```
 
 
