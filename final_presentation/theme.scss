@@ -7,10 +7,9 @@
 // font family
 $font-family-sans-serif: 'Roboto', Arial, sans-serif !default;
 $presentation-heading-font: 'Roboto Slab', Times New Roman, serif  !default;
-$presentation-heading-color: #c41230;
 
 // $presentation-heading-color: #C41230;
-$presentation-h2-font-size: 1.3em;
+$presentation-h2-font-size: 1.25em;
 $presentation-font-smaller: 0.6;
 
 $code-color: #b20e10 !default;
@@ -39,7 +38,6 @@ h2 {
 
   .title {
     font-size: 3.8em;
-    color: #c41230;
   }  
   
   .quarto-title-author, .date {
@@ -63,7 +61,7 @@ h2 {
 .reveal .slides li,
 .reveal .slides ul,
 .reveal .slides ol {
-  font-size: 1.02em;
+  font-size: 1.03em;
   line-height: 1.4;
 }
 

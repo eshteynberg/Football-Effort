@@ -862,6 +862,18 @@ kh_nlrq <- image_scale(kh_nlrq, "x500")
 Christian_Khalil_nlrq <- image_append(c(cmc_nlrq, kh_nlrq)) 
 image_write(Christian_Khalil_nlrq, "Christian_Khalil_nlrq.png")
 
+#effort ranking tables
+eff1_rank <- image_read("final_presentation/images/Effort1Rank.png")
+eff2_rank <- image_read("final_presentation/images/Effort2Rank.png")
+
+eff1_rank <- image_scale(eff1_rank, "x500") 
+spacer <- image_blank(width = 50, height = 500, color = "white")
+eff2_rank <- image_scale(eff2_rank, "x500") 
+
+effort_ranking <- image_append(c(eff1_rank, spacer, eff2_rank)) 
+image_write(effort_ranking, "effort_ranking.png")
+
+
 
 # Nonparam regression 2 splines  ------------------------------------------
 
