@@ -369,7 +369,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
       geom_line(data = data_pos_final, aes(y = nlrq_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.2) +
       geom_line(data = data_neg_final, aes(y = nlrq_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.2) +
       geom_hline(aes(yintercept = 0), color = "black", lwd = 1.2, lty = 2) +
-      scale_color_manual("Line", values = c("#D50A0A", "#0072B2", "goldenrod")) +
+      scale_color_manual("Line", values = c("#D50A0A", "#0072B2")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
            title = paste0(name, "'s effort Quantile (95%")) +
