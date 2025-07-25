@@ -279,7 +279,7 @@ field_background <- geom_football(
   display_range = "in_bounds_only",
   x_trans = 60,
   y_trans = 26.6667,
-  xlims = c(45, 90),
+  xlims = c(30, 100),
   color_updates = field_params
 )
 
@@ -296,12 +296,12 @@ a <- field_background +
                                      vjust = -1),
         plot.title = element_markdown(face = "bold",
                                   hjust = .5,
-                                  size = 30,
+                                  size = 35,
                                   lineheight = 1.2)) +
   transition_time(christian$frameId)
 
 # Animating the football play and saving it
-a_gif <- animate(a, height = 600, width = 950, fps = 20)
+a_gif <- animate(a, height = 600, width = 950, fps = 15)
 a_gif
 anim_save("AnimationA.gif", animation = a_gif)
 
@@ -310,7 +310,8 @@ just_christian <- tracking_bc |>
          gameId == 2022092500) |> 
   pivot_longer(c(s_mph, dir_a_right_mpsh),
                names_to = "metric",
-               values_to = "val")
+               values_to = "val") |> 
+  mutate(metric = ifelse(metric == "s_mph", "Speed (mph)", "Directional Acceleration (mph/s)"))
   
 
 b <- just_christian |> 
@@ -318,18 +319,20 @@ b <- just_christian |>
   geom_line(lwd = 2) +
   scale_color_manual("Metric", values = c("#007FC8", "#808080")) +
   labs(x = "Frame number since snap", 
-       y = "Speed (mph) and Acceleration (mph/s)",
+       y = "Speed and acceleration",
        title = "<span style='color: #D50A0A;'>C. McCaffrey</span> speed and acceleration throughout play") +
-  theme(plot.title = element_markdown(size = 28,
+  theme_minimal() +
+  theme(plot.title = element_markdown(size = 33,
                                       face = "bold"),
-        legend.title = element_text(size = 25,
+        legend.title = element_markdown(size = 25,
                                     face = "bold"),
-        legend.text = element_text(size = 25),
-        axis.title = element_text(size = 15),
-        axis.text = element_text(size = 25)) +
+        legend.text = element_markdown(size = 25),
+        axis.title = element_markdown(size = 25,
+                                  face = "bold"),
+        axis.text = element_markdown(size = 25)) +
   transition_reveal(frameId)
 
-b_gif <- animate(b, height = 400, width = 950)
+b_gif <- animate(b, height = 400, width = 950, fps = 15)
 b_gif
 anim_save("AnimationB.gif", animation = b_gif)
 
@@ -344,8 +347,8 @@ for(i in 2:100){
 }
 
 # Final gif
-ab_gif <-image_read(path = "ab.gif")
-
+ab_gif <-image_write(ab_gif, path = "final_presentation/images/ab.gif")
+image_read(ab_gif, path = "final_presentation/images/ab.gif")
 
 # gt table for Saquon -----------------------------------------------------
 # install.packages("gt")
