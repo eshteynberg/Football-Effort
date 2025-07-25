@@ -1,6 +1,6 @@
 ---
 title: "Tracking the Intangible: Quantifying Effort in NFL Running Backs"
-author: "Emily Shteynberg, Luke Snavely, Sheryl Solorzano"
+author: "Emily Shteynberg, Luke Snavely, Sheryl Solorzano <br> Advisor: Sam Ventura, Buffalo Sabres"
 date: 07/25/2025
 date-format: long
 format:
@@ -61,7 +61,7 @@ format:
   
 [^2]: Courtesy of NFL Big Data Bowl 2025
 
-## Motivation: Estimate Each RB's Theoretical Max acceleration Frontier (Morin et al., 2021)
+## Motivation: Estimate Each RB's Theoretical Max Acceleration Frontier (Morin et al., 2021)
 
 ![](images/linear_AS_CMC_KH.png){width="100%" height="400"}
 
