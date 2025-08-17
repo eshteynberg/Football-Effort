@@ -56,7 +56,44 @@ plays_pass_receivers <- player_play |>
   filter(wasRunningRoute == 1) |> 
   left_join(select(players, nflId, position)) |>
   filter(position == "WR") |>
-  select(gameId, playId, receiver_id = nflId, receiver_club = teamAbbr)
+  select(gameId, playId, receiver_id = nflId, receiver_club = teamAbbr, hadPassReception)
 
+# Only keeping tracking frames of receiver running their routes
 tracking_all <- tracking |> 
-  inner_join(plays_pass_receivers)
+  inner_join(plays_pass_receivers,
+             by = c("gameId", "playId", "nflId" = "receiver_id"))
+
+# Filtering frames for when the ball is snapped (one frame after) to when the pass arrives to a receiver
+tracking_all <- tracking_all |> 
+  group_by(gameId, playId, nflId) |> 
+  mutate(
+    frame_go = frameId[which(event == "ball_snap")][1] + 1,
+    frame_arrived = frameId[which(event == "pass_arrived")][1]
+  ) |> 
+  ungroup() |> 
+  filter(!is.na(frame_go), !is.na(frame_arrived)) |> 
+  filter(frameId >= frame_go & frameId <= frame_arrived)
+
+# Filtering to eliminate wide receivers with low number of routes ran 
+wrs <- plays_pass_receivers |> 
+  count(receiver_id)
+
+summary(wrs) # Median is 88 
+
+wrs <- wrs |> 
+  filter(n >= 88) |> 
+  select(nflId = receiver_id)
+
+# Filtering wide receivers who have ran 25 routes or more
+tracking_filtered <- tracking_all |> 
+  filter(nflId %in% wrs$nflId)
+
+# Calculating directional acceleration for wide receivers
+tracking_wrs <- tracking_filtered |> 
+  mutate(dir_a = ifelse((s_x ^ 2 + s_y^2) == 0, 0, (s_x * a_x2 + s_y * a_y2) / sqrt(s_x ^ 2 + s_y^2)), # accounts for when speed = 0
+         dir_a_mphs = dir_a * (3600/1760),
+         s_mph = s * (3600/1760))
+
+# Wide receiver names
+wrs_names <- tracking_wrs |> 
+  distinct(displayName)

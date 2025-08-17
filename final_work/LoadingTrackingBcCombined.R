@@ -336,6 +336,7 @@ acc_before_contact <- tracking_bc |>
            acc_change > 0.5 ~ "acc",
            acc_change < -0.5~ "dec",
            TRUE ~ "maintain")) 
+
 # Final Data Frame --------------------------------------------------------
 
 tracking_bc_filtered <- tracking_bc |> 
