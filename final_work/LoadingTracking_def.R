@@ -37,7 +37,8 @@ tracking <- tracking |>
     # directional acceleration
     a_x = dir_x * a,
     a_y = dir_y * a,
-    dir_a = a*cos(dir_rad)
+    a_x2 = ((s_x - lag(s_x)) / 0.1),
+    a_y2 = ((s_y - lag(s_y)) / 0.1),
   )  
 
 plays <- plays |> 
@@ -71,14 +72,17 @@ tracking_rb_runs <- tracking_rb_runs |>
   filter(frameId >= frame_handoff & frameId <= frame_end)
 
 # This data frame shows tracking only for running backs
-tracking_bc_quang <- tracking_rb_runs |> 
+tracking_bc_model <- tracking_rb_runs |> 
   filter(nflId == bc_id) |> 
   select(gameId, playId, frameId, 
          bc_id, bc_club,
          bc_x = x, bc_y = y, bc_s = s, bc_a = a,
-         bc_dis = dis, bc_o = o, bc_dir = dir, bc_dir_a=dir_a) |> 
+         bc_dis = dis, bc_o = o, bc_dir = dir,
+         bc_s_x = s_x, bc_s_y = s_y, bc_a_x2 = a_x2, bc_a_y2 = a_y2) |> 
   mutate(adj_bc_x = 110 - bc_x, # Adjusting for the endzone
-         adj_bc_y = bc_y - (160 / 6)) |> 
+         adj_bc_y = bc_y - (160 / 6),
+         dir_a_right = (bc_s_x * bc_a_x2 + bc_s_y * bc_a_y2) / sqrt(bc_s_x ^ 2 + bc_s_y^2),
+         bc_dir_a_mpsh = dir_a_right * (3600/1700)) |> 
   left_join(select(plays, gameId, playId, adj_x_first_down)) |> 
   mutate(adj_bc_x_from_first_down = adj_bc_x - adj_x_first_down,
          bc_position = "RB",
@@ -87,8 +91,8 @@ tracking_bc_quang <- tracking_rb_runs |>
 # Finding the nearest defender
 tracking_def <- tracking_rb_runs |> 
   filter(club != bc_club, displayName != "football") |> 
-  left_join(select(tracking_bc_quang, gameId, playId, frameId,
-                   bc_x, bc_y, adj_bc_x, adj_bc_y, bc_s, bc_a, bc_dir_a),
+  left_join(select(tracking_bc_model, gameId, playId, frameId,
+                   bc_x, bc_y, adj_bc_x, adj_bc_y, bc_s, bc_a, bc_dir_a_mpsh),
             by = c("gameId", "playId", "frameId")) |> 
   mutate(dist_to_bc = sqrt((x - bc_x) ^ 2 + (y - bc_y) ^ 2)) |> 
   group_by(gameId, playId, frameId) |>
@@ -98,15 +102,18 @@ tracking_def <- tracking_rb_runs |>
   filter(player_dist_bc_rank == 1) |> 
   select(gameId, playId, frameId, playDirection,
          nflId, displayName,
-         dist_to_bc, def_x = x, def_y = y, def_s = s, def_a = a, def_dir_a=dir_a,
+         dist_to_bc, def_x = x, def_y = y, def_s = s, def_a = a, 
+         def_s_x = s_x, def_s_y = s_y, def_a_x2 = a_x2, def_a_y2 = a_y2,
          bc_x, bc_y, adj_bc_x, adj_bc_y) |> 
   mutate(adj_x = 110 - def_x,
          adj_y = def_y - (160 / 6),
          adj_x_change = adj_bc_x - adj_x, adj_y_change = adj_bc_y - adj_y,
-         angle_with_bc = atan2(adj_y_change, -adj_x_change)) |> 
+         angle_with_bc = atan2(adj_y_change, -adj_x_change),
+         dir_a_right = (def_s_x * def_a_x2 + def_s_y * def_a_y2) / sqrt(def_s_x ^ 2 + def_s_y^2),
+         def_dir_a_mpsh = dir_a_right * (3600/1700))|> 
   select(-bc_x, -bc_y, -adj_bc_x, -adj_bc_y) |> 
-  left_join(select(tracking_bc_quang, gameId, playId, frameId, bc_id, bc_club,
-                   bc_x, bc_y, adj_bc_x, adj_bc_y, bc_s, bc_a, bc_dir_a),
+  left_join(select(tracking_bc_model, gameId, playId, frameId, bc_id, bc_club,
+                   bc_x, bc_y, adj_bc_x, adj_bc_y, bc_s, bc_a, bc_dir_a_mpsh),
             by = c("gameId", "playId", "frameId")) |> 
   arrange(gameId, playId, frameId)
 
@@ -125,8 +132,6 @@ tracking_def <- tracking_def |>
          def_s_mph = def_s * (3600 / 1760),
          bc_a_mpsh = bc_a * (3600 / 1760),
          def_a_mpsh = def_a * (3600 / 1760),
-         bc_dir_a_mpsh = bc_dir_a*(3600/1760),
-         def_dir_a_mpsh = def_dir_a*(3600/1760),
          down = as.factor(down),
          quarter = as.factor(quarter))
 
@@ -135,12 +140,12 @@ tracking_def <- tracking_def |>
 # Counting number of defenders within 3 yard radius
 tracking_num_defs <- tracking_rb_runs |> 
   filter(club != bc_club, displayName != "football") |> 
-  left_join(select(tracking_bc_quang, gameId, playId, frameId,
-                   bc_x, bc_y, adj_bc_x, adj_bc_y, bc_s, bc_a, bc_dir_a),
+  left_join(select(tracking_bc_model, gameId, playId, frameId,
+                   bc_x, bc_y, adj_bc_x, adj_bc_y, bc_s, bc_a),
             by = c("gameId", "playId", "frameId")) |> 
   mutate(dist_to_bc = sqrt((x - bc_x) ^ 2 + (y - bc_y) ^ 2)) |> 
   filter(frameId == frame_handoff) |>
-  filter(bc_id %in% tracking_bc_play_stats$bc_id) |> 
+  filter(bc_id %in% rbs_names) |> 
   group_by(gameId, playId, frameId) |>
   summarize(num_of_def_5 = sum(dist_to_bc <= 5)) |>
   ungroup()

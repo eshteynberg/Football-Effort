@@ -126,6 +126,7 @@ after_contact <- tracking_bc_after_contact |>
   ungroup() |> 
   mutate(weighted_ke_ac = (1 + sqrt(time_ac)) * mean_ke_ac)
 
+# Looking at statistics per rush
 rb_stats_per_play <- rb_stats_per_play |> 
   left_join(after_contact) |> 
   mutate(dis_gained_x_ac = ifelse(is.na(dis_gained_x_ac), 0, dis_gained_x_ac),
@@ -157,10 +158,14 @@ rb_stats_total <- rb_stats_per_play |>
   ) |> 
   ungroup()
 
+# Filtering for at least 20 rushes
 rb_stats_total_filtered <- rb_stats_total |> 
   filter(num_of_rushes >= 20) 
 
 rbs_names <- rb_stats_total_filtered$displayName
+
+tracking_bc_filtered <- tracking_bc |> 
+  filter(displayName %in% rbs_names)
 
 # Effort Function ---------------------------------------------------------
 # Effort function
@@ -275,6 +280,7 @@ rbs_names <- unique(rb_stats_total_filtered$displayName)
 eff_movements <- purrr::map(rbs_names, eff_function) |> 
   bind_rows() |> 
   mutate(displayName = rbs_names)
+
 # Fatigue -----------------------------------------------------------------
 fatigue <- tracking_bc |> 
   group_by(gameId, bc_id, displayName) |> 
