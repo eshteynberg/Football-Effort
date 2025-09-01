@@ -289,11 +289,11 @@ test <- eff_function_qgam("Saquon Barkley") |>
 
 
 # Running function for all players
-# qgam_combined <- purrr::map(rbs_names, eff_function_qgam) |>
-#   bind_rows()
+ # qgam_combined <- purrr::map(rbs_names, eff_function_qgam) |>
+ #   bind_rows()
 
-# write.csv(qgam_combined, "AvgVelocityQGAM.csv")
-qgam_combined <- read.csv("created_data/AvgVelocityQGAM.csv")
+# write.csv(qgam_combined, "RollingVelocityQGAM.csv")
+qgam_combined <- read.csv("created_data/RollingVelocityQGAM.csv")
 
 qgam_dis <- qgam_combined |> 
   mutate(diff_adj = ifelse(diff_a <= 0, 0, diff_a),
