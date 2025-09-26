@@ -5,12 +5,12 @@ library(qgam)
 # qgam model --------------------------------------------------------------
 receivers_eff <- function(name, graph = FALSE) {
   # Choosing player name
-  player_runs <- tracking_wrs |> 
+  player_runs <- tracking_wrs_avg |> 
     filter(displayName == name)
   
   # Making the modeling data frame
   player_runs_modeling <- player_runs |> 
-    select(s_mph, dir_a_mphs, hadPassReception, gameId, displayName, nflId, playId, frameId)
+    select(s_mph, dir_a_mphs, hadPassReception, wasTargettedReceiver, gameId, displayName, nflId, playId, frameId)
   
   # Data to be in model
   data_pos <- player_runs_modeling |> 
@@ -48,15 +48,15 @@ receivers_eff <- function(name, graph = FALSE) {
       filter(diff_a <= 0)
     
     player_graph <- player_runs_test_preds |> 
-      ggplot(aes(x = s_mph, y = dir_a_mphs)) +
-      geom_point(alpha=.6, color="grey2")+
-      geom_point(data = out_line, aes(x = s_mph, y = dir_a_mphs, fill = "Adjusted distance = 0"), 
-                 stroke = 1.2, color="black", shape = 21) +
+      ggplot(aes(x = s_mph, y = dir_a_mphs, fill = as.factor(wasTargettedReceiver))) +
+      geom_point(alpha=.6, shape = 21)+
+      # geom_point(data = out_line, aes(x = s_mph, y = dir_a_mphs, fill = "Adjusted distance = 0"), 
+      #            stroke = 1.2, shape = 21) +
       geom_line(data = data_pos_final, aes(y = qgam_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.3) +
       geom_line(data = data_neg_final, aes(y = qgam_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.3) +
       geom_hline(aes(yintercept = 0), color = "black", lwd = 1.3, lty = 2) +
       scale_color_manual("Line", values = c("#D50A0A", "#0072B2")) +
-      scale_fill_manual("Point", values = c("#b3b3b3")) +
+      scale_fill_manual("Was Targetted Receiver?", values = c("#b3b3b3", "gold2")) +
       labs(x = "Speed (mph)",
            y = "Acceleration (mph/s)",
            title = paste0(name)) +
@@ -82,11 +82,14 @@ receivers_eff("D.J. Moore", graph = TRUE)
 
 # Calculating Effort ------------------------------------------------------
 # Running the function for all qualified wrs
-receivers_qgam <- purrr::map(wrs_names$displayName, receivers_eff) |>
+receivers_qgam_avg <- purrr::map(wrs_names$displayName, receivers_eff) |>
   bind_rows()
 
 # Writing data into new file
-# write.csv(receivers_qgam, "receivers_effort.csv")
+# write.csv(receivers_qgam_avg, "receivers_effort_avg.csv")
+
+receivers_qgam <- read.csv("created_data/receivers_effort_avg.csv") |> 
+  select(-X)
 
 dis_score_wrs <- receivers_qgam |> 
   mutate(diff_adj = ifelse(diff_a <= 0, 0, diff_a),
@@ -108,9 +111,29 @@ wrs_player <- dis_score_wrs |>
   mutate(dis_score = round(dis_score, 4) *100,
          rank = 1:n())
 
-# Player level (got ball vs. didn't)
-wrs_play_offball <- dis_score_wrs |> 
-  group_by(gameId, playId, as.factor(hadPassReception), nflId, displayName) |> 
-  summarize(dis_score = mean(dis_score_adj)) |> 
-  ungroup()
+# Player level (was targeted vs. didn't)
+wrs_play_targeted <- dis_score_wrs |> 
+  filter(wasTargettedReceiver == 1) |> 
+  group_by(nflId, displayName) |> 
+  summarize(targeted_dis_score = mean(dis_score_adj)) |> 
+  ungroup() |> 
+  arrange(desc(targeted_dis_score)) |> 
+  mutate(targeted_dis_score = round(targeted_dis_score, 4) *100,
+         targeted_rank = 1:n())
 
+wrs_play_not_targeted <- dis_score_wrs |> 
+  filter(wasTargettedReceiver == 0) |> 
+  group_by(nflId, displayName) |> 
+  summarize(not_targeted_dis_score = mean(dis_score_adj)) |> 
+  ungroup() |> 
+  arrange(desc(not_targeted_dis_score)) |> 
+  mutate(not_targeted_dis_score = round(not_targeted_dis_score, 4) *100,
+         not_targeted_rank = 1:n())
+
+wrs_targeted_vs_nottargeted <- wrs_play_targeted |> 
+  left_join(wrs_play_not_targeted, by = c("nflId", "displayName")) |> 
+  mutate(score_diff = not_targeted_dis_score - targeted_dis_score,
+         rank_diff = not_targeted_rank- targeted_rank)
+
+# Positive diff means more effort on non-targeted plays
+# Negative diff means more effort on targeted plays

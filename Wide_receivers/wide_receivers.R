@@ -56,7 +56,7 @@ plays_pass_receivers <- player_play |>
   filter(wasRunningRoute == 1) |> 
   left_join(select(players, nflId, position)) |>
   filter(position == "WR") |>
-  select(gameId, playId, receiver_id = nflId, receiver_club = teamAbbr, hadPassReception)
+  select(gameId, playId, receiver_id = nflId, receiver_club = teamAbbr, hadPassReception, wasTargettedReceiver)
 
 # Only keeping tracking frames of receiver running their routes
 tracking_all <- tracking |> 
@@ -97,3 +97,22 @@ tracking_wrs <- tracking_filtered |>
 # Wide receiver names
 wrs_names <- tracking_wrs |> 
   distinct(displayName)
+
+
+# Rolling average ---------------------------------------------------------
+
+#Example
+#first 4 rows are NA
+#frame 5's value= avg of frames 1-5
+#frame 6's value= avg of frames 2-6
+#frame 7's value=avg of frames 3-7
+
+library(zoo) #for rollmean() function
+
+tracking_wrs_avg <- tracking_wrs |>
+  arrange(gameId, playId, nflId, frameId) |> 
+  group_by(gameId, playId, nflId, displayName) |> 
+  mutate(s_5 = rollmean(s_mph, k=5, fill=NA, align = "right"),
+         dir_a_mphs_5 = rollmean(dir_a_mphs, k=5, fill=NA, align="right")) |> 
+  ungroup() |> 
+  filter(!is.na(s_5), !is.na(dir_a_mphs_5))
