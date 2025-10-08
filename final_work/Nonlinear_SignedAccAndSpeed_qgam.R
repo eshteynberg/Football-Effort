@@ -1,5 +1,6 @@
 library(tidyverse)
 library(qgam)
+library(qu)
 
 # nlrq model --------------------------------------------------------------
 
@@ -78,6 +79,7 @@ eff_function_nlrq <- function(name, graph = FALSE) {
 eff_function_nlrq("Christian McCaffrey", graph = TRUE)
 eff_function_nlrq("Khalil Herbert", graph = TRUE)
 eff_function_nlrq("Saquon Barkley", graph = TRUE)
+
 nlrq_combined <- purrr::map(rbs_names, eff_function_nlrq) |>
   bind_rows()
 

@@ -45,41 +45,6 @@ eff_function_qgam <- function(name, graph = FALSE) {
   
   # Combining positive and negative vals
   player_runs_test_preds <- rbind(data_pos_final, data_neg_final)
-  
-  if (graph == TRUE) {
-    out_line <- player_runs_test_preds |> 
-      filter(diff_a <= 0)
-    
-    player_graph <- player_runs_test_preds |> 
-      ggplot(aes(x = s_5, y = dir_a_mpsh_5)) +
-      geom_point(alpha=.6, color="grey2")+
-      geom_point(data = out_line, aes(x = s_5, y = dir_a_mpsh_5, fill = "Adjusted distance = 0"), size = 4, 
-                 stroke = 1.2, color="black", shape = 21) +
-      geom_line(data = data_pos_final, aes(y = qgam_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.3) +
-      geom_line(data = data_neg_final, aes(y = qgam_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.3) +
-      # geom_vline(aes(color = "Speed 0.99 quantile line", 
-      #                xintercept = quantile(s_mph, probs = c(.99))), 
-      #            lty = 2, lwd = 1.5) +
-      geom_hline(aes(yintercept = 0), color = "black", lwd = 1.3, lty = 2) +
-      scale_color_manual("Line", values = c("#D50A0A", "#0072B2")) +
-      scale_fill_manual("Point", values = c("#b3b3b3")) +
-      labs(x = "Speed (mph)",
-           y = "Acceleration (mph/s)",
-           title = paste0(name)) +
-      theme_minimal(base_size=16) +
-      theme(plot.title = element_text(face = "bold.italic",
-                                      size = 18, 
-                                      hjust = .5),
-            legend.title = element_text(face = "bold"),
-            axis.title = element_text(face = "bold"),
-            legend.text=element_text(size=15),
-            plot.caption = element_text(face = "italic", size = 8),
-            legend.key.height = unit(1.4, "cm")) +
-      xlim(0, 25) +
-      ylim(-20, 20)
-    return(player_graph)
-  }
-  return(player_runs_test_preds)
 }
 
 # Player Tests
@@ -92,7 +57,8 @@ eff_function_qgam("Christian McCaffrey", graph = TRUE)
 #   bind_rows()
 
 # write.csv(qgam_combined, "AvgVelocityQGAM.csv")
-qgam_combined <- read.csv("created_data/AvgVelocityQGAM.csv")
+qgam_combined <- read.csv("created_data/AvgVelocityQGAM.csv") |> 
+  select(-X)
 
 qgam_dis <- qgam_combined |> 
   mutate(diff_adj = ifelse(diff_a <= 0, 0, diff_a),
@@ -107,3 +73,91 @@ qgam_dis_player <- qgam_dis |>
   arrange(desc(dis_score)) |> 
   mutate(dis_score = round(dis_score, 4) *100,
          rank = 1:n())
+
+# Graph -------------------------------------------------------------------
+qgam_graph <- function(name) {
+  qgam_dis2 <- qgam_dis |> 
+    filter(displayName == name)
+
+  qgam_pos <- qgam_dis |> 
+    filter(displayName == name,
+           qgam_pred >= 0)
+  
+  qgam_neg <- qgam_dis |> 
+    filter(displayName == name,
+           qgam_pred < 0)
+  
+  graph <- qgam_dis2 |> 
+    ggplot(aes(x = s_5, y = dir_a_mpsh_5)) +
+    geom_point(alpha=.6, aes(fill = dis_score_adj), pch = 21, size = 3) +
+    geom_line(data = qgam_pos, aes(y = qgam_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.3) +
+    geom_line(data = qgam_neg, aes(y = qgam_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.3) +
+    geom_hline(aes(yintercept = 0), color = "black", lwd = 1.3, lty = 2) +
+    scale_color_manual("Line", values = c("#D50A0A", "#0072B2")) +
+    scale_fill_gradient(name = "Effort Score", low = "#88CCEE", high = "#CC6677") +
+    scale_size_continuous(name = "Effort Score", range = c(2, 6)) +
+    labs(x = "Speed (mph)",
+         y = "Acceleration (mph/s)",
+         title = paste0(name)) +
+    theme_minimal(base_size=16) +
+    theme(plot.title = element_text(face = "bold.italic",
+                                    size = 18, 
+                                    hjust = .5),
+          legend.title = element_text(face = "bold"),
+          axis.title = element_text(face = "bold"),
+          legend.text=element_text(size=15),
+          plot.caption = element_text(face = "italic", size = 8),
+          legend.key.height = unit(1.4, "cm")) +
+    guides(
+      fill = guide_legend(order = 1),
+      size = guide_legend(order = 1),
+      color = guide_legend(order = 2)
+    ) +
+    xlim(0, 25) +
+    ylim(-20, 20)
+  
+  return(graph)
+}
+
+qgam_graph("Derrick Henry")
+
+
+
+# GT Table ----------------------------------------------------------------
+
+library(gt)
+library(gtExtras)
+library(nflplotR)
+library(nflreadr)
+
+# Getting player heads
+rosters <- nflreadr::load_rosters(2022) |> 
+  mutate(gsis_it_id = as.numeric(gsis_it_id))
+
+qgam_dis_player |>
+  slice_max(dis_score, n = 10) |> 
+  left_join(select(rosters, bc_id = gsis_it_id, gsis_id)) |> 
+  select(displayName, gsis_id, dis_score, rank) |> 
+  gt() |>
+  tab_header(title = md("**Top RBs for Effort Score**"),
+             subtitle = md("*Utilized QGAM to calculate score*")) |>
+  cols_label(displayName = "Player", gsis_id = "", dis_score = "Effort Score %", rank = "Rank") |>
+  nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
+  data_color(columns = c(dis_score),
+             fn = scales::col_numeric(palette = c("white", "#D50A0A"), domain = NULL))  |>
+  gtExtras::gt_theme_espn() |>
+  opt_align_table_header(align = "center")
+
+qgam_dis_player |>
+  slice_min(dis_score, n = 10) |> 
+  left_join(select(rosters, bc_id = gsis_it_id, gsis_id)) |> 
+  select(displayName, gsis_id, dis_score, rank) |> 
+  gt() |>
+  tab_header(title = md("**Bottom RBs for Effort Score**"),
+             subtitle = md("*Utilized QGAM to calculate score*")) |>
+  cols_label(displayName = "Player", gsis_id = "", dis_score = "Effort Score %", rank = "Rank") |>
+  nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
+  data_color(columns = c(dis_score),
+             fn = scales::col_numeric(palette = c("#0072B2", "white"), domain = NULL))  |>
+  gtExtras::gt_theme_espn() |>
+  opt_align_table_header(align = "center")
