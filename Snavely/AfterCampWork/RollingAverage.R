@@ -329,7 +329,7 @@ qgam_graph <- function(name) {
     geom_line(data = qgam_neg, aes(y = qgam_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.3) +
     geom_hline(aes(yintercept = 0), color = "black", lwd = 1.3, lty = 2) +
     scale_color_manual("Line", values = c("#D50A0A", "#0072B2")) +
-    scale_fill_gradient(name = "Effort Score", low = "#88CCEE", high = "#CC6677") +
+    scale_fill_gradient(name = "Effort Score", low = "#a4f5ef", high = "goldenrod") +
     labs(x = "Speed (mph)",
          y = "Acceleration (mph/s)",
          title = paste0(name)) +
@@ -352,7 +352,8 @@ qgam_graph <- function(name) {
   return(graph)
 }
 
-qgam_graph("Derrick Henry")
+qgam_graph("Christian McCaffrey")
+qgam_graph("Khalil Herbert")
 
 
 
