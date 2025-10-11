@@ -237,40 +237,7 @@ eff_function_qgam <- function(name, graph = FALSE) {
   
   # Combining positive and negative vals
   player_runs_test_preds <- rbind(data_pos_final, data_neg_final)
-  
-  if (graph == TRUE) {
-    out_line <- player_runs_test_preds |> 
-      filter(diff_a <= 0)
-    
-    player_graph <- player_runs_test_preds |> 
-      ggplot(aes(x = s_5, y = dir_a_mpsh_5)) +
-      geom_point(alpha=.6, color="grey2")+
-      geom_point(data = out_line, aes(x = s_5, y = dir_a_mpsh_5, fill = "Adjusted distance = 0"), size = 4, 
-                 stroke = 1.2, color="black", shape = 21) +
-      geom_line(data = data_pos_final, aes(y = qgam_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.3) +
-      geom_line(data = data_neg_final, aes(y = qgam_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.3) +
-      # geom_vline(aes(color = "Speed 0.99 quantile line", 
-      #                xintercept = quantile(s_mph, probs = c(.99))), 
-      #            lty = 2, lwd = 1.5) +
-      geom_hline(aes(yintercept = 0), color = "black", lwd = 1.3, lty = 2) +
-      scale_color_manual("Line", values = c("#D50A0A", "#0072B2")) +
-      scale_fill_manual("Point", values = c("#b3b3b3")) +
-      labs(x = "Speed (mph)",
-           y = "Acceleration (mph/s)",
-           title = paste0(name)) +
-      theme_minimal(base_size=16) +
-      theme(plot.title = element_text(face = "bold.italic",
-                                      size = 18, 
-                                      hjust = .5),
-            legend.title = element_text(face = "bold"),
-            axis.title = element_text(face = "bold"),
-            legend.text=element_text(size=15),
-            plot.caption = element_text(face = "italic", size = 8),
-            legend.key.height = unit(1.4, "cm")) +
-      xlim(0, 25) +
-      ylim(-20, 20)
-    return(player_graph)
-  }
+
   return(player_runs_test_preds)
 }
 
@@ -309,7 +276,16 @@ qgam_dis_player <- qgam_dis |>
   mutate(dis_score = round(dis_score, 4) *100,
          rank = 1:n())
 
-# Graph -------------------------------------------------------------------
+# Play level
+qgam_dis_play <- qgam_dis |> 
+  group_by(gameId, playId, bc_id, displayName) |> 
+  summarize(dis_score_qgam = mean(dis_score_adj)) |> 
+  ungroup() |> 
+  arrange(desc(dis_score_qgam)) |> 
+  mutate(dis_score_qgam = round(dis_score_qgam, 4) *100,
+         rank = 1:n())
+
+# Graph QGAM-------------------------------------------------------------------
 qgam_graph <- function(name) {
   qgam_dis2 <- qgam_dis |> 
     filter(displayName == name)
@@ -343,11 +319,14 @@ qgam_graph <- function(name) {
           plot.caption = element_text(face = "italic", size = 8),
           legend.key.height = unit(1.4, "cm")) +
     guides(
-      fill = guide_legend(order = 1),
-      color = guide_legend(order = 2)
+      fill = guide_colorbar(
+        title.theme = element_text(margin = margin(b = 20)),  # add space below title
+        barwidth = unit(0.5, "cm"),
+        barheight = unit(5, "cm")
+      )
     ) +
-    xlim(0, 25) +
-    ylim(-20, 20)
+    xlim(0, 22.5) +
+    ylim(-17.5, 17.5)
   
   return(graph)
 }
@@ -395,3 +374,210 @@ qgam_dis_player |>
              fn = scales::col_numeric(palette = c("#0072B2", "white"), domain = NULL))  |>
   gtExtras::gt_theme_espn() |>
   opt_align_table_header(align = "center")
+
+
+# Quadratic Function ------------------------------------------------------
+
+eff_function_nlrq <- function(name) {
+  # Choosing player name
+  player_runs <- tracking_rb_avg |> 
+    filter(displayName == name)
+  
+  # Making the modeling data frame
+  player_runs_modeling <- player_runs |> 
+    select(s_5, dir_a_mpsh_5, gameId, displayName, bc_id, playId)
+  
+  # Data to be in model
+  data_pos <- player_runs_modeling |> 
+    filter(dir_a_mpsh_5 >= 0)
+  
+  data_neg <- player_runs_modeling |> 
+    filter(dir_a_mpsh_5 < 0)
+  
+  # Models
+  nlrq_pos <- nlrq(dir_a_mpsh_5 ~ x * s_5^2 + y * s_5 + z,
+                   data = data_pos,
+                   tau = .95,
+                   start = list(x = 10, y = 2, z = 5))
+  
+  nlrq_neg <- nlrq(dir_a_mpsh_5 ~ x * s_5^2 + y * s_5 + z,
+                   data = data_neg,
+                   tau = .05,
+                   start = list(x = 10, y = 2, z = 5))
+  
+  data_pos_final <- data_pos |> 
+    mutate(nlrq_pred = nlrq_pos$m$fitted(),
+           diff_a = nlrq_pred - dir_a_mpsh_5)
+  
+  data_neg_final <- data_neg |> 
+    mutate(nlrq_pred = nlrq_neg$m$fitted(),
+           diff_a = dir_a_mpsh_5 - nlrq_pred)
+  
+  
+  # Combining positive and negative vals
+  player_runs_test_preds <- rbind(data_pos_final, data_neg_final)
+
+  return(player_runs_test_preds)
+}
+
+# Mapping the function 
+nlrq_combined <- purrr::map(rbs_names, eff_function_nlrq) |>
+  bind_rows()
+
+nlrq_dis <- nlrq_combined |> 
+  mutate(diff_adj = ifelse(diff_a <= 0, 0, diff_a),
+         dis_score = 1 / (1 + diff_adj),
+         dis_score_adj = ifelse(dir_a_mpsh_5 < 0, dis_score / 2, dis_score))
+
+# Player level
+nlrq_dis_player <- nlrq_dis |> 
+  group_by(bc_id, displayName) |> 
+  summarize(dis_score = mean(dis_score_adj)) |> 
+  ungroup() |> 
+  arrange(desc(dis_score)) |> 
+  mutate(dis_score = round(dis_score, 4) *100,
+         rank = 1:n())
+
+# Play level
+nlrq_dis_play <- nlrq_dis |> 
+  group_by(gameId, playId, bc_id, displayName) |> 
+  summarize(dis_score_nlrq = mean(dis_score_adj)) |> 
+  ungroup() |> 
+  arrange(desc(dis_score_nlrq)) |> 
+  mutate(dis_score_nlrq = round(dis_score_nlrq, 4) *100,
+         rank = 1:n())
+
+# Graph nlrq-------------------------------------------------------------------
+nlrq_graph <- function(name) {
+  nlrq_dis2 <- nlrq_dis |> 
+    filter(displayName == name)
+  
+  nlrq_pos <- nlrq_dis |> 
+    filter(displayName == name,
+           nlrq_pred >= 0)
+  
+  nlrq_neg <- nlrq_dis |> 
+    filter(displayName == name,
+           nlrq_pred < 0)
+  
+  graph <- nlrq_dis2 |> 
+    ggplot(aes(x = s_5, y = dir_a_mpsh_5)) +
+    geom_point(alpha=.6, aes(fill = dis_score_adj), pch = 21, size = 3) +
+    geom_line(data = nlrq_pos, aes(y = nlrq_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.3) +
+    geom_line(data = nlrq_neg, aes(y = nlrq_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.3) +
+    geom_hline(aes(yintercept = 0), color = "black", lwd = 1.3, lty = 2) +
+    scale_color_manual("Line", values = c("#D50A0A", "#0072B2")) +
+    scale_fill_gradient(name = "Effort Score", low = "#a4f5ef", high = "goldenrod") +
+    labs(x = "Speed (mph)",
+         y = "Acceleration (mph/s)",
+         title = paste0(name)) +
+    theme_minimal(base_size=16) +
+    theme(plot.title = element_text(face = "bold.italic",
+                                    size = 18, 
+                                    hjust = .5),
+          legend.title = element_text(face = "bold"),
+          axis.title = element_text(face = "bold"),
+          legend.text=element_text(size=15),
+          plot.caption = element_text(face = "italic", size = 8),
+          legend.key.height = unit(1.4, "cm")) +
+    guides(
+      fill = guide_colorbar(
+        title.theme = element_text(margin = margin(b = 20)),  # add space below title
+        barwidth = unit(0.5, "cm"),
+        barheight = unit(5, "cm")
+      )
+    ) + 
+    xlim(0, 22.5) +
+    ylim(-17.5, 17.5)
+  
+  return(graph)
+}
+
+nlrq_graph("Christian McCaffrey")
+nlrq_graph("Khalil Herbert")
+
+
+# GT Tables ---------------------------------------------------------------
+
+library(gt)
+library(gtExtras)
+library(nflplotR)
+library(nflreadr)
+
+# Getting player heads
+rosters <- nflreadr::load_rosters(2022) |> 
+  mutate(gsis_it_id = as.numeric(gsis_it_id))
+
+nlrq_dis_player |>
+  slice_max(dis_score, n = 10) |> 
+  left_join(select(rosters, bc_id = gsis_it_id, gsis_id)) |> 
+  select(displayName, gsis_id, dis_score, rank) |> 
+  gt() |>
+  tab_header(title = md("**Top RBs for Effort Score**"),
+             subtitle = md("*Utilized Quadratic Function Method to calculate score*")) |>
+  cols_label(displayName = "Player", gsis_id = "", dis_score = "Effort Score %", rank = "Rank") |>
+  nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
+  data_color(columns = c(dis_score),
+             fn = scales::col_numeric(palette = c("white", "#D50A0A"), domain = NULL))  |>
+  gtExtras::gt_theme_espn() |>
+  opt_align_table_header(align = "center")
+
+nlrq_dis_player |>
+  slice_min(dis_score, n = 10) |> 
+  left_join(select(rosters, bc_id = gsis_it_id, gsis_id)) |> 
+  select(displayName, gsis_id, dis_score, rank) |> 
+  gt() |>
+  tab_header(title = md("**Bottom RBs for Effort Score**"),
+             subtitle = md("*Utilized Quadratic Function Method to calculate score*")) |>
+  cols_label(displayName = "Player", gsis_id = "", dis_score = "Effort Score %", rank = "Rank") |>
+  nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
+  data_color(columns = c(dis_score),
+             fn = scales::col_numeric(palette = c("#0072B2", "white"), domain = NULL))  |>
+  gtExtras::gt_theme_espn() |>
+  opt_align_table_header(align = "center")
+
+# Combining graphs with the Magick package --------------------------------
+library(magick)
+
+#qgam
+cmc_qgam <- image_read("cmsac_presentation/images/CMC_qgam.png")
+kh_qgam <- image_read("cmsac_presentation/images/Herbert_qgam.png")
+cmc_qgam <- image_scale(cmc_qgam, "x500") 
+kh_qgam <- image_scale(kh_qgam, "x500") 
+
+Christian_Khalil_qgam <- image_append(c(cmc_qgam, kh_qgam)) 
+image_write(Christian_Khalil_qgam, "Christian_Khalil_qgam.png")
+
+#nlrq
+cmc_nlrq <- image_read("cmsac_presentation/images/CMC_nlrq.png")
+kh_nlrq <- image_read("cmsac_presentation/images/Herbert_nlrq.png")
+cmc_nlrq <- image_scale(cmc_nlrq, "x500") 
+kh_nlrq <- image_scale(kh_nlrq, "x500") 
+
+Christian_Khalil_nlrq <- image_append(c(cmc_nlrq, kh_nlrq)) 
+image_write(Christian_Khalil_nlrq, "Christian_Khalil_nlrq.png")
+
+
+# Correlation Table -------------------------------------------------------
+play_stats_effort <- nlrq_dis_play |> 
+  select(-rank) |> 
+  left_join(select(qgam_dis_play, gameId, playId, bc_id, displayName, dis_score_qgam)) |> 
+  left_join(tracking_bc_play_stats)
+
+correlations <- data.frame(type = c("QGAM", "Quadratic"), 
+                           dis_gained_ac = round(c(cor(play_stats_effort$dis_score_qgam, play_stats_effort$dis_gained_x_ac),
+                                                   cor(play_stats_effort$dis_score_nlrq, play_stats_effort$dis_gained_x_ac)), 3),
+                           EPA = round(c(cor(play_stats_effort$dis_score_qgam, play_stats_effort$expectedPointsAdded),
+                                         cor(play_stats_effort$dis_score_nlrq, play_stats_effort$expectedPointsAdded)), 3),
+                           rushingYards = round(c(cor(play_stats_effort$dis_score_qgam, play_stats_effort$rushingYards),
+                                                  cor(play_stats_effort$dis_score_nlrq, play_stats_effort$rushingYards)), 3))
+
+correlations |>
+  gt() |>
+  tab_header(title = md("**Effort metrics do not show a strong correlation with play outcomes**"))|>
+  cols_label(type = "Effort metric type", dis_gained_ac = "Yards gained after contact", EPA = "Expected points added",
+             rushingYards = "Rushing Yards") |>
+  gtExtras::gt_theme_espn() |> 
+  gtsave(file = "EffortCorrelations.png",
+         vwidth = 800,
+         vheight = 200)

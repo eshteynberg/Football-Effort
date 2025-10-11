@@ -116,3 +116,26 @@ tracking_wrs_avg <- tracking_wrs |>
          dir_a_mphs_5 = rollmean(dir_a_mphs, k=5, fill=NA, align="right")) |> 
   ungroup() |> 
   filter(!is.na(s_5), !is.na(dir_a_mphs_5))
+
+
+# Example Data Table ------------------------------------------------------
+
+library(gt)
+library(gtExtras)
+
+tracking_wrs |> 
+  filter(displayName == "Nico Collins",
+         frameId %in% c(184:186),
+         gameId == 2022091105,
+         playId == 1850) |> 
+  select(gameId, playId, nflId, displayName, frameId, event, x, y, s_mph, dir_a_mphs, wasTargettedReceiver) |> 
+  gt() |> 
+  cols_label(gameId = "Game", playId = "Play", nflId = "Receiver", displayName = "Name",
+             frameId = "Frame", event = "Event", x = "X Coordinate", y = "Y Coordinate",
+             s_mph = "Speed (MPH)", dir_a_mphs = "Directional Acceleration (MPH/S)",
+             wasTargettedReceiver = "Targeted?") |> 
+  gt_theme_espn()
+
+  
+Nico <- tracking_wrs |> 
+  filter(displayName == "Nico Collins")
