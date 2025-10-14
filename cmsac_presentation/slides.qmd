@@ -110,7 +110,42 @@ $$
 
 ## Effort Metrics Do Not Show a Strong Correlation with Play Outcomes
 
-![](images/effort_corr.png){width="90%"}
+![](images/EffortCorrelations.png){width="90%"}
+  
+  
+## Shifting Gears: WRs
+
+* RBs typically give their full effort on every single play running the ball
+
+  * In what scenarios might offensive players not exhibit maximal effort?
+  
+* Leads us to wide receivers: do they give same effort when they are targeted vs. when they are not?
+
+
+## WRs: Data
+
+* Pre-processing:
+
+  * Filter to frames of receivers running their routes
+
+  * Filter to from when ball is snapped to when pass arrives to intended receiver 
+
+  * Same speed and directional acceleration calculations with 5-frame rolling mean as for RBs
+
+::: {.fragment style="margin-top: -1.4em;"}
+
+![](images/WRsTable.png)
+
+:::
+
+## WRs Effort Metric: QGAM Approach
+
+* INSERT IMAGE HERE
+
+* Same computation for effort score as for RBs except we distinguished between plays where they were targeted and not targeted
+
+* INSERT SCORES HERE
+
 
 ## Discussion
 
@@ -120,6 +155,8 @@ $$
   
   * Metric quantifies how often a player comes to his acceleration frontier
   
+  * Suprising that some WRs gave more effort when not targeted vs. targeted
+  
 * Limitations
 
   * Metric does not fully account for game context
@@ -128,7 +165,7 @@ $$
   
 * Future work
 
-  * Applying metrics to wide receivers
+  * Better distinguish between high effort points 
   
   * Another way to validate effort metrics?
 

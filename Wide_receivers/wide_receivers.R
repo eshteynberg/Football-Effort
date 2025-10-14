@@ -134,8 +134,5 @@ tracking_wrs |>
              frameId = "Frame", event = "Event", x = "X Coordinate", y = "Y Coordinate",
              s_mph = "Speed (MPH)", dir_a_mphs = "Directional Acceleration (MPH/S)",
              wasTargettedReceiver = "Targeted?") |> 
-  gt_theme_espn()
-
-  
-Nico <- tracking_wrs |> 
-  filter(displayName == "Nico Collins")
+  gt_theme_espn() |> 
+  gtsave(file = "WRsTable.png")

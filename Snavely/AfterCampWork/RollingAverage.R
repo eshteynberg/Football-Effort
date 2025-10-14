@@ -462,7 +462,7 @@ nlrq_graph <- function(name) {
   
   graph <- nlrq_dis2 |> 
     ggplot(aes(x = s_5, y = dir_a_mpsh_5)) +
-    geom_point(alpha=.6, aes(fill = dis_score_adj), pch = 21, size = 3) +
+    geom_point(alpha=.6, aes(fill = dis_score_ad), pch = 21, size = 3) +
     geom_line(data = nlrq_pos, aes(y = nlrq_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.3) +
     geom_line(data = nlrq_neg, aes(y = nlrq_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.3) +
     geom_hline(aes(yintercept = 0), color = "black", lwd = 1.3, lty = 2) +
