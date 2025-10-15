@@ -218,7 +218,7 @@ $$
 :::
 :::
 
-## Chark and Gallup Show High Effort 
+## Chark Leads in Both Categories
 
 ::: columns
 ::: column
@@ -230,7 +230,7 @@ $$
 :::
 :::
 
-## Bateman Shows Low Effort
+## Hill Shows Low Effort when Not Targeted
 
 ::: columns
 ::: column
@@ -243,6 +243,10 @@ $$
 :::
 
 
+## No Significant Change in Effort on the Play Level when Targeted vs. Not Targeted
+
+<img src="images/BoxplotTargetedVSNot.png" style="display: block; margin-left: auto; margin-right: auto; width: 80%;">
+
 ## Discussion
 
 * Conclusions
@@ -251,7 +255,7 @@ $$
   
   * Metric quantifies how often a player comes to his acceleration frontier
   
-  * Suprising that some WRs gave more effort when not targeted vs. targeted
+  * No extreme overall difference in effort when targeted vs. not targeted on play level
   
 * Limitations
 
@@ -268,7 +272,7 @@ $$
 
 # Appendix
 
-## RB effort metrics are positively correlated
+## RB Effort Metrics are Positively Correlated
 
 <img src="images/RB_Scatterplot.png" style="display: block; margin-left: auto; margin-right: auto; width: 80%;">
 
@@ -293,3 +297,7 @@ $$
 
 <img src="images/BiggestDiff2.png" style="display: block; margin-left: auto; margin-right: auto; width: 80%;">
 
+
+## High Effortful Targeted Plays Correlate Positively with Pass Length
+
+<img src="images/PassLengthGraph.png" style="display: block; margin-left: auto; margin-right: auto; width: 80%;">

@@ -24,13 +24,14 @@ wrs_targeted_vs_nottargeted <- wrs_targeted_vs_nottargeted |>
 # Relationship of dis_score and passlength by player level
 wrs_targeted_vs_nottargeted |> 
   ggplot(aes(x = avgPassLength, y = targeted_dis_score)) + 
-  geom_point()
+  geom_point() |> 
+  labs(x = "Pass Lenght")
 
 wrs_targeted_vs_nottargeted |> 
   ggplot(aes(x = avgPassLength, y = not_targeted_dis_score)) + 
   geom_point()
 
-# No real relationship between the two
+# No real relationship between the two for overall effort
 
 
 # 20+ yard passes --------------------------------------------------------------
@@ -72,6 +73,73 @@ wrs_targeted_vs_nottargeted |>
   ggplot(aes(x = targets, y = not_targeted_dis_score)) + 
   geom_point() +
   geom_smooth(method = "lm")
+
+
+# Boxplot -----------------------------------------------------------------
+
+# Play level overall
+wrs_play_t_v_nt <- dis_score_wrs |> 
+  group_by(gameId, playId, nflId, displayName, wasTargettedReceiver) |> 
+  summarize(dis_score = mean(dis_score_adj)) |> 
+  ungroup() |> 
+  mutate(wasTargettedReceiver2 = ifelse(wasTargettedReceiver == 1, "Targeted", "Not Targeted"),
+         dis_score = dis_score * 100)
+
+str(wrs_play_t_v_nt)
+
+wrs_play_t_v_nt |> 
+  ggplot(aes(x = dis_score)) + 
+  geom_boxplot(fill = "lightgrey") +
+  facet_wrap(~wasTargettedReceiver2, labeller = labeller(category = labels), nrow = 2) +
+  scale_x_continuous(breaks = c(seq(0, 100, by = 10))) +
+  labs(x = "Effort Score (%)") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "#0072B2", 
+                                        color = "black", 
+                                        size = 1),
+        strip.text = element_text(color = "white", 
+                                  size = 14, 
+                                  face = "bold"),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.x = element_text(size = 14,
+                                    face = "bold"),
+        axis.text.x = element_text(size = 12))
+  
+
+
+# Avg. DOT Targeted vs. Not -----------------------------------------------
+
+wrs_play_t_v_nt <- wrs_play_t_v_nt |> 
+  left_join(select(plays, passLength, gameId, playId))
+
+wrs_play_t_v_nt |> 
+  ggplot(aes(x = passLength, y = dis_score)) + 
+  geom_point(alpha = .75) + 
+  facet_wrap(~ wasTargettedReceiver2) + 
+  labs(x = "Pass Length (Yards)",
+       y = "Effort Score (%)") +
+  theme_bw() +
+  scale_y_continuous(breaks = seq(0, 100, 10)) + 
+  theme(strip.background = element_rect(fill = "#0072B2", 
+                                        color = "black", 
+                                        size = 1),
+        strip.text = element_text(color = "white", 
+                                  size = 14, 
+                                  face = "bold"),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14,
+                                  face = "bold"))
+
+# Scatterplot of Correlation Between Scores -------------------------------------------------------------
+
+wrs_targeted_vs_nottargeted |> 
+  ggplot(aes(x = targeted_dis_score, y = not_targeted_dis_score)) + 
+  geom_point() +
+  xlim(20,40) +
+  ylim(20,40)
+
+cor(wrs_targeted_vs_nottargeted$targeted_dis_score, wrs_targeted_vs_nottargeted$not_targeted_dis_score)
 
 # Tables ------------------------------------------------------------------
 library(gt)
