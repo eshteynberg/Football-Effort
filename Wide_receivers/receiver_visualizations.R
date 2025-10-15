@@ -70,8 +70,8 @@ wrs_targeted_vs_nottargeted |>
 
 wrs_targeted_vs_nottargeted |> 
   ggplot(aes(x = targets, y = not_targeted_dis_score)) + 
-  geom_point()
-
+  geom_point() +
+  geom_smooth(method = "lm")
 
 # Tables ------------------------------------------------------------------
 library(gt)
@@ -83,23 +83,61 @@ library(nflreadr)
 rosters <- nflreadr::load_rosters(2022) |> 
   mutate(gsis_it_id = as.numeric(gsis_it_id))
 
+# Overall Top
+wrs_player |> 
+  slice_max(dis_score, n = 10) |> 
+  # Get rid of the tie
+  filter(displayName != "Brandin Cooks") |> 
+  left_join(select(rosters, nflId = gsis_it_id, gsis_id)) |> 
+  select(displayName, gsis_id, dis_score, rank) |> 
+  gt() |>
+  tab_header(title = md("**Top Effortful WRs Overall**"),
+             subtitle = md("*Utilized QGAM to calculate score*")) |>
+  cols_label(displayName = "Player", gsis_id = "", dis_score = "Effort Score %", rank = "Effort Rank") |>
+  nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
+  data_color(columns = c(dis_score),
+             fn = scales::col_numeric(palette = c("white", "#D50A0A"), domain = NULL)) |>
+  gtExtras::gt_theme_espn() |>
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "WRsTopOverall.png",
+         vwidth = 600,
+         vheight = 800)
+
+# Overall Bottom
+wrs_player |> 
+  slice_min(dis_score, n = 10) |> 
+  left_join(select(rosters, nflId = gsis_it_id, gsis_id)) |> 
+  select(displayName, gsis_id, dis_score, rank) |> 
+  gt() |>
+  tab_header(title = md("**Bottom Effortful WRs Overall**"),
+             subtitle = md("*Utilized QGAM to calculate score*")) |>
+  cols_label(displayName = "Player", gsis_id = "", dis_score = "Effort Score %", rank = "Effort Rank") |>
+  nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
+  data_color(columns = c(dis_score),
+             fn = scales::col_numeric(palette = c("#0072B2", "white"), domain = NULL)) |>
+  gtExtras::gt_theme_espn() |>
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "WRsBottomOverall.png",
+         vwidth = 600,
+         vheight = 800)
+
 # Top targeted
 wrs_targeted_vs_nottargeted |>
   slice_max(targeted_dis_score, n = 10) |> 
   left_join(select(rosters, nflId = gsis_it_id, gsis_id)) |> 
   select(displayName, gsis_id, targeted_dis_score, targeted_rank) |> 
   gt() |>
-  tab_header(title = md("**Top Effortful WRs when Targeted for the NFL 2022 season**"),
+  tab_header(title = md("**Top Effortful WRs when Targeted**"),
              subtitle = md("*Utilized QGAM to calculate score*")) |>
   cols_label(displayName = "Player", gsis_id = "", targeted_dis_score = "Effort Score %", targeted_rank = "Effort Rank") |>
   nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
   data_color(columns = c(targeted_dis_score),
              fn = scales::col_numeric(palette = c("white", "#D50A0A"), domain = NULL)) |>
   gtExtras::gt_theme_espn() |>
-  tab_options(
-    table.width = pct(40) 
-  ) |> 
-  opt_align_table_header(align = "center")
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "WRsTopTargeted.png",
+         vwidth = 600,
+         vheight = 800)
 
 # Bottom targeted
 wrs_targeted_vs_nottargeted |>
@@ -107,17 +145,17 @@ wrs_targeted_vs_nottargeted |>
   left_join(select(rosters, nflId = gsis_it_id, gsis_id)) |> 
   select(displayName, gsis_id, targeted_dis_score, targeted_rank) |> 
   gt() |>
-  tab_header(title = md("**Bottom Effortful WRs when Targeted for the NFL 2022 season**"),
+  tab_header(title = md("**Bottom Effortful WRs when Targeted**"),
              subtitle = md("*Utilized QGAM to calculate score*")) |>
   cols_label(displayName = "Player", gsis_id = "", targeted_dis_score = "Effort Score %", targeted_rank = "Effort Rank") |>
   nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
   data_color(columns = c(targeted_dis_score),
              fn = scales::col_numeric(palette = c("#0072B2", "white"), domain = NULL)) |>
   gtExtras::gt_theme_espn() |>
-  tab_options(
-    table.width = pct(40) 
-  ) |> 
-  opt_align_table_header(align = "center")
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "WRsBottomTargeted.png",
+         vwidth = 600,
+         vheight = 800)
 
 # Top not targeted
 wrs_targeted_vs_nottargeted |>
@@ -125,17 +163,17 @@ wrs_targeted_vs_nottargeted |>
   left_join(select(rosters, nflId = gsis_it_id, gsis_id)) |> 
   select(displayName, gsis_id, not_targeted_dis_score, not_targeted_rank) |> 
   gt() |>
-  tab_header(title = md("**Top Effortful WRs when not Targeted for the NFL 2022 season**"),
+  tab_header(title = md("**Top Effortful WRs when Not Targeted**"),
              subtitle = md("*Utilized QGAM to calculate score*")) |>
   cols_label(displayName = "Player", gsis_id = "", not_targeted_dis_score = "Effort Score %", not_targeted_rank = "Effort Rank") |>
   nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
   data_color(columns = c(not_targeted_dis_score),
              fn = scales::col_numeric(palette = c("white", "#D50A0A"), domain = NULL)) |>
-  gtExtras::gt_theme_espn() |>
-  tab_options(
-    table.width = pct(40) 
-  ) |> 
-  opt_align_table_header(align = "center")
+  gtExtras::gt_theme_espn() |> 
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "WRsTopNotTargeted.png",
+         vwidth = 600,
+         vheight = 800)
 
 # Bottom not targeted
 wrs_targeted_vs_nottargeted |>
@@ -143,17 +181,17 @@ wrs_targeted_vs_nottargeted |>
   left_join(select(rosters, nflId = gsis_it_id, gsis_id)) |> 
   select(displayName, gsis_id, not_targeted_dis_score, not_targeted_rank) |> 
   gt() |>
-  tab_header(title = md("**Bottom Effortful WRs when not Targeted for the NFL 2022 season**"),
+  tab_header(title = md("**Bottom Effortful WRs when Not Targeted**"),
              subtitle = md("*Utilized QGAM to calculate score*")) |>
   cols_label(displayName = "Player", gsis_id = "", not_targeted_dis_score = "Effort Score %", not_targeted_rank = "Effort Rank") |>
   nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
   data_color(columns = c(not_targeted_dis_score),
              fn = scales::col_numeric(palette = c("#0072B2", "white"), domain = NULL)) |>
-  gtExtras::gt_theme_espn() |>
-  tab_options(
-    table.width = pct(40) 
-  ) |> 
-  opt_align_table_header(align = "center")
+  gtExtras::gt_theme_espn() |> 
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "WRsBottomNotTargeted.png",
+         vwidth = 600,
+         vheight = 800)
 
 # Biggest difference
 wrs_targeted_vs_nottargeted |>
@@ -162,7 +200,7 @@ wrs_targeted_vs_nottargeted |>
   select(displayName, gsis_id, targeted_dis_score, targeted_rank, 
          not_targeted_dis_score, not_targeted_rank, score_diff, rank_diff) |> 
   gt() |>
-  tab_header(title = md("**Biggest Difference of WRs' Effort When Not Targeted vs. Targeted for the NFL 2022 season**"),
+  tab_header(title = md("**These WRs gave more effort when not targeted vs. targeted**"),
              subtitle = md("*Utilized QGAM to calculate score*")) |>
   cols_label(displayName = "Player", gsis_id = "", targeted_dis_score = "Targeted Effort Score %", targeted_rank = "Targeted Rank",
              not_targeted_dis_score = "Not Targeted Effort Score %", not_targeted_rank = "Not Targeted Rank",
@@ -171,7 +209,11 @@ wrs_targeted_vs_nottargeted |>
   data_color(columns = c(score_diff),
              fn = scales::col_numeric(palette = c("white", "#D50A0A"), domain = NULL)) |>
   gtExtras::gt_theme_espn() |>
-  opt_align_table_header(align = "center")
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "BiggestDiff1.png",
+         vwidth = 1000,
+         vheight = 800)
+  
 
 # Smallest difference
 wrs_targeted_vs_nottargeted |>
@@ -180,7 +222,7 @@ wrs_targeted_vs_nottargeted |>
   select(displayName, gsis_id, targeted_dis_score, targeted_rank, 
          not_targeted_dis_score, not_targeted_rank, score_diff, rank_diff) |> 
   gt() |>
-  tab_header(title = md("**Biggest Difference of WRs' Effort When Not Targeted vs. Targeted for the NFL 2022 season**"),
+  tab_header(title = md("**These WRs gave more effort when targeted vs. not targeted**"),
              subtitle = md("*Utilized QGAM to calculate score*")) |>
   cols_label(displayName = "Player", gsis_id = "", targeted_dis_score = "Targeted Effort Score %", targeted_rank = "Targeted Rank",
              not_targeted_dis_score = "Not Targeted Effort Score %", not_targeted_rank = "Not Targeted Rank",
@@ -189,4 +231,8 @@ wrs_targeted_vs_nottargeted |>
   data_color(columns = c(score_diff),
              fn = scales::col_numeric(palette = c("#0072B2", "white"), domain = NULL))  |>
   gtExtras::gt_theme_espn() |>
-  opt_align_table_header(align = "center")
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "BiggestDiff2.png",
+         vwidth = 1000,
+         vheight = 800)
+ 

@@ -189,11 +189,9 @@ tracking_rb_avg <- tracking_bc |>
   filter(!is.na(s_5), !is.na(dir_a_mpsh_5))
 
 
-# QGAM with Rolling Avg ---------------------------------------------------
+# QGAM Function -----------------------------------------------------------
 
 library(qgam)
-
-# QGAM Function -----------------------------------------------------------
 
 eff_function_qgam <- function(name, graph = FALSE) {
   # Choosing player name
@@ -352,28 +350,32 @@ qgam_dis_player |>
   left_join(select(rosters, bc_id = gsis_it_id, gsis_id)) |> 
   select(displayName, gsis_id, dis_score, rank) |> 
   gt() |>
-  tab_header(title = md("**Top RBs for Effort Score**"),
-             subtitle = md("*Utilized QGAM to calculate score*")) |>
+  tab_header(title = md("**QGAM Method**")) |>
   cols_label(displayName = "Player", gsis_id = "", dis_score = "Effort Score %", rank = "Rank") |>
   nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
   data_color(columns = c(dis_score),
              fn = scales::col_numeric(palette = c("white", "#D50A0A"), domain = NULL))  |>
   gtExtras::gt_theme_espn() |>
-  opt_align_table_header(align = "center")
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "TopQGAM.png",
+         vwidth = 450,
+         vheight = 800)
 
 qgam_dis_player |>
   slice_min(dis_score, n = 10) |> 
   left_join(select(rosters, bc_id = gsis_it_id, gsis_id)) |> 
   select(displayName, gsis_id, dis_score, rank) |> 
   gt() |>
-  tab_header(title = md("**Bottom RBs for Effort Score**"),
-             subtitle = md("*Utilized QGAM to calculate score*")) |>
+  tab_header(title = md("**QGAM Method**")) |>
   cols_label(displayName = "Player", gsis_id = "", dis_score = "Effort Score %", rank = "Rank") |>
   nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
   data_color(columns = c(dis_score),
              fn = scales::col_numeric(palette = c("#0072B2", "white"), domain = NULL))  |>
   gtExtras::gt_theme_espn() |>
-  opt_align_table_header(align = "center")
+  opt_align_table_header(align = "center") |> 
+  gtsave(file = "BottomQGAM.png",
+         vwidth = 450,
+         vheight = 800)
 
 
 # Quadratic Function ------------------------------------------------------
@@ -513,28 +515,33 @@ nlrq_dis_player |>
   left_join(select(rosters, bc_id = gsis_it_id, gsis_id)) |> 
   select(displayName, gsis_id, dis_score, rank) |> 
   gt() |>
-  tab_header(title = md("**Top RBs for Effort Score**"),
-             subtitle = md("*Utilized Quadratic Function Method to calculate score*")) |>
+  tab_header(title = md("**Quadratic Quantile Regression Method**")) |>
   cols_label(displayName = "Player", gsis_id = "", dis_score = "Effort Score %", rank = "Rank") |>
   nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
   data_color(columns = c(dis_score),
              fn = scales::col_numeric(palette = c("white", "#D50A0A"), domain = NULL))  |>
   gtExtras::gt_theme_espn() |>
-  opt_align_table_header(align = "center")
+  opt_align_table_header(align = "center") |> 
+  gtsave("TopQuadratic.png",
+         vwidth = 450,
+         vheight = 800)
+  
 
 nlrq_dis_player |>
   slice_min(dis_score, n = 10) |> 
   left_join(select(rosters, bc_id = gsis_it_id, gsis_id)) |> 
   select(displayName, gsis_id, dis_score, rank) |> 
   gt() |>
-  tab_header(title = md("**Bottom RBs for Effort Score**"),
-             subtitle = md("*Utilized Quadratic Function Method to calculate score*")) |>
+  tab_header(title = md("**Quadratic Quantile Regression Method**")) |>
   cols_label(displayName = "Player", gsis_id = "", dis_score = "Effort Score %", rank = "Rank") |>
   nflplotR::gt_nfl_headshots(columns = gsis_id, height = 60) |> 
   data_color(columns = c(dis_score),
              fn = scales::col_numeric(palette = c("#0072B2", "white"), domain = NULL))  |>
   gtExtras::gt_theme_espn() |>
-  opt_align_table_header(align = "center")
+  opt_align_table_header(align = "center") |> 
+  gtsave("BottomQuadratic.png",
+         vwidth = 450,
+         vheight = 800)
 
 # Combining graphs with the Magick package --------------------------------
 library(magick)
@@ -581,3 +588,48 @@ correlations |>
   gtsave(file = "EffortCorrelations.png",
          vwidth = 800,
          vheight = 200)
+
+
+
+# Joined Scatter Plot -----------------------------------------------------
+
+nlrq <- nlrq_dis |> 
+  group_by(bc_id, displayName) |> 
+  summarize(nlrq_dis_score = mean(dis_score_adj)) |> 
+  ungroup() |> 
+  arrange(desc(nlrq_dis_score)) |> 
+  mutate(nlrq_dis_score = round(nlrq_dis_score, 4) *100,
+         nlrq_rank = 1:n())
+
+qgam <- qgam_dis |> 
+  group_by(bc_id, displayName) |> 
+  summarize(qgam_dis_score = mean(dis_score_adj)) |> 
+  ungroup() |> 
+  arrange(desc(qgam_dis_score)) |> 
+  mutate(qgam_dis_score = round(qgam_dis_score, 4) *100,
+         qgam_rank = 1:n())
+
+scatter_df <- nlrq |> 
+  left_join(qgam)
+
+label_names <- scatter_df |>  
+  filter(qgam_rank <= 5 | nlrq_rank <= 5 | qgam_rank >=65 | nlrq_rank >= 65)
+
+## Scatterplot
+scatter_df |> 
+  ggplot(aes(x = nlrq_dis_score, y = qgam_dis_score)) +
+  geom_hline(aes(yintercept = mean(qgam_dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_vline(aes(xintercept = mean(nlrq_dis_score)), lwd = 1.2, lty = 2, color = "black", alpha = .7) +
+  geom_point(size = 3, alpha = .8, color = "#0072B2") +
+  geom_point(data = label_names, size = 3, alpha = .8, color = "#D50A0A") +
+  labs(x = "Effort metric #1 (Quadratic Quantile Regression)",
+       y = "Effort metric #2 (QGAM)")+
+  theme_minimal(base_size=16) +
+  theme(plot.title = element_text(face = "bold.italic",
+                                  size = 18, 
+                                  hjust = .5),
+        legend.position = "none",
+        axis.title = element_text(face = "bold")) + 
+  ggrepel::geom_text_repel(data = label_names, aes(label = displayName),
+                           size = 5, max.overlaps = 15,
+                           fontface = "italic")

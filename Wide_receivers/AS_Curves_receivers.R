@@ -186,3 +186,16 @@ wrs_qgam_graph <- function(name) {
 
 wrs_qgam_graph("D.J. Chark")
 wrs_qgam_graph("Tyreek Hill")
+
+
+# Combining graphs with the Magick package --------------------------------
+library(magick)
+
+#qgam
+hill <- image_read("cmsac_presentation/images/hill.png")
+chark <- image_read("cmsac_presentation/images/chark.png")
+hill <- image_scale(hill, "x500") 
+chark <- image_scale(chark, "x500") 
+
+hill_chark_qgam <- image_append(c(hill, chark)) 
+image_write(hill_chark_qgam, "hill_chark_qgam.png")

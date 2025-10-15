@@ -123,11 +123,12 @@ tracking_wrs_avg <- tracking_wrs |>
 library(gt)
 library(gtExtras)
 
+hill <- tracking_wrs |> 
+  filter(displayName == "Tyreek Hill")
+
 tracking_wrs |> 
-  filter(displayName == "Nico Collins",
-         frameId %in% c(184:186),
-         gameId == 2022091105,
-         playId == 1850) |> 
+  filter(displayName == "Tyreek Hill") |> 
+  slice_head(n = 3) |> 
   select(gameId, playId, nflId, displayName, frameId, event, x, y, s_mph, dir_a_mphs, wasTargettedReceiver) |> 
   gt() |> 
   cols_label(gameId = "Game", playId = "Play", nflId = "Receiver", displayName = "Name",
