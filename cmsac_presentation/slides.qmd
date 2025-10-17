@@ -38,7 +38,7 @@ format:
   
   * Assess how frequently players operate near or exceed their physical limits as a **proxy for effort**
 
-[^1]: Morin, et al. 2021. “Individual Acceleration-Speed Profile in-Situ: A Proof of Concept in Professional Football Players.” Journal of Biomechanics 123: 110524.
+[^1]: Morin, J., Mat, Y. L., Osgnach, C., Barnabò, A., Pilati, A., Samozino, P., & Di Prampero, P. E. (2021). Individual acceleration-speed profile in-situ: A proof of concept in professional football players. Journal of Biomechanics, 123, 110524. https://doi.org/10.1016/j.jbiomech.2021.110524
 
   
 ## Data: 2022 NFL Season[^2]
@@ -79,7 +79,7 @@ format:
 
 * Sensitive to short-term fluctuations
 
-  * Smooth out noise by taking 5-frame rolling mean of speed and directional acceleration 
+  * Need to smooth out noise: take 5-frame rolling mean of speed and directional acceleration 
   
 ## Effort Metric #1: Quadratic Quantile Regression
 
@@ -108,20 +108,20 @@ format:
 
 ::: {.callout-note title="Average frame-level effort for each player" style="font-size: 1.5em;"}
 $$
-\Psi_i = \begin{cases}
+\text{Effort}_i = \begin{cases}
   \frac{1}{1+d_i} & a_i\geq 0 \\
   \frac{1}{2}\cdot\frac{1}{1+d_i} & a_i<0
-  \end{cases} \quad \implies \quad \text{Effort} = \frac{\sum_{i=1}^n \Psi}{n}
+  \end{cases} \quad \implies \quad \text{Average Effort} = \frac{\sum_{i=1}^n \text{Effort}_i}{n}
 $$
 :::
 
-* $d_i$ = vertical distance from point to its respective 95th quantile line (postive vs. negative acceleration)
+* $d_i$ = vertical distance from point to its respective 95th quantile line (positive vs. negative acceleration)
 
-  * Points surpassing the respective 95th quantile line are assigned a distance of 0
+  * Points surpassing their respective 95th quantile line are assigned a distance of 0
 
 * $a_i$ = directional acceleration
 
-  * Penalize points with negative acceleration by $1/2$ because deceleration is not as effortful[^3]
+  * Penalize points with negative acceleration by $1/2$ (deceleration not as effortful[^3])
   
 * Compute average frame-level scores to obtain the percentage of effortful frames 
   
@@ -156,14 +156,14 @@ $$
 
 ![](images/EffortCorrelations.png){width="90%"}
   
-* <u>**Conclusion**</u>: By our definition, effort may not result in favorable play outcomes
+* <u>**Conclusion**</u>: By our definition, effort may not explain favorable play outcomes
 
   * Individual effort may only benefit a team to an extent
   
-  * Football is context dependent and a team sport
+  * Football is context-dependent and a team sport
 
   
-## Shifting Gears: WRs
+## Shifting Gears: Wide Receivers (WRs)
 
 * RBs typically give their full effort on every single play running the ball
 
@@ -178,7 +178,7 @@ $$
 
   * Filter to frames of receivers running their routes
 
-  * Filter to from when ball is snapped to when pass arrives to intended receiver 
+  * Filter to frames between snap and arrival of pass to intended receiver 
 
   * Same speed and directional acceleration calculations with 5-frame rolling mean as for RBs
 
@@ -218,7 +218,7 @@ $$
 :::
 :::
 
-## Chark Leads in Both Categories
+## Chark Leads in Both Scenarios
 
 ::: columns
 ::: column
@@ -255,7 +255,7 @@ $$
   
   * Metric quantifies how often a player comes to his acceleration frontier
   
-  * No extreme overall difference in effort when targeted vs. not targeted on play level
+  * On play level, no extreme overall difference in effort when targeted vs. not targeted
   
 * Limitations
 
