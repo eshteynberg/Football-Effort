@@ -114,13 +114,13 @@ wrs_play_t_v_nt <- wrs_play_t_v_nt |>
   left_join(select(plays, passLength, gameId, playId))
 
 wrs_play_t_v_nt |> 
-  ggplot(aes(x = passLength, y = dis_score)) + 
+  ggplot(aes(x = dis_score, y = passLength)) + 
   geom_point(alpha = .75) + 
   facet_wrap(~ wasTargettedReceiver2) + 
-  labs(x = "Pass Length (Yards)",
-       y = "Effort Score (%)") +
+  labs(y = "Pass Length (Yards)",
+       x = "Effort Score (%)") +
   theme_bw() +
-  scale_y_continuous(breaks = seq(0, 100, 10)) + 
+  scale_x_continuous(breaks = seq(0, 100, 10)) + 
   theme(strip.background = element_rect(fill = "#0072B2", 
                                         color = "black", 
                                         size = 1),
@@ -227,7 +227,7 @@ wrs_targeted_vs_nottargeted |>
 
 # Top not targeted
 wrs_targeted_vs_nottargeted |>
-  slice_max(not_targeted_dis_score, n = 10) |> 
+  slice_max(not_targeted_dis_score, with_ties = FALSE, n = 10) |> 
   left_join(select(rosters, nflId = gsis_it_id, gsis_id)) |> 
   select(displayName, gsis_id, not_targeted_dis_score, not_targeted_rank) |> 
   gt() |>

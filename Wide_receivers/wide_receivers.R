@@ -127,8 +127,11 @@ hill <- tracking_wrs |>
   filter(displayName == "Tyreek Hill")
 
 tracking_wrs |> 
-  filter(displayName == "Tyreek Hill") |> 
-  slice_head(n = 3) |> 
+  filter(displayName == "Tyreek Hill") |>
+  slice(26:28) |> 
+  mutate(y = round(y, 2), 
+         dir_a_mphs = round(dir_a_mphs, 2),
+         s_mph = round(s_mph, 2)) |> 
   select(gameId, playId, nflId, displayName, frameId, event, x, y, s_mph, dir_a_mphs, wasTargettedReceiver) |> 
   gt() |> 
   cols_label(gameId = "Game", playId = "Play", nflId = "Receiver", displayName = "Name",

@@ -65,7 +65,7 @@ format:
 
 ![](images/linear_AS_CMC_KH.png){width="100%" height="400"}
 
-* Effort = % of a player's points (frames) close to and above the regression line
+* **Effort** = % of a player's points (frames) close to and above the regression line
 
 ## But This Approach Has Limitations
 
@@ -115,13 +115,13 @@ $$
 $$
 :::
 
-* $d_i$ = vertical distance from point to its respective 95th quantile line (positive vs. negative acceleration)
+* $d_i$ = vertical distance from point $i$ to its respective 95th quantile line (positive vs. negative acceleration)
 
   * Points surpassing their respective 95th quantile line are assigned a distance of 0
 
 * $a_i$ = directional acceleration
 
-  * Penalize points with negative acceleration by $1/2$ (deceleration not as effortful[^3])
+  * Penalize points with negative acceleration by $1/2$ (deceleration is not as effortful[^3])
   
 * Compute average frame-level scores to obtain the percentage of effortful frames 
   
@@ -180,8 +180,8 @@ $$
 
   * Filter to frames between snap and arrival of pass to intended receiver 
 
-  * Same speed and directional acceleration calculations with 5-frame rolling mean as for RBs
-
+  * Same as for RBs: speed and directional acceleration calculations with 5-frame rolling mean
+  
 ::: {.fragment style="margin-top: -1.4em;"}
 
 ![](images/WRsTable.png)
@@ -243,7 +243,7 @@ $$
 :::
 
 
-## No Significant Change in Effort on the Play Level when Targeted vs. Not Targeted
+## No Extreme Change in Play-Level Effort when Targeted vs. Not Targeted
 
 <img src="images/BoxplotTargetedVSNot.png" style="display: block; margin-left: auto; margin-right: auto; width: 80%;">
 
@@ -251,11 +251,11 @@ $$
 
 * Conclusions
 
+  * Metric quantifies how often a player comes to his acceleration frontier
+
   * A-S-based effort alone does not explain performance
   
-  * Metric quantifies how often a player comes to his acceleration frontier
-  
-  * On play level, no extreme overall difference in effort when targeted vs. not targeted
+  * No extreme difference in play-level effort when targeted vs. not targeted
   
 * Limitations
 
@@ -267,7 +267,7 @@ $$
 
   * Better distinguish between high effort points 
   
-  * Another way to validate effort metrics?
+  * Find another way to validate effort metrics
 
 
 # Appendix
@@ -300,4 +300,4 @@ $$
 
 ## High Effortful Targeted Plays Correlate Positively with Pass Length
 
-<img src="images/PassLengthGraph.png" style="display: block; margin-left: auto; margin-right: auto; width: 80%;">
+<img src="images/EffortVSPassLength.png" style="display: block; margin-left: auto; margin-right: auto; width: 80%;">

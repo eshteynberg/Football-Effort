@@ -379,6 +379,7 @@ qgam_dis_player |>
 
 
 # Quadratic Function ------------------------------------------------------
+library(quantreg)
 
 eff_function_nlrq <- function(name) {
   # Choosing player name
@@ -464,7 +465,7 @@ nlrq_graph <- function(name) {
   
   graph <- nlrq_dis2 |> 
     ggplot(aes(x = s_5, y = dir_a_mpsh_5)) +
-    geom_point(alpha=.6, aes(fill = dis_score_ad), pch = 21, size = 3) +
+    geom_point(alpha=.6, aes(fill = dis_score_adj), pch = 21, size = 3) +
     geom_line(data = nlrq_pos, aes(y = nlrq_pred, color = "0.95 quantile accel. \nregression line"), lwd = 1.3) +
     geom_line(data = nlrq_neg, aes(y = nlrq_pred, color = "0.95 quantile decel. \nregression line"), lwd = 1.3) +
     geom_hline(aes(yintercept = 0), color = "black", lwd = 1.3, lty = 2) +
@@ -581,7 +582,8 @@ correlations <- data.frame(type = c("QGAM", "Quadratic"),
 
 correlations |>
   gt() |>
-  tab_header(title = md("**Effort metrics do not show a strong correlation with play outcomes**"))|>
+  tab_header(title = "",
+             subtitle = md("*Correlations between each effort metric and 'effortful' play outcome metrics*"))|>
   cols_label(type = "Effort metric type", dis_gained_ac = "Yards gained after contact", EPA = "Expected points added",
              rushingYards = "Rushing Yards") |>
   gtExtras::gt_theme_espn() |> 
