@@ -115,7 +115,7 @@ $$
 $$
 :::
 
-* $d_i$ = vertical distance from point $i$ to its respective 95th quantile line (positive vs. negative acceleration)
+* $d_i$ = vertical distance from point $i$ to its respective 0.95 quantile line (positive vs. negative acceleration)
 
   * Points surpassing their respective 95th quantile line are assigned a distance of 0
 
