@@ -269,6 +269,31 @@ $$
   
   * Find another way to validate effort metrics
 
+## Connect with Us
+
+:::{.columns style="justify-content: center; text-align: center;"}
+
+::: {.column width="33%"}
+![](https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://www.linkedin.com/in/eshteynberg/)
+
+**Emily Shteynberg**
+:::
+
+::: {.column width="33%"}
+![](https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://www.linkedin.com/in/lukesnavely/)
+
+**Luke Snavely**
+:::
+
+
+::: {.column width="33%"}
+![](https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://www.linkedin.com/in/sheryl-solorzano-sherylslz/)
+
+**Sheryl Solorzano**
+:::
+
+:::
+
 
 # Appendix
 
